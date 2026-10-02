@@ -2374,10 +2374,10 @@ function viewSales(){
       ${unitSales.map(u=>{
         const soldP=Math.round(u.sold/u.total*100), resP=Math.round(u.reserved/u.total*100), avP=100-soldP-resP;
         return `
-        <div>
+        <div onclick="gotoProjeSema('${u.project.replace(/'/g,"\\'")}')" class="cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-white/[.04] transition group">
           <div class="flex items-center justify-between text-xs mb-1.5">
-            <span class="text-slate-200 font-medium">${u.project}</span>
-            <span class="text-slate-400">${u.sold}/${u.total} satıldı · ${money(u.revenue)}</span>
+            <span class="text-slate-200 font-medium group-hover:text-gold inline-flex items-center gap-1">${u.project}<i data-lucide="external-link" class="h-3 w-3 opacity-0 group-hover:opacity-100 text-gold"></i></span>
+            <span class="text-slate-400">${u.sold}/${u.total} satıldı · ${money(u.revenue)} <i data-lucide="chevron-right" class="inline h-3.5 w-3.5 text-slate-500"></i></span>
           </div>
           <div class="h-3 rounded-full overflow-hidden flex bg-navy-600/80">
             <div class="bar h-full bg-emer" style="width:0%" data-w="${soldP}"></div>
@@ -2592,6 +2592,18 @@ let katProjeler = [
     ruhsat:[['Zemin Etüt','Devam Eden'],['İmar Durumu','Bekliyor'],['Yapı Ruhsatı','Bekliyor']] }
 ];
 function openKatPage(id){ state.katView=id; state.hisseView=null; render(); }
+function gotoProjeSema(name){
+  const n=(name||'').toLocaleLowerCase('tr-TR');
+  const sp = state.sub=state.sub||{};
+  // 1) Kat karşılığı eşleşmesi → kat şeması (arsa paylaşımı / daire satış)
+  const kat = katProjeler.find(k=>{ const kn=k.ad.toLocaleLowerCase('tr-TR'); return kn.split(' ').some(w=>w.length>3 && (n.includes(w)||w.includes(n.split(' ')[0]))); });
+  if(kat){ state.module='projects'; sp.projects='katkarsiligi'; state.caseView=null; state.projView=null; saveState(); toggleSidebar(false); openKatPage(kat.id); toast(kat.ad+' şemasına gidildi'); return; }
+  // 2) Yap-Sat eşleşmesi → proje satış şeması
+  const yi = projects.findIndex(p=> p.isKolu==='Yap-Sat' && (()=>{ const pn=p.name.toLocaleLowerCase('tr-TR'); const a=n.split(' ')[0], b=pn.split(' ')[0]; return pn.includes(a)||n.includes(b); })());
+  if(yi>=0){ state.module='projects'; sp.projects='yapsat'; state.caseView=null; state.katView=null; state.projView=null; saveState(); render(); openProject(yi); toast(projects[yi].name+' şemasına gidildi'); return; }
+  // 3) Genel fallback → Yap-Sat sekmesi
+  state.module='projects'; sp.projects='yapsat'; state.caseView=null; state.katView=null; saveState(); render(); toast('Bu proje Yap-Sat/Kat Karşılığı değil; Yap-Sat listesine gidildi');
+}
 function backKat(){ state.katView=null; state.hisseView=null; render(); }
 function openHissedar(kat,idx){ state.katView=kat; state.hisseView={kat,idx}; render(); }
 function backHissedar(){ state.hisseView=null; render(); }
