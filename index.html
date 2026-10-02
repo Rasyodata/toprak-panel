@@ -75,6 +75,12 @@
   @media (prefers-reduced-motion: reduce){ .bar::after{ animation:none; display:none; } }
   @keyframes nakitNew{ 0%{ background:rgba(45,182,115,.18); } 100%{ background:transparent; } }
   .nakit-new{ animation:nakitNew 1.1s ease-out; }
+  /* Onay kutusu sinyali — bekleyen onay varken dikkat çeker */
+  @keyframes onaySignal{ 0%{ box-shadow:0 0 0 0 rgba(239,68,68,.5);} 70%{ box-shadow:0 0 0 12px rgba(239,68,68,0);} 100%{ box-shadow:0 0 0 0 rgba(239,68,68,0);} }
+  .onay-signal{ animation:onaySignal 1.9s ease-out infinite; border-color:rgba(239,68,68,.45) !important; }
+  @keyframes signalBlink{ 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.25; transform:scale(.7);} }
+  .signal-dot{ animation:signalBlink 1s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce){ .onay-signal{ animation:none; } .signal-dot{ animation:none; } }
   [data-lucide]{ stroke-width:1.75; }
   @media print {
     @page{ margin:14mm; }
@@ -1191,8 +1197,11 @@ function viewYetkiler(){
     ${kpi('gavel','Hukuk Onayı', davaP.length+' dosya','dava/icra','true','gold')}
     ${kpi('home','Emlak/Gezdirme', (satisP.length+rndP.length)+' talep','satış','true','emer')}
   </div>
-  <div data-sub="onaylar" class="card rounded-2xl p-5 mb-5">
-    ${sectionTitle('stamp','Bekleyen Onaylar', onayToplam+' kalem')}
+  <div data-sub="onaylar" class="card rounded-2xl p-5 mb-5 ${onayToplam>0?'onay-signal':''}">
+    <div class="flex items-center justify-between mb-1">
+      ${sectionTitle('stamp','Bekleyen Onaylar', onayToplam+' kalem')}
+      ${onayToplam>0?`<span class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500"><span class="h-2.5 w-2.5 rounded-full bg-rose-500 signal-dot"></span>ONAY BEKLİYOR</span>`:''}
+    </div>
     <div class="space-y-2">
       ${poP.map(p=>onayRow('shopping-cart',p.id,p.item,'Satın Alma · '+money(p.amount),`patronAct('po','${p.id}','approved')`)).join('')}
       ${szP.map(c=>onayRow('file-signature',c.id,c.title,'Sözleşme · '+money(c.value),`patronAct('sz','${c.id}','approved')`)).join('')}
@@ -1474,9 +1483,10 @@ function viewBI(){
     </div>
 
     <!-- ONAYLAMALAR -->
-    <div class="card rounded-2xl p-5">
+    <div class="card rounded-2xl p-5 ${bekleyen>0?'onay-signal':''}">
       <div class="flex items-center justify-between mb-3">
         ${sectionTitle('stamp','Onaylamalar', bekleyen+' bekliyor')}
+        ${bekleyen>0?`<span class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500"><span class="h-2.5 w-2.5 rounded-full bg-rose-500 signal-dot"></span>${patronBekleyen>0?patronBekleyen+' PATRON ONAYI':'ONAY BEKLİYOR'}</span>`:''}
       </div>
       <div class="max-h-[280px] overflow-y-auto -mx-1 px-1">
         ${(poPend.length+czPend.length+davaOnay.length) ? `
