@@ -1087,6 +1087,32 @@ function actFiyat(id){
 }
 
 /* ============================================================
+   WHATSAPP YÖNETİMİ — gruplar, gruba mesaj gönderme
+   ============================================================ */
+let whatsappGruplar = [
+  { id:'wg1', ad:'Yönetim Kurulu', uye:7,  renk:'gold' },
+  { id:'wg2', ad:'Şantiye Şefleri', uye:12, renk:'emer' },
+  { id:'wg3', ad:'Satın Alma Ekibi', uye:6, renk:'emer' },
+  { id:'wg4', ad:'Finans & Muhasebe', uye:9, renk:'gold' },
+  { id:'wg5', ad:'Taşeronlar', uye:24, renk:'amber' },
+  { id:'wg6', ad:'Satış & Emlak', uye:11, renk:'emer' }
+];
+let whatsappMesajlar = [
+  { grup:'Şantiye Şefleri', kisi:1, text:'Bu hafta hakediş dosyalarını cuma gününe kadar gönderin.', who:'Ahmet Yıldız', time:'09:20', gun:'bugün' },
+  { grup:'Satın Alma Ekibi', kisi:1, text:'Hazır beton teklifleri için 3 firma karşılaştırması bekliyorum.', who:'Ahmet Yıldız', time:'Dün 16:40', gun:'dün' }
+];
+function waGonder(){
+  const sel=document.getElementById('waGrup'); const inp=document.getElementById('waMesaj');
+  const grup=sel?sel.value:''; const text=(inp?inp.value:'').trim();
+  if(!grup){ toast('Grup seçin'); return; }
+  if(!text){ toast('Mesaj yazın'); return; }
+  const g=whatsappGruplar.find(x=>x.ad===grup);
+  whatsappMesajlar.unshift({ grup, kisi:g?g.uye:0, text, who:ROLES[state.role].name, time:'şimdi', gun:'bugün' });
+  logAction('message-circle','emer', `WhatsApp · "${grup}" grubuna mesaj gönderildi (${g?g.uye:0} kişi): "${text.slice(0,40)}${text.length>40?'…':''}"`, 'WhatsApp');
+  render(); toast(`"${grup}" grubuna gönderildi ✓`);
+}
+
+/* ============================================================
    PATRON ONAY AKIŞI — talep sahibi, soru-cevap, belge, karar
    ============================================================ */
 const onayTalepEden = {
@@ -1531,6 +1557,53 @@ function viewYetkiler(){
         <td class="text-right">${(canAct&&f.durum==='Onaya Hazır')?`<button onclick="actFiyat('${f.id}')" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emer text-navy-900 font-semibold text-[11px] hover:bg-emer-light transition"><i data-lucide="check" class="h-3.5 w-3.5"></i>Onayla</button>`:f.durum==='Onaylandı'?'<span class="text-[11px] text-emer-light inline-flex items-center gap-1"><i data-lucide="badge-check" class="h-3.5 w-3.5"></i>Tamam</span>':'<span class="text-[11px] text-slate-500">—</span>'}</td>
       </tr>`).join('')}
       </tbody></table></div>
+  </div>
+
+  <!-- WHATSAPP YÖNETİMİ -->
+  <div data-sub="whatsapp" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    ${kpi('users','Gruplar', whatsappGruplar.length+' grup', whatsappGruplar.reduce((a,g)=>a+g.uye,0)+' kişi','true','emer')}
+    ${kpi('send','Bugün Gönderilen', whatsappMesajlar.filter(m=>m.gun==='bugün').length+' mesaj','aktif','true','gold')}
+    ${kpi('message-circle','Toplam Mesaj', whatsappMesajlar.length+' kayıt','geçmiş','true','gold')}
+    ${kpi('badge-check','Bağlantı', 'Bağlı','WhatsApp Business','false','emer')}
+  </div>
+  <div data-sub="whatsapp" class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
+    <!-- Gruba mesaj gönder -->
+    <div class="card rounded-2xl p-5 xl:col-span-1">
+      ${sectionTitle('send','Gruba Mesaj Gönder','Seç · yaz · gönder')}
+      <label class="block text-[11px] text-slate-500 mb-1">Grup</label>
+      <select id="waGrup" class="w-full bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/50 mb-3">
+        ${whatsappGruplar.map(g=>`<option value="${g.ad}">${g.ad} (${g.uye} kişi)</option>`).join('')}
+      </select>
+      <label class="block text-[11px] text-slate-500 mb-1">Mesaj</label>
+      <textarea id="waMesaj" rows="4" placeholder="Mesajınızı yazın…" class="w-full bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50 resize-none mb-3"></textarea>
+      ${canAct?`<button onclick="waGonder()" class="w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-emer text-navy-900 font-bold text-sm hover:bg-emer-light transition"><i data-lucide="send" class="h-4 w-4"></i>Gönder</button>`:'<p class="text-[11px] text-slate-500 text-center">Mesaj gönderme yetkisi yok</p>'}
+    </div>
+    <!-- Gruplar -->
+    <div class="card rounded-2xl p-5 xl:col-span-2">
+      ${sectionTitle('users','WhatsApp Grupları', whatsappGruplar.length+' grup')}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        ${whatsappGruplar.map(g=>`
+          <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3.5 flex items-center gap-3">
+            <span class="h-10 w-10 shrink-0 rounded-xl bg-emer/15 border border-emer/30 text-emer-light flex items-center justify-center"><i data-lucide="users" class="h-5 w-5"></i></span>
+            <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-slate-100 truncate">${g.ad}</p><p class="text-[11px] text-slate-500">${g.uye} üye</p></div>
+            ${canAct?`<button onclick="(document.getElementById('waGrup').value='${g.ad}');document.getElementById('waMesaj').focus()" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emer/90 text-navy-900 font-semibold text-[11px] hover:bg-emer transition"><i data-lucide="send" class="h-3.5 w-3.5"></i>Mesaj</button>`:''}
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div data-sub="whatsapp" class="card rounded-2xl p-5 mb-5">
+    ${sectionTitle('message-square','Gönderilen Mesajlar','Grup geçmişi')}
+    <div class="space-y-1">
+      ${whatsappMesajlar.length?whatsappMesajlar.map(m=>`
+        <div class="flex items-start gap-3 py-2.5 border-b border-white/5 last:border-0">
+          <span class="h-9 w-9 shrink-0 rounded-lg bg-emer/15 border border-emer/30 text-emer-light flex items-center justify-center"><i data-lucide="message-circle" class="h-4 w-4"></i></span>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm text-slate-100">${m.text}</p>
+            <p class="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5"><i data-lucide="users" class="h-3 w-3"></i><b class="text-emer-light">${m.grup}</b> · ${m.kisi} kişi · ${m.who}</p>
+          </div>
+          <span class="text-[11px] text-slate-500 shrink-0">${m.time}</span>
+        </div>`).join(''):'<p class="text-sm text-slate-500 py-6 text-center">Henüz mesaj yok.</p>'}
+    </div>
   </div>
 
   <!-- İŞLEM LOGLARI -->
@@ -5605,7 +5678,7 @@ function toggleNotif(){
 /* ---------- MODÜL ALT SEKMELERİ (sub-nav) ---------- */
 const SUBTABS = {
   dashboard:     [{id:'bi',label:'İş Zekası',icon:'brain-circuit'},{id:'konsolide',label:'Bilanço',icon:'scale'},{id:'sirketler',label:'Şirketler',icon:'building-2'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'hukukrisk',label:'Hukuk ve Risk',icon:'shield-alert'}],
-  yetkiler:      [{id:'panel',label:'Panel',icon:'layout-dashboard'},{id:'akis',label:'İş Onay Akışı',icon:'git-pull-request'},{id:'onaylar',label:'Onaylar',icon:'stamp'},{id:'odeme',label:'Ödeme Talepleri',icon:'banknote'},{id:'satinalma',label:'Satın Alma Talepleri',icon:'shopping-cart'},{id:'fiyat',label:'Fiyat Talepleri',icon:'tag'},{id:'loglar',label:'İşlem Logları',icon:'history'}],
+  yetkiler:      [{id:'panel',label:'Panel',icon:'layout-dashboard'},{id:'akis',label:'İş Onay Akışı',icon:'git-pull-request'},{id:'onaylar',label:'Onaylar',icon:'stamp'},{id:'odeme',label:'Ödeme Talepleri',icon:'banknote'},{id:'satinalma',label:'Satın Alma Talepleri',icon:'shopping-cart'},{id:'fiyat',label:'Fiyat Talepleri',icon:'tag'},{id:'whatsapp',label:'WhatsApp Yönetimi',icon:'message-circle'},{id:'loglar',label:'İşlem Logları',icon:'history'}],
   sales:         [{id:'satis',label:'Satış',icon:'trending-up'},{id:'crm',label:'CRM & Faturalar',icon:'contact'}],
   projects:      [{id:'tumu',label:'Tümü',icon:'pie-chart'},{id:'proje',label:'Proje',icon:'pen-tool'},{id:'denetim',label:'Yapı Denetim',icon:'clipboard-check'},{id:'taahhut',label:'İnşaat Taahhüt',icon:'hard-hat'},{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'}],
   profitability: [{id:'marj',label:'Kâr Marjı',icon:'percent'},{id:'segment',label:'Segment & OPEX',icon:'layers'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'maliyet',label:'Maliyet Hesapları',icon:'receipt-text'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'ozkaynak',label:'Özkaynak Durumu',icon:'scale'},{id:'satinalma',label:'Satın Alma',icon:'shopping-cart'},{id:'saticilar',label:'Satıcılar Hesabı',icon:'badge-dollar-sign'}],
