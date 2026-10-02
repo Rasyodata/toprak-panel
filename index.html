@@ -511,12 +511,20 @@ function landingModule(role){
   const f = MODULES.find(m=>m.roles.includes(role)); return f?f.id:'dashboard';
 }
 function devicePlatform(){ try{ return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'Mobil':'Web'; }catch(e){ return 'Web'; } }
+/* ---------- First-party, çerezsiz Kullanım Analitiği (dışarı veri gitmez) ---------- */
+let analytics = (()=>{ try{ const j=JSON.parse(localStorage.getItem('toprak_analytics')); if(j&&typeof j==='object') return j; }catch(e){} return null; })()
+  || { sessions:0, views:0, byModule:{}, byDevice:{Web:0,Mobil:0}, byDay:{}, firstSeen:null };
+function saveAnalytics(){ try{ localStorage.setItem('toprak_analytics', JSON.stringify(analytics)); }catch(e){} }
+function bugunKey(){ try{ return new Date().toISOString().slice(0,10); }catch(e){ return '2026-01-01'; } }
+function trackView(modId){ if(!modId) return; analytics.views=(analytics.views||0)+1; analytics.byModule[modId]=(analytics.byModule[modId]||0)+1; const k=bugunKey(); analytics.byDay[k]=(analytics.byDay[k]||0)+1; saveAnalytics(); }
+function trackLogin(){ analytics.sessions=(analytics.sessions||0)+1; const d=devicePlatform(); analytics.byDevice[d]=(analytics.byDevice[d]||0)+1; if(!analytics.firstSeen) analytics.firstSeen=bugunKey(); saveAnalytics(); }
 function login(role){
   state.role = role; state.authed = true;
   state.module = landingModule(role);
   state.lawyerTab = 'davalar';
   state.companyChosen = !needsCompanyChoice(role); // iç kullanıcı → şirket seçim ekranı gelir; dış/avukat → atlar
   if(!needsCompanyChoice(role)) state.company='all';
+  trackLogin(); trackView(state.module);
   logAction('log-in', ROLES[role].lawyer?'gold':'emer', `${ROLES[role].name} sisteme giriş yaptı · ${devicePlatform()}`);
   saveState(); render();
 }
@@ -785,7 +793,7 @@ function setRole(r){
   }
   render();
 }
-function setModule(id){ state.module = id; saveState(); toggleSidebar(false); render(); }
+function setModule(id){ state.module = id; trackView(id); saveState(); toggleSidebar(false); render(); }
 function goPurchase(){ state.sub = state.sub||{}; state.sub.profitability = 'satinalma'; setModule('profitability'); }
 
 /* ============================================================
@@ -4910,7 +4918,35 @@ function viewAdmin(){
         <span class="text-[11px] text-slate-500 shrink-0">${a.time}</span>
       </div>`).join('')}
     </div>
+  </div>
+
+  ${(()=>{
+    const total=analytics.views||0;
+    const nameOf=id=>({admin:'Sistem Yöneticisi',avukat:'Avukat Portalı',realtor:'Emlak Portalı',portal:'Hizmet Portalı',yetkiler:'İstekler'}[id])||((MODULES.find(m=>m.id===id)||{}).name)||id;
+    const mods=Object.entries(analytics.byModule||{}).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const mx=Math.max(1,...mods.map(m=>m[1]));
+    const web=(analytics.byDevice&&analytics.byDevice.Web)||0, mob=(analytics.byDevice&&analytics.byDevice.Mobil)||0, dt=web+mob||1;
+    const aktifGun=Object.keys(analytics.byDay||{}).length;
+    const mini=(ic,lbl,val,sub,tone)=>`<div class="rounded-xl border border-white/8 bg-navy-700/40 p-3.5"><div class="flex items-center gap-2"><i data-lucide="${ic}" class="h-4 w-4 ${tone==='emer'?'text-emer-light':'text-gold'}"></i><span class="text-[11px] text-slate-400">${lbl}</span></div><p class="mt-1.5 text-xl font-bold text-white leading-none">${val}</p><p class="text-[11px] text-slate-500 mt-1 truncate">${sub}</p></div>`;
+    return `
+  <div class="card rounded-2xl p-5 mt-5">
+    ${sectionTitle('bar-chart-3','Kullanım Analitiği','First-party · çerezsiz · cihazda saklanır (dışarı veri gönderilmez)')}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      ${mini('log-in','Oturum', (analytics.sessions||0), 'giriş sayısı','gold')}
+      ${mini('eye','Sayfa Görüntüleme', total, 'modül açılışı','emer')}
+      ${mini('calendar-days','Aktif Gün', aktifGun, analytics.firstSeen?('ilk: '+analytics.firstSeen):'—','gold')}
+      ${mini('smartphone','Cihaz', '%'+Math.round(web/dt*100)+' Web', '%'+Math.round(mob/dt*100)+' Mobil','emer')}
+    </div>
+    <p class="text-[11px] uppercase tracking-wider text-slate-500 mb-2">En Çok Görüntülenen Modüller</p>
+    <div class="space-y-2.5">
+      ${mods.length?mods.map(([id,v])=>`<div>
+        <div class="flex justify-between text-xs mb-1"><span class="text-slate-300">${nameOf(id)}</span><span class="text-slate-400">${v} görüntüleme</span></div>
+        <div class="h-2.5 w-full rounded-full bg-navy-700/70 overflow-hidden"><div class="h-full rounded-full bg-gradient-to-r from-gold-dark to-gold" style="width:${Math.round(v/mx*100)}%"></div></div>
+      </div>`).join(''):'<p class="text-sm text-slate-500 py-4 text-center">Henüz veri yok.</p>'}
+    </div>
+    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="shield-check" class="h-3.5 w-3.5 text-emer"></i>KVKK dostu: izleme çerezi yok, veriler yalnızca bu tarayıcıda tutulur.</p>
   </div>`;
+  })()}`;
 }
 function impersonate(key){
   if(!state.viewAs) state.adminHome = state.role; // hangi admin görüntülüyor
