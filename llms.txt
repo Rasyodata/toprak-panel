@@ -1,0 +1,16 @@
+# Toprak Yatırım · İş Zekası & Patron Ekranı
+
+> Toprak Yatırım holdingi için kurumsal iş zekası / yönetim paneli. Konsolide finans, satış, proje, hukuk, satın alma ve çok aşamalı onay akışlarını tek ekranda sunar. Tek sayfalık (SPA) statik web uygulaması.
+
+## Özellikler
+- Yönetim Paneli (konsolide): İş Zekası, Bilanço, Bütçe, Nakit Akış, Hukuk & Risk
+- İstekler: çok aşamalı (3'lü) onay zinciri, ödeme/satın alma/fiyat talepleri, WhatsApp yönetimi
+- Rol bazlı erişim (RBAC), işlem logları, canlı piyasa göstergeleri
+- Şirket bazlı görünüm ve filtreleme
+
+## İletişim
+- E-posta: info@toprakyatirim.com
+- Site: https://toprak-panel.onrender.com/
+
+## Not
+Uygulama yetkilendirilmiş kurumsal kullanıcılar içindir; genel içerik/blog barındırmaz.

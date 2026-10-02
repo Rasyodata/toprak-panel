@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://toprak-panel.onrender.com/sitemap.xml
