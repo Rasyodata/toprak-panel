@@ -235,6 +235,9 @@
 <div id="infoModal" onclick="if(event.target===this)closeInfo()" class="hidden fixed inset-0 z-[72] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
   <div id="infoModalBody" class="w-full max-w-md card rounded-2xl shadow-exec overflow-hidden fade-in"></div>
 </div>
+<div id="onayModal" onclick="if(event.target===this)closeOnay()" class="hidden fixed inset-0 z-[74] bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-10 overflow-y-auto">
+  <div id="onayModalBody" class="w-full max-w-lg card rounded-2xl shadow-exec overflow-hidden fade-in"></div>
+</div>
 
 <!-- ======================= PROFİL MODALI ======================= -->
 <div id="profileModal" onclick="if(event.target===this)closeProfile()" class="hidden fixed inset-0 z-[72] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1082,6 +1085,131 @@ function actFiyat(id){
   logAction('tag','emer', `${id} fiyat talebi onaylandı · ${f.kalem}`, 'Yetkiler');
   render(); toast(`${id} onaylandı ✓`);
 }
+
+/* ============================================================
+   PATRON ONAY AKIŞI — talep sahibi, soru-cevap, belge, karar
+   ============================================================ */
+const onayTalepEden = {
+  'PO-2041':'Mehmet Demir · Saha Şefi','PO-2042':'Ayşe Kaya · Elektrik Müh.','PO-2043':'Okan Arslan · Filo Sorumlusu','PO-2044':'Satın Alma Birimi','PO-2045':'Bilgi İşlem Birimi',
+  'OD-5012':'Muhasebe · Hakediş','OD-5011':'Şantiye Şefliği','OD-5010':'Satın Alma','OD-5009':'Yapı Denetim Birimi',
+  'SZ-88':'Av. Deniz Ak · Hukuk','SZ-92':'Taşeronluk Birimi','SZ-93':'Mekanik Birim','SZ-94':'İhale Birimi','SZ-96':'İK Birimi',
+  'FY-3019':'Satın Alma · RFQ','FY-3020':'Proje Birimi','FY-3021':'Saha · Beton','FY-3018':'Filo Yönetimi'
+};
+const talepEdenOf = id => onayTalepEden[id] || 'Birim Talebi';
+let onaySorular = {};
+let onayBelgeler = { 'PO-2041':['teklif_vinc.pdf','teknik_sartname.pdf'], 'PO-2043':['filo_teklif.pdf'], 'SZ-88':['sozlesme_taslak.pdf','konsorsiyum_protokol.pdf'], 'SZ-94':['taahhut_sartname.pdf'], 'OD-5012':['hakedis_no4.pdf'], 'FY-3019':['3_teklif_karsilastirma.xlsx'] };
+let onayModalCtx = null;
+function onayItem(kind,id){
+  if(kind==='po') return purchaseRequests.find(x=>x.id===id);
+  if(kind==='sz') return contracts.find(x=>x.id===id);
+  if(kind==='od') return odemeTalepleri.find(x=>x.id===id);
+  if(kind==='fy') return fiyatTalepleri.find(x=>x.id===id);
+  if(kind==='dava') return lawsuits.find(x=>x.no===id);
+  if(kind==='satis' && typeof units!=='undefined') return units.find(x=>x.id===id);
+  if(kind==='rnd' && typeof appointments!=='undefined') return appointments.find(x=>x.id===id);
+  return null;
+}
+function onayNorm(kind,id){
+  const o=onayItem(kind,id); if(!o) return null;
+  const m={
+    po:{baslik:o.item, tur:'Satın Alma Talebi', taraf:o.firm+' · '+o.dept, tutar:o.amount, st:o.status},
+    sz:{baslik:o.title, tur:'Sözleşme · '+o.kategori, taraf:o.party, tutar:o.value, st:o.status},
+    od:{baslik:o.aciklama, tur:'Ödeme Talebi', taraf:o.firm+' · '+o.alacakli, tutar:o.amount, st:o.status},
+    fy:{baslik:o.kalem, tur:'Fiyat Talebi (RFQ)', taraf:o.firm, tutar:o.tahmini, st:o.durum},
+    dava:{baslik:o.subject, tur:(o.tur||'Hukuk'), taraf:o.avukat||'-', tutar:o.value, st:(o.onay==='onaylı'?'approved':'pending')},
+    satis:{baslik:(o.musteri||'Daire Satışı'), tur:'Emlak Satış', taraf:(o.proje||o.unit||'-'), tutar:(o.fiyat||0), st:(o.durum||'pending')},
+    rnd:{baslik:(o.musteri||'Gezdirme'), tur:'Gezdirme Randevusu', taraf:(o.unit||'-'), tutar:0, st:(o.durum||'pending')}
+  }[kind];
+  return m?{o,...m}:null;
+}
+function onayDurum(st){
+  if(st==='approved'||st==='Onaylandı'||st==='onaylı') return badge('Onaylandı','emer');
+  if(st==='rejected'||st==='Reddedildi') return badge('Reddedildi','red');
+  if(st==='patron') return badge('Patron Onayında','gold');
+  return badge('Onay Bekliyor','amber');
+}
+function openOnayDetay(kind,id){
+  onayModalCtx={kind,id};
+  const n=onayNorm(kind,id);
+  const host=document.getElementById('onayModalBody');
+  if(!n){ closeOnay(); return; }
+  const canAct = state.role==='ceo'||state.role==='cfo';
+  const docs=onayBelgeler[id]||[];
+  const sorular=onaySorular[id]||[];
+  const bitti = /approved|Onaylandı|onaylı|rejected|Reddedildi/.test(n.st);
+  host.innerHTML = `
+    <div class="flex items-start justify-between gap-3 p-5 border-b border-white/10">
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="h-11 w-11 shrink-0 rounded-xl bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 flex items-center justify-center"><i data-lucide="stamp" class="h-5 w-5"></i></span>
+        <div class="min-w-0"><h3 class="text-base font-bold text-slate-100 truncate">${n.baslik}</h3>
+          <p class="text-[11px] text-slate-500"><span class="font-mono text-gold">${id}</span> · ${n.tur}</p></div>
+      </div>
+      <button onclick="closeOnay()" class="text-slate-500 hover:text-white shrink-0"><i data-lucide="x" class="h-5 w-5"></i></button>
+    </div>
+    <div class="p-5 space-y-4">
+      <div class="flex items-center gap-2 flex-wrap">${onayDurum(n.st)}${n.tutar?badge(money(n.tutar),'gold'):''}</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="user" class="h-3 w-3"></i>Talep Eden</p><p class="text-sm font-medium text-slate-100 mt-0.5">${talepEdenOf(id)}</p></div>
+        <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="building-2" class="h-3 w-3"></i>Taraf / Birim</p><p class="text-sm font-medium text-slate-100 mt-0.5 truncate">${n.taraf}</p></div>
+      </div>
+
+      <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1.5"><i data-lucide="paperclip" class="h-3.5 w-3.5 text-gold"></i>Belgeler (${docs.length})</p>
+          <label class="cursor-pointer inline-flex items-center gap-1 text-[11px] text-gold hover:text-gold-light"><i data-lucide="upload" class="h-3.5 w-3.5"></i>Belge Yükle<input type="file" class="hidden" onchange="onayDosyaSec()"></label>
+        </div>
+        ${docs.length?`<div class="space-y-1.5">${docs.map(d=>`<div class="flex items-center gap-2 text-sm text-slate-200"><i data-lucide="file-text" class="h-4 w-4 text-gold shrink-0"></i><span class="truncate">${d}</span></div>`).join('')}</div>`:'<p class="text-[12px] text-slate-500">Henüz belge yok — patron belge talep edebilir.</p>'}
+      </div>
+
+      <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3">
+        <p class="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1.5 mb-2"><i data-lucide="messages-square" class="h-3.5 w-3.5 text-gold"></i>Patron Soru & Yanıt</p>
+        ${sorular.length?`<div class="space-y-2 mb-2 max-h-40 overflow-y-auto">${sorular.map(s=>`
+          <div class="text-sm"><span class="inline-flex items-center gap-1 text-[11px] ${s.rol==='talep'?'text-emer-light':'text-gold'}"><i data-lucide="${s.rol==='talep'?'corner-down-right':'crown'}" class="h-3 w-3"></i>${s.who} · ${s.time}</span><p class="text-slate-200 mt-0.5 ${s.rol==='talep'?'pl-4':''}">${s.text}</p></div>`).join('')}</div>`:'<p class="text-[12px] text-slate-500 mb-2">Onaydan önce talep sahibine soru sorabilirsiniz.</p>'}
+        ${canAct?`<div class="flex gap-2">
+          <input id="onaySoruInput" type="text" placeholder="Talep sahibine soru / not yaz…" onkeydown="if(event.key==='Enter')onaySor()" class="flex-1 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50">
+          <button onclick="onaySor()" class="px-3 py-2 rounded-lg bg-navy-600 text-slate-100 text-sm hover:bg-navy-500 border border-white/10 inline-flex items-center gap-1"><i data-lucide="send" class="h-4 w-4"></i>Sor</button>
+        </div>`:''}
+      </div>
+
+      ${canAct && !bitti ? `<div class="flex gap-2 pt-1">
+        <button onclick="onayKarar('${kind}','${id}','approved')" class="flex-1 h-11 rounded-xl bg-emer text-navy-900 font-bold text-sm hover:bg-emer-light transition inline-flex items-center justify-center gap-2"><i data-lucide="check" class="h-4 w-4"></i>Onayla</button>
+        <button onclick="onayKarar('${kind}','${id}','rejected')" class="flex-1 h-11 rounded-xl bg-rose-500/90 text-white font-bold text-sm hover:bg-rose-500 transition inline-flex items-center justify-center gap-2"><i data-lucide="x" class="h-4 w-4"></i>Reddet</button>
+      </div>` : (bitti?'<p class="text-center text-sm text-slate-400 pt-1 inline-flex items-center justify-center gap-1.5 w-full"><i data-lucide="badge-check" class="h-4 w-4 text-emer-light"></i>Karar verildi</p>':'')}
+    </div>`;
+  document.getElementById('onayModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+function closeOnay(){ const m=document.getElementById('onayModal'); if(m) m.classList.add('hidden'); onayModalCtx=null; }
+function onaySor(){
+  if(!onayModalCtx) return; const {kind,id}=onayModalCtx;
+  const inp=document.getElementById('onaySoruInput'); const t=(inp?inp.value:'').trim(); if(!t){ toast('Önce soru yazın'); return; }
+  (onaySorular[id]=onaySorular[id]||[]).push({rol:'patron', who:ROLES[state.role].name, text:t, time:'şimdi'});
+  // talep sahibinden otomatik "ileteceğim" tarzı bir alındı kaydı
+  (onaySorular[id]).push({rol:'talep', who:talepEdenOf(id), text:'Soru alındı, belge/bilgi hazırlanıyor.', time:'şimdi'});
+  logAction('messages-square','gold', `${id} için patron soru sordu: "${t.slice(0,50)}"`, 'Yetkiler');
+  openOnayDetay(kind,id);
+  toast('Soru talep sahibine iletildi ✓');
+}
+function onayDosyaSec(){
+  if(!onayModalCtx) return; const {kind,id}=onayModalCtx;
+  const f=event&&event.target; const name=(f&&f.files&&f.files[0])?f.files[0].name:'';
+  if(!name) return;
+  (onayBelgeler[id]=onayBelgeler[id]||[]).push(name);
+  logAction('paperclip','emer', `${id} talebine belge yüklendi: ${name}`, 'Yetkiler');
+  openOnayDetay(kind,id);
+  toast(`${name} eklendi ✓`);
+}
+function onayKarar(kind,id,action){
+  const o=onayItem(kind,id); if(!o){ closeOnay(); return; }
+  const ap = action==='approved';
+  if(kind==='po'||kind==='sz') o.status = ap?'approved':'rejected';
+  else if(kind==='od') o.status = ap?'approved':'rejected';
+  else if(kind==='fy') o.durum = ap?'Onaylandı':'Reddedildi';
+  else if(kind==='dava') o.onay = ap?'onaylı':'red';
+  else if(kind==='satis'||kind==='rnd') o.durum = ap?'Onaylandı':'Reddedildi';
+  logAction(ap?'check-circle-2':'x-circle', ap?'emer':'red', `${id} ${ap?'ONAYLANDI':'reddedildi'} · patron kararı`, 'Yetkiler');
+  closeOnay(); render(); toast(`${id} ${ap?'onaylandı ✓':'reddedildi'}`);
+}
 function viewYetkiler(){
   const canAct = state.role==='ceo' || state.role==='cfo';
   const now = new Date();
@@ -1095,10 +1223,10 @@ function viewYetkiler(){
   const satisP = units.filter(u=>u.durum==='Onayda');
   const rndP = appointments.filter(a=>a.durum==='Onay Bekliyor');
   const onayToplam = poP.length+szP.length+davaP.length+satisP.length+rndP.length;
-  const onayRow=(icon,no,text,meta,fn)=>`<div class="flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-500/5 p-3">
+  const onayRow=(kind,icon,no,text,meta)=>`<div onclick="openOnayDetay('${kind}','${no}')" class="flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-500/5 p-3 cursor-pointer hover:border-gold/50 transition">
     <span class="h-8 w-8 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center text-gold"><i data-lucide="${icon}" class="h-4 w-4"></i></span>
-    <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate"><span class="font-mono text-gold text-[11px]">${no}</span> ${text}</p><p class="text-[11px] text-slate-500">${meta}</p></div>
-    ${canAct?`<button onclick="${fn}" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emer text-navy-900 font-semibold text-[11px] hover:bg-emer-light transition"><i data-lucide="check" class="h-3.5 w-3.5"></i>Onayla</button>`:''}
+    <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate"><span class="font-mono text-gold text-[11px]">${no}</span> ${text}</p><p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="user" class="h-3 w-3"></i>${talepEdenOf(no)} · ${meta}</p></div>
+    <span class="inline-flex items-center gap-1 text-[11px] text-gold shrink-0">İncele<i data-lucide="chevron-right" class="h-3.5 w-3.5"></i></span>
   </div>`;
 
   // --- Ödeme verileri ---
@@ -1190,6 +1318,51 @@ function viewYetkiler(){
     </div>`;
   })()}
 
+  <!-- İŞ ONAY AKIŞI · kişilere göre talepler -->
+  ${(()=>{
+    const all=[
+      ...purchaseRequests.map(p=>({kind:'po',icon:'shopping-cart',id:p.id,baslik:p.item,tutar:p.amount,st:p.status})),
+      ...contracts.map(c=>({kind:'sz',icon:'file-signature',id:c.id,baslik:c.title,tutar:c.value,st:c.status})),
+      ...odemeTalepleri.map(o=>({kind:'od',icon:'banknote',id:o.id,baslik:o.aciklama,tutar:o.amount,st:o.status})),
+      ...fiyatTalepleri.map(f=>({kind:'fy',icon:'tag',id:f.id,baslik:f.kalem,tutar:f.tahmini,st:f.durum}))
+    ];
+    const bekliyorMu = s => !/approved|Onaylandı|onaylı|rejected|Reddedildi/.test(s);
+    const groups={};
+    all.forEach(t=>{ const k=talepEdenOf(t.id); (groups[k]=groups[k]||[]).push(t); });
+    const people=Object.keys(groups).sort((a,b)=>groups[b].filter(t=>bekliyorMu(t.st)).length-groups[a].filter(t=>bekliyorMu(t.st)).length);
+    const initials=n=>n.split('·')[0].trim().split(' ').map(w=>w[0]).join('').slice(0,2).toLocaleUpperCase('tr-TR');
+    const stBadge=s=>/approved|Onaylandı|onaylı/.test(s)?badge('Onaylandı','emer'):/rejected|Reddedildi/.test(s)?badge('Reddedildi','red'):s==='patron'?badge('Patron','gold'):badge('Bekliyor','amber');
+    return `
+    <div data-sub="akis" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      ${kpi('users','Talep Eden Kişi', people.length+' kişi','aktif','true','gold')}
+      ${kpi('inbox','Toplam Talep', all.length+' kayıt','tüm türler','true','emer')}
+      ${kpi('clock','Bekleyen', all.filter(t=>bekliyorMu(t.st)).length+' talep','onay sürecinde','true','amber')}
+      ${kpi('check-check','Sonuçlanan', all.filter(t=>!bekliyorMu(t.st)).length+' talep','onay/ret','true','emer')}
+    </div>
+    <div data-sub="akis" class="card rounded-2xl p-5 mb-5">
+      ${sectionTitle('git-pull-request','İş Onay Akışı · Kişilere Göre Talepler','Her kişinin talepleri ve durumu · tıkla → detay/karar')}
+      <div class="space-y-4">
+        ${people.map(person=>{ const list=groups[person]; const bek=list.filter(t=>bekliyorMu(t.st)).length;
+          return `<div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 font-bold flex items-center justify-center text-sm">${initials(person)}</span>
+              <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-slate-100 truncate">${person}</p><p class="text-[11px] text-slate-500">${list.length} talep · ${bek} bekliyor</p></div>
+              ${bek>0?`<span class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500"><span class="h-2 w-2 rounded-full bg-rose-500 signal-dot"></span>${bek}</span>`:badge('Temiz','emer')}
+            </div>
+            <div class="space-y-1.5">
+              ${list.map(t=>`<div onclick="openOnayDetay('${t.kind}','${t.id}')" class="flex items-center gap-2.5 py-2 px-2 rounded-lg cursor-pointer hover:bg-white/[.04] transition border-b border-white/5 last:border-0">
+                <i data-lucide="${t.icon}" class="h-4 w-4 text-gold shrink-0"></i>
+                <span class="min-w-0 flex-1 text-sm text-slate-200 truncate"><span class="font-mono text-[11px] text-gold">${t.id}</span> ${t.baslik}</span>
+                ${t.tutar?`<span class="text-xs text-slate-400 shrink-0">${money(t.tutar)}</span>`:''}
+                ${stBadge(t.st)}
+                <i data-lucide="chevron-right" class="h-4 w-4 text-slate-500 shrink-0"></i>
+              </div>`).join('')}
+            </div>
+          </div>`; }).join('')}
+      </div>
+    </div>`;
+  })()}
+
   <!-- ONAYLAR -->
   <div data-sub="onaylar" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
     ${kpi('stamp','Bekleyen Onay', onayToplam+' kalem','tüm modüller','true', onayToplam>0?'amber':'emer')}
@@ -1203,11 +1376,11 @@ function viewYetkiler(){
       ${onayToplam>0?`<span class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500"><span class="h-2.5 w-2.5 rounded-full bg-rose-500 signal-dot"></span>ONAY BEKLİYOR</span>`:''}
     </div>
     <div class="space-y-2">
-      ${poP.map(p=>onayRow('shopping-cart',p.id,p.item,'Satın Alma · '+money(p.amount),`patronAct('po','${p.id}','approved')`)).join('')}
-      ${szP.map(c=>onayRow('file-signature',c.id,c.title,'Sözleşme · '+money(c.value),`patronAct('sz','${c.id}','approved')`)).join('')}
-      ${davaP.map(l=>onayRow('gavel',l.no,l.subject,'Hukuk · '+(l.avukat||'-'),`approveLawsuit(${lawsuits.indexOf(l)})`)).join('')}
-      ${satisP.map(u=>onayRow('home',u.id,u.musteri||'Müşteri','Emlak satış · '+money(u.fiyat),`approveUnit('${u.id}')`)).join('')}
-      ${rndP.map(a=>onayRow('calendar-check',a.id,a.musteri,'Gezdirme · '+a.unit,`approveAppt('${a.id}')`)).join('')}
+      ${poP.map(p=>onayRow('po','shopping-cart',p.id,p.item,'Satın Alma · '+money(p.amount))).join('')}
+      ${szP.map(c=>onayRow('sz','file-signature',c.id,c.title,'Sözleşme · '+money(c.value))).join('')}
+      ${davaP.map(l=>onayRow('dava','gavel',l.no,l.subject,'Hukuk · '+(l.avukat||'-'))).join('')}
+      ${satisP.map(u=>onayRow('satis','home',u.id,u.musteri||'Müşteri','Emlak satış · '+money(u.fiyat))).join('')}
+      ${rndP.map(a=>onayRow('rnd','calendar-check',a.id,a.musteri,'Gezdirme · '+a.unit)).join('')}
       ${onayToplam===0?'<p class="text-sm text-slate-500 py-6 text-center">Bekleyen onay yok ✓</p>':''}
     </div>
   </div>
@@ -1431,12 +1604,13 @@ function viewBI(){
     </span>`;
   const tickHtml = tickData.map(tItem).join('');
 
-  const onayRow = (icon,id,title,sub,amount,st) => `
-    <div class="flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0">
+  const onayRow = (kind,icon,id,title,sub,amount,st) => `
+    <div onclick="openOnayDetay('${kind}','${id}')" class="flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0 cursor-pointer hover:bg-white/[.03] rounded-lg -mx-1 px-1 transition">
       <span class="h-9 w-9 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center ${st==='patron'?'text-rose-400':'text-gold'}"><i data-lucide="${icon}" class="h-4 w-4"></i></span>
-      <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${title}</p><p class="text-[11px] text-slate-500 truncate">${id} · ${sub}</p></div>
+      <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${title}</p><p class="text-[11px] text-slate-500 truncate"><i data-lucide="user" class="inline h-3 w-3"></i> ${talepEdenOf(id)} · ${sub}</p></div>
       ${amount?`<span class="text-sm font-semibold text-slate-200 shrink-0">${money(amount)}</span>`:''}
       ${st==='patron'?badge('Patron','red'):badge('Bekliyor','amber')}
+      <i data-lucide="chevron-right" class="h-4 w-4 text-slate-500 shrink-0"></i>
     </div>`;
 
   return `
@@ -1490,9 +1664,9 @@ function viewBI(){
       </div>
       <div class="max-h-[280px] overflow-y-auto -mx-1 px-1">
         ${(poPend.length+czPend.length+davaOnay.length) ? `
-          ${poPend.slice(0,4).map(p=>onayRow('shopping-cart',p.id,p.item,p.firm,p.amount,p.status)).join('')}
-          ${czPend.slice(0,4).map(c=>onayRow('file-signature',c.id,c.title,c.party,c.value,c.status)).join('')}
-          ${davaOnay.slice(0,3).map(l=>onayRow('gavel',l.no,l.subject,l.avukat,l.value,'pending')).join('')}
+          ${poPend.slice(0,4).map(p=>onayRow('po','shopping-cart',p.id,p.item,p.firm,p.amount,p.status)).join('')}
+          ${czPend.slice(0,4).map(c=>onayRow('sz','file-signature',c.id,c.title,c.party,c.value,c.status)).join('')}
+          ${davaOnay.slice(0,3).map(l=>onayRow('dava','gavel',l.no,l.subject,l.avukat,l.value,'pending')).join('')}
         ` : '<p class="text-sm text-slate-500 py-8 text-center">Bekleyen onay yok ✓</p>'}
       </div>
       ${canApprove ? `<button onclick="togglePatron()" class="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="stamp" class="h-4 w-4"></i> Onay Merkezini Aç</button>` : ''}
@@ -5337,7 +5511,7 @@ function toggleNotif(){
 /* ---------- MODÜL ALT SEKMELERİ (sub-nav) ---------- */
 const SUBTABS = {
   dashboard:     [{id:'bi',label:'İş Zekası',icon:'brain-circuit'},{id:'konsolide',label:'Bilanço',icon:'scale'},{id:'sirketler',label:'Şirketler',icon:'building-2'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'hukukrisk',label:'Hukuk ve Risk',icon:'shield-alert'}],
-  yetkiler:      [{id:'panel',label:'Panel',icon:'layout-dashboard'},{id:'onaylar',label:'Onaylar',icon:'stamp'},{id:'odeme',label:'Ödeme Talepleri',icon:'banknote'},{id:'satinalma',label:'Satın Alma Talepleri',icon:'shopping-cart'},{id:'fiyat',label:'Fiyat Talepleri',icon:'tag'},{id:'loglar',label:'İşlem Logları',icon:'history'}],
+  yetkiler:      [{id:'panel',label:'Panel',icon:'layout-dashboard'},{id:'akis',label:'İş Onay Akışı',icon:'git-pull-request'},{id:'onaylar',label:'Onaylar',icon:'stamp'},{id:'odeme',label:'Ödeme Talepleri',icon:'banknote'},{id:'satinalma',label:'Satın Alma Talepleri',icon:'shopping-cart'},{id:'fiyat',label:'Fiyat Talepleri',icon:'tag'},{id:'loglar',label:'İşlem Logları',icon:'history'}],
   sales:         [{id:'satis',label:'Satış',icon:'trending-up'},{id:'crm',label:'CRM & Faturalar',icon:'contact'}],
   projects:      [{id:'tumu',label:'Tümü',icon:'pie-chart'},{id:'proje',label:'Proje',icon:'pen-tool'},{id:'denetim',label:'Yapı Denetim',icon:'clipboard-check'},{id:'taahhut',label:'İnşaat Taahhüt',icon:'hard-hat'},{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'}],
   profitability: [{id:'marj',label:'Kâr Marjı',icon:'percent'},{id:'segment',label:'Segment & OPEX',icon:'layers'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'maliyet',label:'Maliyet Hesapları',icon:'receipt-text'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'ozkaynak',label:'Özkaynak Durumu',icon:'scale'},{id:'satinalma',label:'Satın Alma',icon:'shopping-cart'},{id:'saticilar',label:'Satıcılar Hesabı',icon:'badge-dollar-sign'}],
