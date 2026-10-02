@@ -1171,10 +1171,18 @@ function openOnayDetay(kind,id){
         </div>`:''}
       </div>
 
-      ${canAct && !bitti ? `<div class="flex gap-2 pt-1">
-        <button onclick="onayKarar('${kind}','${id}','approved')" class="flex-1 h-11 rounded-xl bg-emer text-navy-900 font-bold text-sm hover:bg-emer-light transition inline-flex items-center justify-center gap-2"><i data-lucide="check" class="h-4 w-4"></i>Onayla</button>
-        <button onclick="onayKarar('${kind}','${id}','rejected')" class="flex-1 h-11 rounded-xl bg-rose-500/90 text-white font-bold text-sm hover:bg-rose-500 transition inline-flex items-center justify-center gap-2"><i data-lucide="x" class="h-4 w-4"></i>Reddet</button>
-      </div>` : (bitti?'<p class="text-center text-sm text-slate-400 pt-1 inline-flex items-center justify-center gap-1.5 w-full"><i data-lucide="badge-check" class="h-4 w-4 text-emer-light"></i>Karar verildi</p>':'')}
+      <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3">
+        <p class="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1.5 mb-1"><i data-lucide="git-pull-request" class="h-3.5 w-3.5 text-gold"></i>Onay Akışı (çok aşamalı)</p>
+        ${akisZinciriHtml(kind,id)}
+      </div>
+
+      ${(()=>{ const a=getAkis(kind,id); const bittiZincir=a.cur>=a.steps.length; const cur=bittiZincir?null:a.steps[a.cur];
+        if(!canAct) return '';
+        if(bittiZincir) return '<p class="text-center text-sm text-slate-400 pt-1 inline-flex items-center justify-center gap-1.5 w-full"><i data-lucide="badge-check" class="h-4 w-4 text-emer-light"></i>Onay süreci tamamlandı</p>';
+        return `<div class="flex gap-2 pt-1">
+          <button onclick="akisOnayla('${kind}','${id}')" class="flex-1 h-11 rounded-xl bg-emer text-navy-900 font-bold text-sm hover:bg-emer-light transition inline-flex items-center justify-center gap-2"><i data-lucide="check" class="h-4 w-4"></i>${cur.unit} Onayı Ver<i data-lucide="arrow-right" class="h-4 w-4"></i></button>
+          <button onclick="akisRed('${kind}','${id}')" class="flex-1 h-11 rounded-xl bg-rose-500/90 text-white font-bold text-sm hover:bg-rose-500 transition inline-flex items-center justify-center gap-2"><i data-lucide="x" class="h-4 w-4"></i>Reddet</button>
+        </div>`; })()}
     </div>`;
   document.getElementById('onayModal').classList.remove('hidden');
   lucide.createIcons();
@@ -1209,6 +1217,77 @@ function onayKarar(kind,id,action){
   else if(kind==='satis'||kind==='rnd') o.durum = ap?'Onaylandı':'Reddedildi';
   logAction(ap?'check-circle-2':'x-circle', ap?'emer':'red', `${id} ${ap?'ONAYLANDI':'reddedildi'} · patron kararı`, 'Yetkiler');
   closeOnay(); render(); toast(`${id} ${ap?'onaylandı ✓':'reddedildi'}`);
+}
+
+/* ---------- ÇOK AŞAMALI (3'lü) ONAY ZİNCİRİ ---------- */
+const birimOnaylayan = {
+  'Şantiye Şefi':'Mehmet Demir','Satın Alma':'Burak Yıldız','Finans':'Elif Kaya (CFO)','Finans Müdürü':'Elif Kaya',
+  'Muhasebe':'Derya Şahin','Hukuk':'Av. Deniz Ak','Patron':'Ahmet Yıldız (CEO)','İlgili Birim':'Birim Sorumlusu',
+  'Emlak':'Serkan Demir','Satış Müdürü':'Okan Arslan','Proje Müdürü':'Ays. Kaya'
+};
+const onayZinciriTpl = {
+  po:['Şantiye Şefi','Satın Alma','Finans'],
+  od:['Muhasebe','Finans Müdürü','Patron'],
+  sz:['Hukuk','Satın Alma','Patron'],
+  fy:['Satın Alma','Finans'],
+  dava:['Hukuk','Patron'],
+  satis:['Emlak','Satış Müdürü','Patron'],
+  rnd:['Emlak','Satış Müdürü']
+};
+let akisState = {};
+function getAkis(kind,id){
+  if(!akisState[id]){
+    const tpl=(onayZinciriTpl[kind]||['İlgili Birim','Satın Alma','Finans']).slice();
+    const o=onayItem(kind,id);
+    const st=o?(o.status||o.durum||o.onay||''):'';
+    const steps=tpl.map(u=>({unit:u,by:'',status:'pending'}));
+    let cur=0;
+    if(/approved|Onaylandı|onaylı/.test(st)){ steps.forEach(s=>{s.status='approved';s.by=birimOnaylayan[s.unit]||'—';}); cur=steps.length; }
+    else if(/rejected|Reddedildi|red/.test(st)){ steps[0].status='rejected'; steps[0].by=birimOnaylayan[steps[0].unit]||'—'; cur=0; }
+    else if(st==='patron'){ for(let i=0;i<steps.length-1;i++){steps[i].status='approved';steps[i].by=birimOnaylayan[steps[i].unit]||'—';} cur=steps.length-1; }
+    akisState[id]={steps,cur,kind};
+  }
+  return akisState[id];
+}
+function akisUygulaDurum(kind,id,val){ const o=onayItem(kind,id); if(!o)return; if('status'in o)o.status=val==='ok'?'approved':'rejected'; else if('durum'in o)o.durum=val==='ok'?'Onaylandı':'Reddedildi'; else if('onay'in o)o.onay=val==='ok'?'onaylı':'red'; }
+function akisOnayla(kind,id){
+  const a=getAkis(kind,id); if(a.cur>=a.steps.length) return;
+  const s=a.steps[a.cur]; s.status='approved'; s.by=birimOnaylayan[s.unit]||ROLES[state.role].name;
+  const next=(a.cur+1<a.steps.length)?a.steps[a.cur+1].unit:null;
+  logAction('check-circle-2','emer', `${id} · ${s.unit} ONAYLADI (${s.by})`+(next?` → ${next} birimine gönderildi`:` → süreç tamamlandı ✓`), 'İş Onay Akışı');
+  a.cur++;
+  if(a.cur>=a.steps.length) akisUygulaDurum(kind,id,'ok');
+  render(); if(onayModalCtx) openOnayDetay(kind,id);
+  toast(`${s.unit} onayı verildi ✓`);
+}
+function akisRed(kind,id){
+  const a=getAkis(kind,id); if(a.cur>=a.steps.length) return;
+  const s=a.steps[a.cur]; s.status='rejected'; s.by=birimOnaylayan[s.unit]||ROLES[state.role].name;
+  logAction('x-circle','red', `${id} · ${s.unit} REDDETTİ (${s.by}) — onay akışı durduruldu`, 'İş Onay Akışı');
+  akisUygulaDurum(kind,id,'red');
+  render(); if(onayModalCtx) openOnayDetay(kind,id);
+  toast(`${s.unit} reddetti`);
+}
+function akisZinciriHtml(kind,id){
+  const a=getAkis(kind,id);
+  const canAct=state.role==='ceo'||state.role==='cfo';
+  const talep=(talepEdenOf(id).split('·')[0]||'').trim();
+  const pill=(label,sub,cls,extra='')=>`<div class="shrink-0 rounded-lg border px-2.5 py-1.5 ${cls}"><p class="text-[11px] font-semibold leading-tight whitespace-nowrap">${label}</p>${sub?`<p class="text-[10px] opacity-90 leading-tight whitespace-nowrap">${sub}</p>`:''}${extra}</div>`;
+  const arr='<i data-lucide="chevron-right" class="h-4 w-4 text-slate-500 shrink-0"></i>';
+  let h='<div class="flex items-center gap-1.5 overflow-x-auto pb-1 mt-2">';
+  h+=pill('Talep Eden', talep, 'border-white/10 bg-navy-700/50 text-slate-300');
+  a.steps.forEach((s,i)=>{
+    h+=arr;
+    if(s.status==='approved') h+=pill(s.unit,'✓ '+(s.by||''),'border-emer/40 bg-emer/10 text-emer-light');
+    else if(s.status==='rejected') h+=pill(s.unit,'✕ '+(s.by||'reddetti'),'border-rose-500/40 bg-rose-500/10 text-rose-400');
+    else if(i===a.cur){
+      const btns=canAct?`<div class="flex gap-1 mt-1"><button onclick="event.stopPropagation();akisOnayla('${kind}','${id}')" class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded bg-emer text-navy-900 font-bold text-[10px] hover:bg-emer-light">Onayla<i data-lucide="arrow-right" class="h-3 w-3"></i></button><button onclick="event.stopPropagation();akisRed('${kind}','${id}')" class="px-1.5 py-0.5 rounded bg-rose-500/80 text-white text-[10px]">✕</button></div>`:'';
+      h+=pill(s.unit,'● onay bekliyor','border-amber-400/60 bg-amber-500/10 text-amber-300 ring-1 ring-amber-400/30',btns);
+    }
+    else h+=pill(s.unit,'sırada','border-white/10 bg-navy-700/30 text-slate-500');
+  });
+  h+='</div>';
+  return h;
 }
 function viewYetkiler(){
   const canAct = state.role==='ceo' || state.role==='cfo';
@@ -1350,12 +1429,15 @@ function viewYetkiler(){
               ${bek>0?`<span class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500"><span class="h-2 w-2 rounded-full bg-rose-500 signal-dot"></span>${bek}</span>`:badge('Temiz','emer')}
             </div>
             <div class="space-y-1.5">
-              ${list.map(t=>`<div onclick="openOnayDetay('${t.kind}','${t.id}')" class="flex items-center gap-2.5 py-2 px-2 rounded-lg cursor-pointer hover:bg-white/[.04] transition border-b border-white/5 last:border-0">
-                <i data-lucide="${t.icon}" class="h-4 w-4 text-gold shrink-0"></i>
-                <span class="min-w-0 flex-1 text-sm text-slate-200 truncate"><span class="font-mono text-[11px] text-gold">${t.id}</span> ${t.baslik}</span>
-                ${t.tutar?`<span class="text-xs text-slate-400 shrink-0">${money(t.tutar)}</span>`:''}
-                ${stBadge(t.st)}
-                <i data-lucide="chevron-right" class="h-4 w-4 text-slate-500 shrink-0"></i>
+              ${list.map(t=>`<div class="py-2 px-2 rounded-lg border-b border-white/5 last:border-0">
+                <div onclick="openOnayDetay('${t.kind}','${t.id}')" class="flex items-center gap-2.5 cursor-pointer hover:bg-white/[.04] rounded-lg -mx-1 px-1 py-0.5 transition">
+                  <i data-lucide="${t.icon}" class="h-4 w-4 text-gold shrink-0"></i>
+                  <span class="min-w-0 flex-1 text-sm text-slate-200 truncate"><span class="font-mono text-[11px] text-gold">${t.id}</span> ${t.baslik}</span>
+                  ${t.tutar?`<span class="text-xs text-slate-400 shrink-0">${money(t.tutar)}</span>`:''}
+                  ${stBadge(t.st)}
+                  <i data-lucide="chevron-right" class="h-4 w-4 text-slate-500 shrink-0"></i>
+                </div>
+                ${akisZinciriHtml(t.kind,t.id)}
               </div>`).join('')}
             </div>
           </div>`; }).join('')}
