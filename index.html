@@ -24,7 +24,7 @@
 <meta name="twitter:image" content="https://toprak-panel.onrender.com/og.svg" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZWNjZDcyIi8+PHN0b3Agb2Zmc2V0PSIwLjU1IiBzdG9wLWNvbG9yPSIjZDRhZjM3Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYTk4MDFjIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTUiIGZpbGw9InVybCgjZykiLz4KPHJlY3QgeD0iMi45IiB5PSIyLjkiIHdpZHRoPSI1OC4yIiBoZWlnaHQ9IjU4LjIiIHJ4PSIxNC4yIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS1vcGFjaXR5PSIwLjM1IiBzdHJva2Utd2lkdGg9IjEuMSIvPgo8ZyBmaWxsPSIjMTQyMzNmIj4KPHJlY3QgeD0iMTMuNSIgeT0iMTQiIHdpZHRoPSIzNyIgaGVpZ2h0PSI1LjYiIHJ4PSIyLjgiLz4KPHJlY3QgeD0iMTUuNSIgeT0iMzYiIHdpZHRoPSI4LjQiIGhlaWdodD0iMTQiIHJ4PSIxLjYiLz4KPHJlY3QgeD0iMjcuOCIgeT0iMjkiIHdpZHRoPSI4LjQiIGhlaWdodD0iMjEiIHJ4PSIxLjYiLz4KPHJlY3QgeD0iNDAuMSIgeT0iMjMiIHdpZHRoPSI4LjQiIGhlaWdodD0iMjciIHJ4PSIxLjYiLz4KPC9nPgo8ZyBmaWxsPSIjZWNjZDcyIj4KPHJlY3QgeD0iMTgiIHk9IjM5IiB3aWR0aD0iMy40IiBoZWlnaHQ9IjIuNCIgcng9IjAuNSIvPgo8cmVjdCB4PSIzMC4zIiB5PSIzMi41IiB3aWR0aD0iMy40IiBoZWlnaHQ9IjIuNCIgcng9IjAuNSIvPgo8cmVjdCB4PSI0Mi42IiB5PSIyNyIgd2lkdGg9IjMuNCIgaGVpZ2h0PSIyLjQiIHJ4PSIwLjUiLz4KPC9nPgo8L3N2Zz4=" />
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/lucide@1.50.0/dist/umd/lucide.min.js" integrity="sha384-/sIySnlbVLfPSNdgy7yqanP6+Dv4en7FlBure4Rag0mp480bA2f+nTviC6933zkQ" crossorigin="anonymous"></script>
 <script>
   tailwind.config = {
     theme: {
@@ -543,6 +543,8 @@ const isAdminUser = () => state.role==='ceo' || !!ROLES[state.role].sysadmin;
 const winColor = (w) => w>=70?'emer':w>=50?'gold':w>=40?'amber':'red';
 const fmt = (n) => new Intl.NumberFormat('tr-TR').format(n);
 const money = (n) => '₺' + new Intl.NumberFormat('tr-TR').format(n);
+/* Güvenlik: kullanıcı serbest-metin girdilerini HTML'e basmadan önce kaçış (XSS önleme) */
+const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ---------- MUTABLE DEMO DATA (interactive) ---------- */
 let purchaseRequests = [
@@ -607,7 +609,7 @@ function sellUnit(id){
   const u=units.find(x=>x.id===id); if(!u) return;
   const m = (document.getElementById('su_'+id)||{}).value||'';
   if(!m.trim()){ toast('Müşteri adı girin'); return; }
-  u.musteri=m.trim(); u.durum='Onayda';
+  u.musteri=esc(m.trim()); u.durum='Onayda';
   logAction('send','gold', `${u.id} satışı onaya gönderildi · Müşteri: ${u.musteri} · ${ROLES[state.role].name}`);
   render(); toast(`${u.id} satışı yönetici onayına gönderildi`);
 }
@@ -1148,7 +1150,7 @@ let whatsappMesajlar = [
 ];
 function waGonder(){
   const sel=document.getElementById('waGrup'); const inp=document.getElementById('waMesaj');
-  const grup=sel?sel.value:''; const text=(inp?inp.value:'').trim();
+  const grup=sel?sel.value:''; const text=esc((inp?inp.value:'').trim());
   if(!grup){ toast('Grup seçin'); return; }
   if(!text){ toast('Mesaj yazın'); return; }
   const g=whatsappGruplar.find(x=>x.ad===grup);
@@ -1261,7 +1263,7 @@ function openOnayDetay(kind,id){
 function closeOnay(){ const m=document.getElementById('onayModal'); if(m) m.classList.add('hidden'); onayModalCtx=null; }
 function onaySor(){
   if(!onayModalCtx) return; const {kind,id}=onayModalCtx;
-  const inp=document.getElementById('onaySoruInput'); const t=(inp?inp.value:'').trim(); if(!t){ toast('Önce soru yazın'); return; }
+  const inp=document.getElementById('onaySoruInput'); const t=esc((inp?inp.value:'').trim()); if(!t){ toast('Önce soru yazın'); return; }
   (onaySorular[id]=onaySorular[id]||[]).push({rol:'patron', who:ROLES[state.role].name, text:t, time:'şimdi'});
   // talep sahibinden otomatik "ileteceğim" tarzı bir alındı kaydı
   (onaySorular[id]).push({rol:'talep', who:talepEdenOf(id), text:'Soru alındı, belge/bilgi hazırlanıyor.', time:'şimdi'});
@@ -1271,7 +1273,7 @@ function onaySor(){
 }
 function onayDosyaSec(){
   if(!onayModalCtx) return; const {kind,id}=onayModalCtx;
-  const f=event&&event.target; const name=(f&&f.files&&f.files[0])?f.files[0].name:'';
+  const f=event&&event.target; const name=esc((f&&f.files&&f.files[0])?f.files[0].name:'');
   if(!name) return;
   (onayBelgeler[id]=onayBelgeler[id]||[]).push(name);
   logAction('paperclip','emer', `${id} talebine belge yüklendi: ${name}`, 'Yetkiler');
@@ -2637,7 +2639,7 @@ function poActions(p,isCeo,isCfo,canAct){
 }
 function addPurchase(){
   const firm = (document.getElementById('poFirm')||{}).value || 'Toprak Grup';
-  const item = ((document.getElementById('poItem')||{}).value || '').trim();
+  const item = esc(((document.getElementById('poItem')||{}).value || '').trim());
   const amount = parseInt((document.getElementById('poAmount')||{}).value || '0', 10);
   if(!item){ toast('Lütfen talep kalemini girin'); return; }
   if(!amount || amount<=0){ toast('Lütfen geçerli bir tutar girin'); return; }
