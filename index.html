@@ -3731,7 +3731,17 @@ function viewProfit(){
   <!-- NAKİT AKIŞ -->
   <div data-sub="nakit" class="card rounded-2xl p-5">
     ${sectionTitle('banknote','Nakit Akış Özeti','Giriş · çıkış · net · milyon ₺')}
-    ${(()=>{ const r=nakitByYear[2026]; const tin=r.reduce((a,x)=>a+x[0],0),tout=r.reduce((a,x)=>a+x[1],0); return `
+    ${(()=>{ const r=nakitByYear[2026]; const tin=r.reduce((a,x)=>a+x[0],0),tout=r.reduce((a,x)=>a+x[1],0);
+      const per=state.nakitPeriod||'ay'; const div=per==='gun'?365:per==='hafta'?52:per==='ay'?12:1; const lbl=per==='gun'?'Günlük':per==='hafta'?'Haftalık':per==='ay'?'Aylık':'Yıllık';
+      return `
+    <div class="rounded-xl border border-gold/25 bg-gold/5 p-3 mb-3">
+      <p class="text-[11px] uppercase tracking-wider text-gold mb-1.5 flex items-center gap-1.5"><i data-lucide="file-bar-chart" class="h-3.5 w-3.5"></i>Nakit Akış Raporu · ${lbl} ortalama</p>
+      <div class="grid grid-cols-3 gap-3 text-center text-sm">
+        <div><span class="block text-[11px] text-slate-500">Giriş</span><span class="font-bold text-emer-light">${mn(tin/div)}</span></div>
+        <div><span class="block text-[11px] text-slate-500">Çıkış</span><span class="font-bold text-rose-400">${mn(tout/div)}</span></div>
+        <div><span class="block text-[11px] text-slate-500">Net</span><span class="font-bold text-gold">${mn((tin-tout)/div)}</span></div>
+      </div>
+    </div>
     <div class="grid grid-cols-3 gap-3 text-center mb-3">
       <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">Toplam Giriş</p><p class="text-sm font-bold text-emer-light">${mn(tin)}</p></div>
       <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">Toplam Çıkış</p><p class="text-sm font-bold text-rose-400">${mn(tout)}</p></div>
@@ -6908,6 +6918,14 @@ function leftSpecialSubsHtml(){
       <button onclick="${onclick}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
         <i data-lucide="${icon}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${label}</span>
       </button>`;
+  // Finans · Nakit Akış → Gün / Hafta / Ay / Yıl rapor dönemi sol barda
+  if(state.module==='profitability' && active==='nakit'){
+    const per=state.nakitPeriod||'ay';
+    const pb=(v,l,ic)=>`<button onclick="state.nakitPeriod='${v}';render()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${per===v?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${ic}" class="h-[18px] w-[18px] ${per===v?'text-[#f0a58a]':''}"></i><span class="truncate">${l}</span></button>`;
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Nakit Akış Raporu</div>`
+      + pb('gun','Gün','calendar') + pb('hafta','Hafta','calendar-days') + pb('ay','Ay','calendar-range') + pb('yil','Yıl','calendar-check')
+      + sep;
+  }
   // Satıcılar Hesabı → Hesap Aç · Cari Hesaplar · Şüpheli Alacaklar sol barda
   if(state.module==='profitability' && active==='saticilar'){
     const supCount = vendorAccounts.filter(v=>v.suspheli).length;
