@@ -3776,7 +3776,6 @@ function viewProfit(){
 
   <!-- NAKİT AKIŞ -->
   <div data-sub="nakit" class="card rounded-2xl p-5">
-    ${sectionTitle('banknote','Nakit Akış Özeti','Giriş · çıkış · net · milyon ₺')}
     ${(()=>{ const r=nakitByYear[2026]; const tin=r.reduce((a,x)=>a+x[0],0),tout=r.reduce((a,x)=>a+x[1],0);
       const rp=nakitRaporData();
       return `
