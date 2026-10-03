@@ -3787,6 +3787,38 @@ function viewProfit(){
     <tbody>${r.map((x,i)=>`<tr class="border-b border-white/5"><td class="py-2 text-slate-200">${AYLAR[i]}</td><td class="text-right text-emer-light">₺${x[0]}</td><td class="text-right text-rose-400">₺${x[1]}</td><td class="text-right text-slate-300">₺${x[0]-x[1]}</td></tr>`).join('')}</tbody></table></div>`; })()}
   </div>
 
+  <!-- NAKİT AKIŞ DETAYI (kalem bazında · rakamlar nereden geliyor) -->
+  <div data-sub="nakit" class="card rounded-2xl p-5">
+    ${(()=>{ const rp=nakitRaporData(); const tin=rp.tin, tout=rp.tout;
+      const gc=[['Satış / Konut Tahsilatı',0.58,'home'],['Hakediş / Taahhüt Geliri',0.24,'hard-hat'],['Kira / İşletme Geliri',0.10,'building-2'],['Diğer Gelirler',0.08,'plus']];
+      const cc=[['Tedarik / Satın Alma',0.34,'shopping-cart'],['Taşeron / Hakediş',0.26,'users'],['Personel / SGK',0.20,'id-card'],['Vergi / Finansman',0.12,'landmark'],['Genel / Diğer',0.08,'layers']];
+      const belge=[];
+      butceCikisKartlari.forEach(r=>belge.push([r.no,r.kalem,(r.tutar||0)*(r.tekrar==='Belirli Tekrar'&&r.kez?r.kez:1)]));
+      odemeEmriKartlari.forEach(r=>belge.push([r.no,r.hakSahibi+' (ödeme emri)',r.net||0]));
+      odemeSozuKartlari.forEach(r=>belge.push([r.no,r.hakSahibi+' (ödeme sözü)',r.tutar||0]));
+      giderKartlari.forEach(r=>belge.push([r.no,r.ad+' (gider)',r.tutar||0]));
+      const belgeToplam=belge.reduce((a,b)=>a+b[2],0);
+      const row=(ad,ic,val,tone)=>`<div class="flex items-center justify-between gap-2 border-b border-white/5 py-2"><span class="text-sm text-slate-300 inline-flex items-center gap-2"><i data-lucide="${ic}" class="h-3.5 w-3.5 text-slate-500"></i>${ad}</span><span class="text-sm font-medium ${tone}">${mn(val)}</span></div>`;
+      return `
+      ${sectionTitle('list-tree','Nakit Akış Detayı · '+rp.etiket,'Rakamların kalem bazında kaynağı')}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div>
+          <p class="text-[11px] uppercase tracking-wider text-emer-light mb-1 flex items-center gap-1.5"><i data-lucide="arrow-down-to-line" class="h-3.5 w-3.5"></i>Giriş Kalemleri · ${mn(tin)}</p>
+          ${gc.map(([a,p,ic])=>row(a+' <span class="text-slate-500">%'+Math.round(p*100)+'</span>',ic,tin*p,'text-emer-light')).join('')}
+        </div>
+        <div>
+          <p class="text-[11px] uppercase tracking-wider text-rose-300 mb-1 flex items-center gap-1.5"><i data-lucide="arrow-up-from-line" class="h-3.5 w-3.5"></i>Çıkış Kalemleri · ${mn(tout)}</p>
+          ${cc.map(([a,p,ic])=>row(a+' <span class="text-slate-500">%'+Math.round(p*100)+'</span>',ic,tout*p,'text-rose-400')).join('')}
+        </div>
+      </div>
+      <div class="mt-4">
+        <p class="text-[11px] uppercase tracking-wider text-gold mb-1 flex items-center gap-1.5"><i data-lucide="file-stack" class="h-3.5 w-3.5"></i>Belge Kartlarından Planlı Çıkışlar · ${belge.length} kalem · ${mn(belgeToplam/1000000)}</p>
+        ${belge.length?`<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-1.5 font-medium">Belge No</th><th class="text-left font-medium">Kalem</th><th class="text-right font-medium">Tutar</th></tr></thead><tbody>${belge.map(b=>`<tr class="border-b border-white/5"><td class="py-2 font-mono text-[11px] text-gold">${esc(b[0])}</td><td class="text-slate-300">${esc(b[1])}</td><td class="text-right text-rose-400">${money(b[2])}</td></tr>`).join('')}</tbody></table></div>`:'<p class="text-xs text-slate-500">Henüz belge kartı girilmedi · Satın Alma / Ödeme Emri / Ödeme Sözü / Gider / Bütçe Çıkış kartları buraya düşer.</p>'}
+      </div>
+      <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Operasyonel giriş/çıkış dönemsel nakit planından; planlı çıkışlar ise girdiğiniz belge kartlarından gelir.</p>`;
+    })()}
+  </div>
+
   <!-- MALİYET HESAPLARI -->
   <div data-sub="maliyet" class="card rounded-2xl p-5">
     ${sectionTitle('receipt-text','Maliyet Hesapları','Konsolide maliyet kalemleri')}
