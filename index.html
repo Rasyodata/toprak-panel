@@ -3859,7 +3859,7 @@ function viewLegal(){
       ${sectionTitle('gavel','Davalar', state.davaKpi?('Filtre: '+state.davaKpi):(ROLES[state.role].lawyer?'Kendi dosyalarınız':'Hukuk · Ceza · İş Hukuku'))}
       <div class="space-y-3">
         ${lawsuits.map((l,li)=>({l,li})).filter(x=>legalCanSee(x.l) && x.l.tur!=='İcra Takibi' && (!state.davaKpi || (state.davaKpi==='Planlanan'?x.l.onay==='bekliyor':x.l.tur===state.davaKpi))).map(({l,li})=>`
-        <div onclick="openLawsuit(${li})" class="rounded-xl border ${l.onay==='bekliyor'?'border-amber-400/40 bg-amber-500/5':'border-white/8 bg-navy-700/40'} p-3 cursor-pointer hover:border-gold/30 transition">
+        <div onclick="openCaseDetail(${li})" class="rounded-xl border ${l.onay==='bekliyor'?'border-amber-400/40 bg-amber-500/5':'border-white/8 bg-navy-700/40'} p-3 cursor-pointer hover:border-gold/30 transition">
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <span class="font-mono text-[11px] text-gold">${l.no}</span>
             ${l.tur?badge(l.tur, l.tur==='İcra Takibi'?'amber':'gold'):''}
@@ -3878,11 +3878,11 @@ function viewLegal(){
     </div>
   </div>
 
-  <div data-sub="icra" class="card rounded-2xl p-5 mt-5">
+  <div id="icraListesi" data-sub="icra" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('receipt-text','İcra Takipleri', ROLES[state.role].lawyer?'Kendi dosyalarınız':'Kira · cari hesap · alacak')}
     <div class="space-y-3">
       ${lawsuits.map((l,li)=>({l,li})).filter(x=>legalCanSee(x.l) && x.l.tur==='İcra Takibi').map(({l,li})=>`
-      <div onclick="openLawsuit(${li})" class="rounded-xl border border-white/8 bg-navy-700/40 p-3 cursor-pointer hover:border-gold/30 transition flex items-center gap-3">
+      <div onclick="openCaseDetail(${li})" class="rounded-xl border border-white/8 bg-navy-700/40 p-3 cursor-pointer hover:border-gold/30 transition flex items-center gap-3">
         <span class="font-mono text-[11px] text-gold shrink-0">${l.no}</span>
         ${badge(l.hal||'Devam Eden',(l.hal==='Biten')?'emer':'slate')}
         <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${l.subject}</p><p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="scale" class="h-3 w-3"></i>${l.avukat||'—'}</p></div>
@@ -6133,31 +6133,13 @@ function leftSpecialSubsHtml(){
   // Hukuk & Risk · Dava sekmesi → Dava işlemleri sol barda (İcra üst barda kalır)
   if(state.module==='legal' && (active==='dava' || active==='icra')){
     const isIcra = active==='icra';
-    const cases = lawsuits.map((l,li)=>({l,li})).filter(x=>legalCanSee(x.l) && (isIcra ? x.l.tur==='İcra Takibi' : x.l.tur!=='İcra Takibi'));
-    const open = isIcra ? !!state.icraOpen : !!state.davaOpen;
-    const toggleJs = isIcra ? "state.icraOpen=!state.icraOpen;render()" : "state.davaOpen=!state.davaOpen;render()";
     const hdr = isIcra ? 'İcra İşlemleri' : 'Dava İşlemleri';
     const addLbl = isIcra ? 'İcra Aç' : 'Dava Aç';
-    const listLbl = isIcra ? 'İcralar' : 'Davalar';
-    const listIcon = isIcra ? 'receipt-text' : 'gavel';
-    const citem = (l,li)=>{ const on=state.caseView===li; return `
-      <button onclick="openCaseDetail(${li})" class="w-full flex items-center gap-2 pl-7 pr-3 py-2 rounded-xl text-[13px] transition ${on?'bg-[#8a2a1a]/80 text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
-        <span class="font-mono text-[11px] ${on?'text-[#f0a58a]':'text-gold'} shrink-0">${l.no}</span><span class="truncate flex-1 text-left">${l.subject}</span>
-      </button>`;};
-    const listBtn = `
-      <button onclick="${toggleJs}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 border border-transparent transition">
-        <i data-lucide="${listIcon}" class="h-[18px] w-[18px]"></i><span class="truncate flex-1 text-left">${listLbl}</span>
-        <span class="text-[10px] text-slate-500">${cases.length}</span><i data-lucide="chevron-${open?'down':'right'}" class="h-4 w-4 text-slate-500"></i>
-      </button>`;
-    // Sığmazsa sayfalama: 8'erli, altında 1,2,… numaraları
-    const PAGE=8, pageKey=isIcra?'icraPage':'davaPage', pages=Math.max(1,Math.ceil(cases.length/PAGE));
-    let pg=state[pageKey]||0; if(pg>=pages) pg=0;
-    const slice=cases.slice(pg*PAGE,(pg+1)*PAGE);
-    const pager = pages>1 ? `<div class="flex flex-wrap items-center gap-1 pl-7 pr-3 py-1.5">${Array.from({length:pages},(_,k)=>`<button onclick="state.${pageKey}=${k};render()" class="h-6 min-w-[24px] px-1.5 rounded-md text-[11px] font-medium transition ${k===pg?'bg-[#8a2a1a] text-white':'text-slate-400 hover:text-white hover:bg-white/5 border border-white/10'}">${k+1}</button>`).join('')}</div>` : '';
+    const listId = isIcra ? 'icraListesi' : 'davaListesi';
+    // Dosyalar sağdaki içerik alanında listelenir; sol barda yalnızca "Dosyalar" düğmesi
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${hdr}</div>`
       + lbtn("state.davaNew=true;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'folder-plus',addLbl,false)
-      + listBtn
-      + (open ? (cases.length ? (slice.map(x=>citem(x.l,x.li)).join('') + pager) : '<p class="pl-7 pr-3 py-2 text-[12px] text-slate-500">Kayıt yok</p>') : '')
+      + lbtn("state.caseView=null;state.davaNew=false;render();setTimeout(function(){var e=document.getElementById('"+listId+"');if(e)e.scrollIntoView({behavior:'smooth'})},60)",'folder','Dosyalar',!state.caseView&&!state.davaNew)
       + sep;
   }
   // Sözleşmeler alanı → sözleşme türleri sol barda
