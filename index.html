@@ -2687,13 +2687,9 @@ function salesAccountHtml(){
     <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Prim yalnızca tahsil edilen tutar üzerinden hak edilir · bakiye sonraki bordroda ödenir.</p>
   </div>
   <div data-sub="saticilar" class="card rounded-2xl p-5 mt-5">
-    ${(()=>{ const kart=getCariKartlar(); return `
-    ${sectionTitle('database','Cari Kartlar','Merkezi cari veritabanı · satıcı/müşteri/danışman/avukat · '+kart.length+' kart')}
-    <div class="flex flex-wrap gap-2 mb-3 text-[11px]">${CARI_TURU.map(t=>{const n=kart.filter(k=>k.turu===t).length; return n?`<span class="px-2 py-1 rounded-lg bg-navy-700/60 border border-white/10 text-slate-300">${t}: <b class="text-gold">${n}</b></span>`:'';}).join('')}</div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      ${kart.map(v=>vendorCardHtml(v)).join('')}
-    </div>
-    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Yeni kart için sol bardan "Hesap Aç" · Avukat Tanımla'daki avukatlar otomatik buraya gelir · personel hariç tüm cari açılışları burada toplanır.</p>`;})()}
+    ${sectionTitle('database','Cari Kartlar', (state.cariFilterTipi||state.cariFilterTuru)?('Filtre: '+[state.cariFilterTipi,state.cariFilterTuru].filter(Boolean).join(' · ')):'Cari türüne göre · sol bardan tipi/türü seç')}
+    ${cariGroupedCardsHtml()}
+    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Yeni kart için sol bardan "Hesap Aç" · Avukat Tanımla'daki avukatlar otomatik buraya gelir · personel hariç tüm cari açılışları burada toplanır.</p>
   </div>
   <div data-sub="saticilar" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('bar-chart-3','Satıcı Performansı','Satış hacmi · tahsilat oranı')}
@@ -5366,24 +5362,40 @@ function cariRecordCard(k){
     </div>
   </div>`;
 }
-function viewAdminRecords(){
+function cariGroupedCardsHtml(){
   const all=getCariKartlar();
   const fTipi=state.cariFilterTipi, fTuru=state.cariFilterTuru;
   const list=all.filter(k=>(!fTipi||k.tipi===fTipi)&&(!fTuru||k.turu===fTuru));
   const turler=CARI_TURU.filter(t=>list.some(k=>k.turu===t)).concat([...new Set(list.map(k=>k.turu))].filter(t=>!CARI_TURU.includes(t)));
-  return `
-  <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-5">
-    ${kpi('database','Toplam Cari Kart', all.length+' Kayıt','Merkezi veritabanı','true','gold')}
-    ${kpi('scale','Avukat', all.filter(k=>k.turu==='Avukat').length+' Kayıt','Otomatik','true','emer')}
-    ${kpi('users','Satıcı / Taşeron / Müteahhit', all.filter(k=>['Satıcı','Taşeron','Müteahhit'].includes(k.turu)).length+' Kayıt','Tedarik','true','gold')}
-    ${kpi('alert-triangle','Şüpheli', all.filter(k=>k.suspheli).length+' Kayıt','Riskli','true','red')}
-  </div>
-  ${(fTipi||fTuru)?`<div class="mb-3"><button onclick="state.cariFilterTipi=null;state.cariFilterTuru=null;render()" class="text-[11px] text-slate-400 hover:text-white inline-flex items-center gap-1"><i data-lucide="x" class="h-3.5 w-3.5"></i>Filtre: ${[fTipi,fTuru].filter(Boolean).join(' · ')} · temizle</button></div>`:''}
+  return `${(fTipi||fTuru)?`<div class="mb-3"><button onclick="state.cariFilterTipi=null;state.cariFilterTuru=null;render()" class="text-[11px] text-slate-400 hover:text-white inline-flex items-center gap-1"><i data-lucide="x" class="h-3.5 w-3.5"></i>Filtre: ${[fTipi,fTuru].filter(Boolean).join(' · ')} · temizle</button></div>`:''}
   ${turler.length?turler.map(t=>`
-    <div class="card rounded-2xl p-5 mb-4">
-      ${sectionTitle('folder', t+' ('+list.filter(k=>k.turu===t).length+')','Cari türü · kodlu kartlar')}
+    <div class="mb-5">
+      <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="folder" class="h-3.5 w-3.5"></i>${t} (${list.filter(k=>k.turu===t).length})</p>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">${list.filter(k=>k.turu===t).map(cariRecordCard).join('')}</div>
-    </div>`).join(''):'<div class="card rounded-2xl p-6 text-center text-sm text-slate-500">Bu filtrede cari kayıt yok.</div>'}`;
+    </div>`).join(''):'<p class="text-sm text-slate-500 py-6 text-center">Bu filtrede cari kayıt yok.</p>'}`;
+}
+function viewAdminRecords(){
+  const kart=getCariKartlar();
+  return `
+  <div class="card rounded-2xl p-5">
+    ${sectionTitle('database','Cari Kartlar', kart.length+' kayıt · kodlu cari tablo')}
+    <div class="overflow-x-auto"><table class="w-full text-sm min-w-[820px]">
+      <thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>
+        <th class="text-left py-2 font-medium">Kod</th><th class="text-left font-medium">Ünvan</th>
+        <th class="text-left font-medium">Cari Tipi</th><th class="text-left font-medium">Cari Türü</th>
+        <th class="text-left font-medium">Yetkili / İletişim</th><th class="text-right font-medium">Bakiye</th>
+        <th class="text-right font-medium">Durum</th></tr></thead>
+      <tbody>${kart.map(k=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">
+        <td class="py-2.5 font-mono text-[12px] text-gold">${k.kayitNo}</td>
+        <td class="text-slate-100 font-medium">${esc(k.ad)}</td>
+        <td class="text-slate-300">${k.tipi||'—'}</td>
+        <td>${badge(k.turu||'—','slate')}</td>
+        <td class="text-slate-400 text-[12px]">${esc(k.yetkili||'—')}${k.tel?' · '+esc(k.tel):''}</td>
+        <td class="text-right ${k.bakiye>0?'text-amber-300':'text-slate-400'}">${money(k.bakiye||0)}</td>
+        <td class="text-right">${k.suspheli?badge('Şüpheli','red'):badge('Aktif','emer')}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div>`;
 }
 function cariFilterLeftHtml(){
   const kart=getCariKartlar();
@@ -6504,7 +6516,8 @@ function leftSpecialSubsHtml(){
       + `<button onclick="setVendorView('suspect')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${state.vendorView==='suspect'?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
           <i data-lucide="alert-triangle" class="h-[18px] w-[18px] ${state.vendorView==='suspect'?'text-[#f0a58a]':'text-rose-300'}"></i><span class="truncate flex-1 text-left">Şüpheli Alacaklar / Riskler</span>${supCount?`<span class="text-[10px] px-1.5 h-4 rounded-full bg-rose-500 text-white font-bold flex items-center">${supCount}</span>`:''}
         </button>`
-      + sep;
+      + sep
+      + (!state.vendorView ? cariFilterLeftHtml() : '');
   }
   // Hukuk & Risk · Dava sekmesi → Dava işlemleri sol barda (İcra üst barda kalır)
   if(state.module==='legal' && (active==='dava' || active==='icra')){
@@ -6547,8 +6560,7 @@ function subTabsLeftHtml(){
       <button onclick="setSub('${s.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${s.id===active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
         <i data-lucide="${s.icon}" class="h-[18px] w-[18px] ${s.id===active?'text-[#f0a58a]':''}"></i><span class="truncate">${s.label}</span>
       </button>`).join('')
-    + '<div class="my-2 border-t border-white/5"></div>'
-    + ((state.module==='admin' && active==='kayitlar') ? cariFilterLeftHtml() : '');
+    + '<div class="my-2 border-t border-white/5"></div>';
 }
 function applySub(){
   const subs = getSubs(); if(!subs) return;
