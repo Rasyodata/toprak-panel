@@ -957,22 +957,7 @@ function buildNav(){
     return;
   }
 
-  // Sistem Yönetimi modunda sol bar → Kullanıcı Gözlem listesi
-  if(state.module==='admin' && isAdminUser()){
-    nav.innerHTML = `
-      <div class="px-2 pb-2 flex items-center gap-2 text-[10px] uppercase tracking-[.2em] text-slate-500"><i data-lucide="eye" class="h-3.5 w-3.5 text-gold"></i>Kullanıcı Gözlem</div>
-      ${Object.entries(ROLES).map(([k,v])=>`
-        <button onclick="impersonate('${k}')" title="${v.title}"
-          class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-slate-300 hover:bg-white/5 border border-transparent hover:border-gold/30 transition">
-          <span class="h-8 w-8 shrink-0 rounded-lg ${v.kind==='internal'?'bg-gradient-to-br from-gold-light to-gold-dark text-navy-900':'bg-navy-600 text-slate-200 border border-white/10'} font-bold flex items-center justify-center text-[11px]">${v.short}</span>
-          <span class="min-w-0 flex-1"><span class="block text-xs font-medium text-slate-100 truncate">${v.name}</span><span class="block text-[10px] ${v.kind==='internal'?'text-gold':'text-emer-light'} truncate">${v.tag}</span></span>
-          <i data-lucide="eye" class="h-3.5 w-3.5 text-slate-500"></i>
-        </button>`).join('')}
-      <div class="my-2 border-t border-white/5"></div>
-      <button onclick="setModule('dashboard')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-slate-400 hover:text-white hover:bg-white/5 transition">
-        <i data-lucide="corner-up-left" class="h-4 w-4"></i><span class="text-xs">Modüllere Dön</span>
-      </button>`;
-  }
+  // (Kullanıcı Gözlem listesi sol bardan kaldırıldı → Sistem Yöneticisi sayfası içinde "Kullanıcılar" bölümüne taşındı)
 
   // bottom nav (mobile): sadece yetkili modüller
   const bn = document.getElementById('bottomNav');
@@ -4942,14 +4927,27 @@ function viewAdmin(){
     ${kpi('history','Sistem Logları', auditLog.length+' Kayıt', 'İşlem izi','true','gold')}
   </div>
 
-  <div class="card rounded-2xl p-5 mt-5">
-    ${sectionTitle('user-check','Kurumsal Kullanıcılar','Gözüyle görüntüle')}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">${internal.map(card).join('')}</div>
-  </div>
-  <div class="card rounded-2xl p-5 mt-5">
-    ${sectionTitle('user-cog','Danışman & Hizmet · Avukatlar','Gözüyle görüntüle')}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">${external.map(card).join('')}</div>
-  </div>
+  ${(()=>{
+    const userCats=[
+      ['Yönetim','crown',['ceo','sysadmin','sales','satisekip']],
+      ['Muhasebe','calculator',['muhasebe']],
+      ['Finans','coins',['cfo','satinalma']],
+      ['Maliye','landmark',['advisor_fin','auditor']],
+      ['Hukuk','scale',['advisor_legal','advisor_legal2']],
+      ['Dışarıdan İzin Verilen Kullanıcılar','users-round',['vendor','realtor']]
+    ];
+    return `
+    <div class="flex items-center gap-2 mt-6 mb-1">
+      <i data-lucide="users" class="h-5 w-5 text-gold"></i>
+      <h2 class="text-lg font-bold text-white">Kullanıcılar</h2>
+      <span class="text-[11px] text-slate-500">${Object.keys(ROLES).length} hesap · kategorilere göre · "gözüyle görüntüle"</span>
+    </div>
+    ${userCats.map(([ad,icon,keys])=>{ const list=keys.filter(k=>ROLES[k]); if(!list.length) return '';
+      return `<div class="card rounded-2xl p-5 mt-4">
+        ${sectionTitle(icon, ad, list.length+' kullanıcı')}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">${list.map(card).join('')}</div>
+      </div>`; }).join('')}`;
+  })()}
 
   <div class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('history','Kullanıcı İşlem Logları','Son hareketler')}
