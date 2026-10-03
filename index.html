@@ -2271,7 +2271,11 @@ function viewDashboard(){
     const yil = state.nakitYil || 2026;
     const rows = nakitByYear[yil] || nakitByYear[2026];
     const mx = Math.max(...rows.map(r=>Math.max(r[0],r[1])));
-    const topIn = rows.reduce((a,r)=>a+r[0],0), topOut = rows.reduce((a,r)=>a+r[1],0);
+    const topIn = rows.reduce((a,r)=>a+r[0],0);
+    // Bütçe Çıkış Kartları tutarları nakit akışa planlı çıkış olarak etki eder (TL → Mn)
+    const planliCikisTL = butceCikisKartlari.reduce((a,r)=>a+((r.tutar||0)*(r.tekrar==='Belirli Tekrar'&&r.kez?r.kez:1)),0);
+    const planliCikis = planliCikisTL/1000000;
+    const topOut = rows.reduce((a,r)=>a+r[1],0) + planliCikis;
     nakitSeed();
     // Şirket bazlı konsolide dağılım (ciro ağırlığına göre)
     const wsum = companies.reduce((a,c)=>a+c.ciro,0);
@@ -2284,6 +2288,7 @@ function viewDashboard(){
       ${kpi('arrow-up-from-line','Konsolide Çıkış', mn(topOut),yil+' toplam','true','red')}
       ${kpi('wallet','Konsolide Net', mn(topIn-topOut),'serbest nakit','true', (topIn-topOut)>=0?'emer':'red')}
     </div>
+    ${planliCikis>0?`<div data-sub="nakit" class="mt-2 text-[11px] text-slate-400 flex items-center gap-1.5"><i data-lucide="trending-down" class="h-3.5 w-3.5 text-rose-400"></i>Bütçe Çıkış Kartlarından planlı çıkış dahildir: <b class="text-rose-300">${mn(planliCikis)}</b> · ${butceCikisKartlari.length} kalem</div>`:''}
 
     <!-- Şirket bazlı konsolide tablo -->
     <div data-sub="nakit" class="card rounded-2xl p-5 mt-5">
@@ -2574,7 +2579,11 @@ function nextGdrNo(){ const max=giderKartlari.reduce((m,k)=>{const n=parseInt((S
 function addGiderKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g('gdAd').value||'').trim(); if(!ad){toast('Gider adı girin');return;} const no=nextGdrNo();
   giderKartlari.unshift({ no, ad, cikisTipi:g('gdCikisTipi').value||'Gider', cikisTuru:g('gdCikisTuru').value||'Kira Gideri', alacakli:(g('gdAlacakli').value||'').trim(), tutar:parseInt(g('gdTutar').value||'0',10)||0, butceKodu:(g('gdKod').value||'').trim(),
     tekrar:g('gdTekrar').value||'Her Ay', ayGun:parseInt(g('gdAyGun').value||'0',10)||0, kez:parseInt(g('gdKez').value||'0',10)||0, baslangic:(g('gdBaslangic').value||'').trim(), aciklama:(g('gdAciklama').value||'').trim() });
-  logAction('repeat','amber', `Gider kartı · ${no} · ${ad} (${g('gdCikisTuru').value}) · ${money(parseInt(g('gdTutar').value||'0',10)||0)} · ${tekrarOzet(giderKartlari[0])}`); render(); toast(no+' gider kartı oluşturuldu'); }
+  const gdTutar=parseInt(g('gdTutar').value||'0',10)||0;
+  odemeTalepleri.unshift({ id:no, firm:'Toprak Grup', alacakli:(g('gdAlacakli').value||ad).trim(), aciklama:ad+' · '+(g('gdCikisTuru').value||'Gider')+' ('+tekrarOzet(giderKartlari[0])+')', amount:gdTutar, tarih:(g('gdBaslangic').value||'').trim(), status:'pending', kaynak:'gider' });
+  logAction('repeat','amber', `Gider kartı · ${no} · ${ad} (${g('gdCikisTuru').value}) · ${money(gdTutar)} · ${tekrarOzet(giderKartlari[0])}`);
+  logAction('git-pull-request','gold', `${no} gider kartı İş Onay Akışına düştü · Muhasebe → Finans Müdürü → Patron`, 'İş Onay Akışı');
+  render(); toast(no+' · onay akışına düştü'); }
 function sayiYazi(n){ n=Math.round(Math.abs(n||0)); if(n===0) return 'Sıfır'; const b=['','Bir','İki','Üç','Dört','Beş','Altı','Yedi','Sekiz','Dokuz']; const o=['','On','Yirmi','Otuz','Kırk','Elli','Altmış','Yetmiş','Seksen','Doksan']; const gr=['','Bin','Milyon','Milyar','Trilyon'];
   const uc=x=>{let s='';const y=Math.floor(x/100),k=Math.floor((x%100)/10),t=x%10;if(y)s+=(y>1?b[y]:'')+'Yüz';if(k)s+=o[k];if(t)s+=b[t];return s;};
   let parts=[],i=0; while(n>0){let g3=n%1000; if(g3){let p=uc(g3); if(i===1&&g3===1)p=''; parts.unshift(p+gr[i]);} n=Math.floor(n/1000); i++;} return parts.join(''); }
