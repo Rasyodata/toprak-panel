@@ -566,7 +566,7 @@ const money = (n) => {
 /* Güvenlik: kullanıcı serbest-metin girdilerini HTML'e basmadan önce kaçış (XSS önleme) */
 const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* Milyon → ≥1000 ise Milyar (MLY) kısaltması, nokta ile: 6510 Mn → ₺6.51 MLY, 1000 → ₺1.00 MLY */
-const mn = (v) => { const n=Math.abs(v); const sgn=v<0?'-':''; return sgn+'₺'+(n>=1000 ? (n/1000).toFixed(2).replace('.',',')+' MLY' : new Intl.NumberFormat('tr-TR').format(n)+' Mn'); };
+const mn = (v) => money((v||0) * 1000000); // Nakit değerleri milyon-birimli; tüm panelde tek tip gösterim (Milyar/Milyon)
 
 /* ---------- MUTABLE DEMO DATA (interactive) ---------- */
 let purchaseRequests = [
