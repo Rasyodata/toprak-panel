@@ -1735,21 +1735,23 @@ function sparkPoints(hist,w,h){
   return hist.map((v,i)=>`${(i/(n-1)*w).toFixed(1)},${(h-((v-min)/rng)*(h-4)-2).toFixed(1)}`).join(' ');
 }
 function biLiveTick(){
-  const card=document.getElementById('biLive');
-  if(!card || card.offsetParent===null) return; // yalnız görünürken çalış
+  const c1=document.getElementById('biLive'), c2=document.getElementById('biLive2');
+  const vis1=c1&&c1.offsetParent!==null, vis2=c2&&c2.offsetParent!==null;
+  if(!vis1 && !vis2) return; // yalnız İş Zekası ya da Live panel görünürken çalış
   BI_INSTRUMENTS.forEach(({k})=>{
     const st=biState[k]; if(!st) return;
     const drift=(Math.random()-0.47)*0.009;      // hafif yukarı eğilim
     st.price=st.price*(1+drift);
     st.hist.push(st.price); if(st.hist.length>28) st.hist.shift();
     const chg=(st.price/st.open-1)*100;
-    const up=drift>=0;
-    const lv=document.getElementById('lv-'+k);
-    const lc=document.getElementById('lc-'+k);
-    const lsp=document.getElementById('lsp-'+k);
-    if(lv){ lv.textContent='₺'+st.price.toFixed(2); lv.style.color= up?'#059669':'#e11d48'; }
-    if(lc){ lc.textContent=(chg>=0?'▲ %':'▼ %')+Math.abs(chg).toFixed(2); lc.style.color= chg>=0?'#059669':'#e11d48'; }
-    if(lsp){ lsp.setAttribute('points', sparkPoints(st.hist,120,34)); lsp.setAttribute('stroke', chg>=0?'#10b981':'#ef4444'); }
+    const up=drift>=0; const col=up?'#059669':'#e11d48'; const sc=chg>=0?'#10b981':'#ef4444';
+    const pts=sparkPoints(st.hist,120,34); const txt='₺'+st.price.toFixed(2); const ct=(chg>=0?'▲ %':'▼ %')+Math.abs(chg).toFixed(2);
+    ['','2'].forEach(sfx=>{
+      const lv=document.getElementById('lv'+sfx+'-'+k); const lc=document.getElementById('lc'+sfx+'-'+k); const lsp=document.getElementById('lsp'+sfx+'-'+k);
+      if(lv){ lv.textContent=txt; lv.style.color=col; }
+      if(lc){ lc.textContent=ct; lc.style.color= chg>=0?'#059669':'#e11d48'; }
+      if(lsp){ lsp.setAttribute('points', pts); lsp.setAttribute('stroke', sc); }
+    });
   });
 }
 function liveMarketHtml(){
@@ -1918,6 +1920,138 @@ function viewBI(){
     </div>
   </div>`;
 }
+/* ============================================================
+   İŞ ZEKASI EK PANELLERİ — Live / Analytics / Statistics / Performance
+   ============================================================ */
+const gauge = (pct,label,sub,col) => { const c=col==='emer'?'#10b981':col==='red'?'#f43f5e':col==='teal'?'#2bb6c4':'#d4af37';
+  return `<div class="flex flex-col items-center">
+    <div class="relative h-28 w-28 rounded-full" style="background:conic-gradient(${c} 0 ${pct}%, rgba(148,163,184,.18) ${pct}% 100%)">
+      <div class="absolute inset-[10px] rounded-full flex flex-col items-center justify-center" style="background:var(--card-bg,#1d212b)">
+        <span class="text-2xl font-bold" style="color:${c}">%${pct}</span></div>
+    </div>
+    <p class="mt-2 text-sm font-semibold text-slate-100 text-center">${label}</p>
+    <p class="text-[11px] text-slate-500 text-center">${sub}</p>
+  </div>`; };
+function viewLiveBoard(){
+  const comps=companies; const totCiro=comps.reduce((a,c)=>a+c.ciro,0); const totNet=comps.reduce((a,c)=>a+c.net,0);
+  biSeed();
+  const card=s=>{ const st=biState[s.k]; const chg=(st.price/st.open-1)*100;
+    return `<div class="card rounded-2xl p-4">
+      <div class="flex items-center justify-between"><div><span class="text-sm font-bold text-slate-100">${s.sym}</span><span class="block text-[10px] text-slate-500 truncate">${s.n}</span></div>
+      <svg width="110" height="36" viewBox="0 0 120 34" preserveAspectRatio="none"><polyline id="lsp2-${s.k}" fill="none" stroke="${chg>=0?'#10b981':'#ef4444'}" stroke-width="1.8" points="${sparkPoints(st.hist,120,34)}"/></svg></div>
+      <div class="mt-1.5 flex items-baseline gap-2"><span id="lv2-${s.k}" class="text-lg font-bold tabular-nums" style="color:${chg>=0?'#059669':'#e11d48'}">₺${st.price.toFixed(2)}</span>
+      <span id="lc2-${s.k}" class="text-xs font-semibold tabular-nums" style="color:${chg>=0?'#059669':'#e11d48'}">${chg>=0?'▲':'▼'} %${Math.abs(chg).toFixed(2)}</span></div>
+    </div>`; };
+  return `
+  <div data-sub="live" class="flex items-center justify-between mb-4">
+    <div><h2 class="text-xl font-bold text-white">Canlı Panel</h2><p class="text-xs text-slate-400">Gerçek zamanlı grup göstergeleri · otomatik güncellenir</p></div>
+    <span class="inline-flex items-center gap-2 text-sm font-bold text-rose-500"><span class="h-2.5 w-2.5 rounded-full bg-rose-500 live-dot"></span>CANLI</span>
+  </div>
+  <div data-sub="live" id="biLive2" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    ${BI_INSTRUMENTS.map(card).join('')}
+  </div>
+  <div data-sub="live" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    ${kpi('landmark','Konsolide Ciro', money(totCiro),'canlı','true','gold')}
+    ${kpi('wallet','Net Kâr', money(totNet),'canlı','true','emer')}
+    ${kpi('activity','Serbest Nakit','₺742 Mn','anlık','true','emer')}
+    ${kpi('trending-up','Grup Endeksi','₺'+ (biState.TYH?biState.TYH.price.toFixed(0):'1000'),'TYH','true','gold')}
+  </div>
+  <div data-sub="live" class="card rounded-2xl p-5 mb-5">
+    <div class="flex items-center justify-between mb-3">${sectionTitle('rss','Canlı Aktivite Akışı','Son hareketler')}<span class="inline-flex items-center gap-1.5 text-xs text-rose-500 font-semibold"><span class="h-2 w-2 rounded-full bg-rose-500 live-dot"></span>CANLI</span></div>
+    <div class="space-y-1">${auditLog.slice(0,7).map(a=>`<div class="flex items-center gap-3 py-2 border-b border-white/5 last:border-0"><span class="h-8 w-8 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center ${a.tone==='emer'?'text-emer-light':a.tone==='red'?'text-rose-400':'text-gold'}"><i data-lucide="${a.icon}" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${a.text}</p><p class="text-[11px] text-slate-500">${a.modul||''} · ${a.who}</p></div><span class="text-[11px] text-slate-500 shrink-0">${a.time.split(' ').pop()}</span></div>`).join('')}</div>
+  </div>`;
+}
+function viewAnalytics(){
+  const rows=nakitByYear[2026]; const mx=Math.max(...rows.map(r=>r[0]));
+  const segTot=segmentProfit.reduce((a,s)=>a+s.rev,0);
+  const compTot=companies.reduce((a,c)=>a+c.ciro,0);
+  let acc=0; const donut=companies.map(c=>{ const pct=c.ciro/compTot*100; const seg=`${c.color==='gold'?'#d4af37':c.color==='emer'?'#10b981':'#f43f5e'} ${acc}% ${acc+pct}%`; acc+=pct; return seg; }).join(', ');
+  const uTot=unitSales.reduce((a,u)=>a+u.total,0), uSold=unitSales.reduce((a,u)=>a+u.sold,0), uRes=unitSales.reduce((a,u)=>a+u.reserved,0);
+  return `
+  <div data-sub="analytics" class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
+    <div class="card rounded-2xl p-5 xl:col-span-2">
+      ${sectionTitle('area-chart','Aylık Ciro Trendi','2026 · nakit girişi (Mn ₺)')}
+      <svg viewBox="0 0 600 180" preserveAspectRatio="none" class="w-full h-44">
+        <defs><linearGradient id="agrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4af37" stop-opacity="0.5"/><stop offset="1" stop-color="#d4af37" stop-opacity="0"/></linearGradient></defs>
+        ${(()=>{ const pts=rows.map((r,i)=>`${(i/(rows.length-1)*600).toFixed(0)},${(170-r[0]/mx*150).toFixed(0)}`); return `<polygon fill="url(#agrad)" points="0,180 ${pts.join(' ')} 600,180"/><polyline fill="none" stroke="#d4af37" stroke-width="2.5" points="${pts.join(' ')}"/>`+rows.map((r,i)=>`<circle cx="${(i/(rows.length-1)*600).toFixed(0)}" cy="${(170-r[0]/mx*150).toFixed(0)}" r="3" fill="#e7c766"/>`).join(''); })()}
+      </svg>
+      <div class="flex justify-between text-[10px] text-slate-500 mt-1">${AYLAR.map(m=>`<span>${m}</span>`).join('')}</div>
+    </div>
+    <div class="card rounded-2xl p-5">
+      ${sectionTitle('pie-chart','Ciro Dağılımı','Şirket payı')}
+      <div class="flex items-center justify-center my-3"><div class="relative h-36 w-36 rounded-full" style="background:conic-gradient(${donut})"><div class="absolute inset-[14px] rounded-full flex items-center justify-center" style="background:var(--card-bg,#1d212b)"><span class="text-sm font-bold text-white">${money(compTot)}</span></div></div></div>
+      <div class="space-y-1.5">${companies.map(c=>`<div class="flex items-center justify-between text-xs"><span class="flex items-center gap-1.5 text-slate-300"><span class="h-2.5 w-2.5 rounded-full ${c.color==='gold'?'bg-gold':c.color==='emer'?'bg-emer':'bg-rose-400'}"></span>${c.name}</span><span class="text-slate-400 tabular-nums text-right">%${Math.round(c.ciro/compTot*100)}</span></div>`).join('')}</div>
+    </div>
+  </div>
+  <div data-sub="analytics" class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-5">
+    <div class="card rounded-2xl p-5">
+      ${sectionTitle('layers','Segment Analizi','Gelir & brüt marj')}
+      <div class="space-y-3">${segmentProfit.map(s=>{ const marj=Math.round((s.rev-s.cost)/s.rev*100); return `<div><div class="flex justify-between text-xs mb-1"><span class="text-slate-300">${s.name}</span><span class="text-slate-400 tabular-nums">${money(s.rev)} · %${marj} marj</span></div><div class="h-2.5 rounded-full bg-navy-700/70 overflow-hidden"><div class="bar h-full rounded-full bg-gradient-to-r from-gold-dark to-gold" style="width:0%" data-w="${Math.round(s.rev/segTot*100)}"></div></div></div>`; }).join('')}</div>
+    </div>
+    <div class="card rounded-2xl p-5">
+      ${sectionTitle('filter','Satış Hunisi','Daire envanteri dönüşümü')}
+      <div class="space-y-3">
+        ${[['Toplam Envanter',uTot,'gold',100],['Rezerve',uRes,'amber',Math.round(uRes/uTot*100)],['Satıldı',uSold,'emer',Math.round(uSold/uTot*100)]].map(([l,v,c,p])=>`<div><div class="flex justify-between text-xs mb-1"><span class="text-slate-300">${l}</span><span class="text-slate-400 tabular-nums">${v} daire · %${p}</span></div><div class="h-6 rounded-lg bg-navy-700/70 overflow-hidden"><div class="h-full rounded-lg bg-gradient-to-r ${c==='emer'?'from-emer-dark to-emer-light':c==='amber'?'from-amber-600 to-amber-400':'from-gold-dark to-gold'} flex items-center justify-end pr-2 text-[10px] font-bold text-navy-900" style="width:${p}%">${v}</div></div></div>`).join('')}
+      </div>
+      <p class="mt-3 text-[11px] text-slate-500">Dönüşüm oranı: <b class="text-emer-light">%${Math.round(uSold/uTot*100)}</b> satış · <b class="text-amber-300">%${Math.round(uRes/uTot*100)}</b> rezerve</p>
+    </div>
+  </div>`;
+}
+function viewStats(){
+  const totCiro=companies.reduce((a,c)=>a+c.ciro,0), totNet=companies.reduce((a,c)=>a+c.net,0);
+  const avgMarj=(companies.reduce((a,c)=>a+c.margin,0)/companies.length).toFixed(1);
+  const uSold=unitSales.reduce((a,u)=>a+u.sold,0), uTot=unitSales.reduce((a,u)=>a+u.total,0);
+  const stat=(ic,lbl,val,sub,tone)=>`<div class="card rounded-2xl p-5 relative overflow-hidden"><div class="absolute -right-5 -top-5 h-20 w-20 rounded-full ${tone==='emer'?'bg-emer/15':tone==='red'?'bg-rose-500/15':'bg-gold/15'} blur-2xl"></div><i data-lucide="${ic}" class="h-5 w-5 ${tone==='emer'?'text-emer-light':tone==='red'?'text-rose-400':'text-gold'}"></i><p class="mt-3 text-2xl font-bold text-white tabular-nums">${val}</p><p class="text-xs text-slate-400 mt-0.5">${lbl}</p><p class="text-[11px] text-slate-500">${sub}</p></div>`;
+  return `
+  <div data-sub="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    ${stat('landmark','Konsolide Ciro',money(totCiro),companies.length+' şirket','gold')}
+    ${stat('wallet','Net Kâr',money(totNet),'marj %'+avgMarj,'emer')}
+    ${stat('home','Satılan Daire',uSold+' / '+uTot,'%'+Math.round(uSold/uTot*100)+' doluluk','emer')}
+    ${stat('hard-hat','Aktif Proje',projects.length,projects.filter(p=>p.status==='Tamamlandı').length+' tamamlandı','gold')}
+    ${stat('gavel','Aktif Dava',lawsuits.filter(l=>l.hal==='Devam Eden').length,lawsuits.length+' toplam','red')}
+    ${stat('percent','Ort. Brüt Marj','%28,1','segment','emer')}
+    ${stat('scale','Özkaynak',money(4465000000),'ROE %20,1','gold')}
+    ${stat('activity','EBITDA Marj','%27,4','+1,8 puan','emer')}
+  </div>
+  <div data-sub="stats" class="card rounded-2xl p-5 mb-5">
+    ${sectionTitle('bar-chart-4','Şirket Karşılaştırma İstatistikleri','Ciro · net · marj · trend')}
+    <div class="overflow-x-auto"><table class="w-full text-sm min-w-[620px]">
+      <thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Şirket</th><th class="text-right font-medium">Ciro</th><th class="text-right font-medium">Net Kâr</th><th class="text-right font-medium">Marj</th><th class="text-right font-medium">Nakit</th><th class="text-right font-medium">Trend</th></tr></thead>
+      <tbody>${companies.map(c=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-3 font-medium text-slate-100">${c.name}</td><td class="text-right tabular-nums text-slate-300">${money(c.ciro)}</td><td class="text-right tabular-nums text-emer-light">${money(c.net)}</td><td class="text-right tabular-nums">${badge('%'+c.margin,c.margin>18?'emer':c.margin>13?'gold':'red')}</td><td class="text-right text-slate-400">${c.cash}</td><td class="text-right tabular-nums ${c.trend>=0?'text-emer-light':'text-rose-400'}">${c.trend>=0?'▲':'▼'} %${Math.abs(c.trend)}</td></tr>`).join('')}
+      <tr class="font-bold bg-white/[.03]"><td class="py-3 text-white">TOPLAM</td><td class="text-right tabular-nums text-white">${money(totCiro)}</td><td class="text-right tabular-nums text-emer-light">${money(totNet)}</td><td class="text-right">—</td><td></td><td></td></tr></tbody>
+    </table></div>
+  </div>`;
+}
+function viewPerformance(){
+  const totCiro=companies.reduce((a,c)=>a+c.ciro,0); const hedef=Math.round(totCiro*1.08); const ach=Math.round(totCiro/hedef*100);
+  const sr=(typeof salesReps!=='undefined'?salesReps.slice():[]).sort((a,b)=>b.satis-a.satis);
+  const srMax=Math.max(1,...sr.map(r=>r.satis));
+  const tahsil=Math.round(sr.reduce((a,r)=>a+r.tahsilat,0)/Math.max(1,sr.reduce((a,r)=>a+r.satis,0))*100);
+  const bitenProje=Math.round(projects.reduce((a,p)=>a+p.progress,0)/projects.length);
+  return `
+  <div data-sub="performance" class="card rounded-2xl p-5 mb-5">
+    ${sectionTitle('gauge','Performans Göstergeleri','Hedefe göre gerçekleşme')}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 justify-items-center">
+      ${gauge(ach,'Ciro Hedefi', money(totCiro)+' / '+money(hedef), ach>=90?'emer':'gold')}
+      ${gauge(tahsil,'Tahsilat Oranı','satış→nakit','teal')}
+      ${gauge(bitenProje,'Proje İlerleme',projects.length+' proje ort.','gold')}
+      ${gauge(74,'Bütçe Uyumu','plan vs gerçek','emer')}
+    </div>
+  </div>
+  <div data-sub="performance" class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-5">
+    <div class="card rounded-2xl p-5">
+      ${sectionTitle('target','Bütçe vs Gerçekleşen','Departman sapması')}
+      <div class="overflow-x-auto"><table class="w-full text-sm min-w-[460px]">
+        <thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Kalem</th><th class="text-right font-medium">Bütçe</th><th class="text-right font-medium">Gerçek</th><th class="text-right font-medium">Sapma</th></tr></thead>
+        <tbody>${budgetVsActual.map(b=>{ const s=b.actual-b.budget; return `<tr class="border-b border-white/5"><td class="py-2.5 text-slate-200">${b.name}</td><td class="text-right tabular-nums text-slate-300">${money(b.budget)}</td><td class="text-right tabular-nums text-slate-300">${money(b.actual)}</td><td class="text-right tabular-nums ${s>0?'text-rose-400':'text-emer-light'}">${s>0?'+':''}${money(s)}</td></tr>`; }).join('')}</tbody>
+      </table></div>
+    </div>
+    <div class="card rounded-2xl p-5">
+      ${sectionTitle('award','En İyi Satıcılar','Satış performansı')}
+      <div class="space-y-3">${sr.slice(0,5).map((r,i)=>`<div><div class="flex justify-between text-xs mb-1"><span class="text-slate-300">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':''}${r.ad} <span class="text-slate-500">· ${r.ekip}</span></span><span class="text-slate-400 tabular-nums">${money(r.satis)}</span></div><div class="h-2.5 rounded-full bg-navy-700/70 overflow-hidden"><div class="bar h-full rounded-full bg-gradient-to-r from-emer-dark to-emer-light" style="width:0%" data-w="${Math.round(r.satis/srMax*100)}"></div></div></div>`).join('')}</div>
+    </div>
+  </div>`;
+}
 function viewDashboard(){
   const sf = scopeFirm();
   const comps = sf ? companies.filter(c=>c.name===sf) : companies;
@@ -1942,6 +2076,10 @@ function viewDashboard(){
   </div>
 
   ${viewBI()}
+  ${viewLiveBoard()}
+  ${viewAnalytics()}
+  ${viewStats()}
+  ${viewPerformance()}
 
   <div data-sub="konsolide" class="card rounded-2xl p-5 mb-5 flex flex-col sm:flex-row items-center gap-5">
     <div class="relative h-28 w-28 shrink-0 rounded-full"
@@ -5829,7 +5967,7 @@ function toggleNotif(){
 /* ---------- COMPANY SCOPE BAR ---------- */
 /* ---------- MODÜL ALT SEKMELERİ (sub-nav) ---------- */
 const SUBTABS = {
-  dashboard:     [{id:'bi',label:'İş Zekası',icon:'brain-circuit'},{id:'konsolide',label:'Bilanço',icon:'scale'},{id:'sirketler',label:'Şirketler',icon:'building-2'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'hukukrisk',label:'Hukuk ve Risk',icon:'shield-alert'}],
+  dashboard:     [{id:'bi',label:'İş Zekası',icon:'brain-circuit'},{id:'live',label:'Live Dashboard',icon:'radio'},{id:'analytics',label:'Analytics',icon:'line-chart'},{id:'stats',label:'Statistics',icon:'sigma'},{id:'performance',label:'Performance',icon:'gauge'},{id:'konsolide',label:'Bilanço',icon:'scale'},{id:'sirketler',label:'Şirketler',icon:'building-2'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'hukukrisk',label:'Hukuk ve Risk',icon:'shield-alert'}],
   yetkiler:      [{id:'panel',label:'Panel',icon:'layout-dashboard'},{id:'akis',label:'İş Onay Akışı',icon:'git-pull-request'},{id:'onaylar',label:'Onaylar',icon:'stamp'},{id:'odeme',label:'Ödeme Talepleri',icon:'banknote'},{id:'satinalma',label:'Satın Alma Talepleri',icon:'shopping-cart'},{id:'fiyat',label:'Fiyat Talepleri',icon:'tag'},{id:'whatsapp',label:'WhatsApp Yönetimi',icon:'message-circle'},{id:'loglar',label:'İşlem Logları',icon:'history'}],
   sales:         [{id:'satis',label:'Satış',icon:'trending-up'},{id:'crm',label:'CRM & Faturalar',icon:'contact'}],
   projects:      [{id:'tumu',label:'Tümü',icon:'pie-chart'},{id:'proje',label:'Proje',icon:'pen-tool'},{id:'denetim',label:'Yapı Denetim',icon:'clipboard-check'},{id:'taahhut',label:'İnşaat Taahhüt',icon:'hard-hat'},{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'}],
