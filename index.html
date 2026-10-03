@@ -938,7 +938,7 @@ function buildNav(){
         <i data-lucide="shield-check" class="h-4 w-4 ${a?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">Sistem Yöneticisi</span></button>`; })() : '');
 
   // SOL BAR — aktif modülün alt-sekmeleri + Patron Ekranı · Duyurular · Erişim + Şirket Seçimi + Sistem Yöneticisi
-  nav.innerHTML = (state.company!=='all' ? '' : subTabsLeftHtml()) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
+  nav.innerHTML = (state.company!=='all' ? leftSpecialSubsHtml() : subTabsLeftHtml()) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
     const active = m.id===state.module;
     return `
     <button onclick="setModule('${m.id}')"
@@ -6015,7 +6015,7 @@ const SUBTABS = {
   projects:      [{id:'tumu',label:'Tümü',icon:'pie-chart'},{id:'proje',label:'Proje',icon:'pen-tool'},{id:'denetim',label:'Yapı Denetim',icon:'clipboard-check'},{id:'taahhut',label:'İnşaat Taahhüt',icon:'hard-hat'},{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'}],
   profitability: [{id:'marj',label:'Kâr Marjı',icon:'percent'},{id:'segment',label:'Segment & OPEX',icon:'layers'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'maliyet',label:'Maliyet Hesapları',icon:'receipt-text'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'ozkaynak',label:'Özkaynak Durumu',icon:'scale'},{id:'satinalma',label:'Satın Alma',icon:'shopping-cart'},{id:'saticilar',label:'Satıcılar Hesabı',icon:'badge-dollar-sign'}],
   finance:       [{id:'gelir',label:'Gelir Tablosu',icon:'file-spreadsheet'},{id:'vergi',label:'Vergi Planlama',icon:'percent'},{id:'kurumlar',label:'Kurumlar Beyannamesi',icon:'file-text'},{id:'ozkaynak',label:'Özkaynak Hs.',icon:'scale'},{id:'kdv',label:'KDV İadesi',icon:'receipt-text'},{id:'ssk',label:'SSK Hesaplama',icon:'users'}],
-  legal:         [{id:'analiz',label:'Analiz',icon:'bar-chart-3'},{id:'dava',label:'Dava',icon:'gavel'},{id:'icra',label:'İcra',icon:'receipt-text'},{id:'onleyici',label:'Önleyici Hukuk',icon:'shield-check'},{id:'taslak',label:'Sözleşme Taslakları',icon:'file-text'},{id:'c_tumu',label:'Sözleşmeler · Tümü',icon:'file-signature'},{id:'c_insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat'},{id:'c_ik',label:'İK Sözleşmeleri',icon:'users'},{id:'c_danismanlik',label:'Danışmanlık Söz.',icon:'briefcase'},{id:'c_tedarik',label:'Tedarik Söz.',icon:'truck'},{id:'kvkk',label:'KVKK / Mevzuat',icon:'book-check'}],
+  legal:         [{id:'analiz',label:'Analiz',icon:'bar-chart-3'},{id:'dava',label:'Dava',icon:'gavel'},{id:'icra',label:'İcra',icon:'receipt-text'},{id:'onleyici',label:'Önleyici Hukuk',icon:'shield-check'},{id:'taslak',label:'Sözleşme Taslakları',icon:'file-text'},{id:'c_tumu',label:'Sözleşmeler · Tümü',icon:'file-signature'},{id:'c_insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat',left:true},{id:'c_ik',label:'İK Sözleşmeleri',icon:'users',left:true},{id:'c_danismanlik',label:'Danışmanlık Söz.',icon:'briefcase',left:true},{id:'c_tedarik',label:'Tedarik Söz.',icon:'truck',left:true},{id:'kvkk',label:'KVKK / Mevzuat',icon:'book-check'}],
   contracts:     [{id:'insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat'},{id:'ik',label:'İK Sözleşmeleri',icon:'users'},{id:'danismanlik',label:'Danışmanlık',icon:'briefcase'},{id:'tedarik',label:'Tedarik',icon:'truck'},{id:'tumu',label:'Tümü',icon:'list'}],
   company:       [{id:'kunye',label:'Firma Bilgileri',icon:'building-2'},{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
@@ -6040,7 +6040,9 @@ function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; rend
 function buildSubNav(){
   const bar = document.getElementById('subNav');
   if(!bar) return;
-  const subs = getSubs();
+  const allSubs = getSubs();
+  // `left:true` olan alt-sekmeler sol barda gösterilir (ör. sözleşme türleri); kalanlar üst yatay alt-barda.
+  const subs = allSubs ? allSubs.filter(s=>!s.left) : null;
   // Tüm şirketlerde alt-sekmeler üst yatay alt-barda (üst barın hemen altında); yalnızca Konsolide'de sol barda.
   if(state.company!=='all' && subs && subs.length>=2){
     const active = currentSub();
@@ -6061,6 +6063,20 @@ function buildSubNav(){
     bar.style.display='none'; bar.innerHTML='';
     bar.style.removeProperty('background-color'); bar.style.removeProperty('border-bottom');
   }
+}
+// Sol barda gösterilecek `left:true` alt-sekmeler (ör. Hukuk & Risk'teki sözleşme türleri) — tüm şirketlerde
+function leftSpecialSubsHtml(){
+  const all = getSubs();
+  if(!all) return '';
+  const left = all.filter(s=>s.left);
+  if(!left.length) return '';
+  const active = currentSub();
+  return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Sözleşme Türleri</div>`
+    + left.map(s=>`
+      <button onclick="setSub('${s.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${s.id===active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
+        <i data-lucide="${s.icon}" class="h-[18px] w-[18px] ${s.id===active?'text-[#f0a58a]':''}"></i><span class="truncate">${s.label}</span>
+      </button>`).join('')
+    + '<div class="my-2 border-t border-white/5"></div>';
 }
 function subTabsLeftHtml(){
   const subs = getSubs();
