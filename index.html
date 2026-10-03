@@ -2526,6 +2526,8 @@ let vendorAccounts = [
 ];
 const CARI_TIPI = ['Satıcı','Müşteri','Danışman','Diğer'];
 const CARI_TURU = ['Avukat','Satıcı','Taşeron','Müteahhit','Mali Müşavir','Tedarikçi','Diğer'];
+let cariTurKod = { 'Avukat':'AVK','Satıcı':'STC','Taşeron':'TSR','Müteahhit':'MTH','Mali Müşavir':'MLM','Tedarikçi':'TDR','Diğer':'DGR' };
+function nextCariKod(){ const max=vendorAccounts.reduce((m,v)=>{const n=parseInt((String(v.id).split('-')[1]||'0'),10);return n>m?n:m;},0); return 'CARI-'+String(max+1).padStart(4,'0'); }
 const RISK_LVL = ['Düşük','Orta','Yüksek'];
 const riskTone = r => r==='Yüksek'?'red':r==='Orta'?'amber':'emer';
 // Merkezi Cari Kartlar veritabanı: elle açılan hesaplar + Avukat Tanımla'dan gelen avukatlar (personel hariç)
@@ -2557,6 +2559,11 @@ function viewCariDetail(id){
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
     ${row('Cari Tipi', v.tipi)}
     ${row('Cari Türü', v.turu)}
+    ${row('Şirket Türü', esc(v.sirketTuru||'—'))}
+    ${row('İç Muhasebe Kodu', `<span class="font-mono text-gold">${esc(v.icKod||'—')}</span>`)}
+    ${row('Resmi Muhasebe Kodu', `<span class="font-mono">${esc(v.resmiKod||'—')}</span>`)}
+    ${row('Vergi No', esc(v.vergiNo||'—'))}
+    ${row('TC No', esc(v.tcNo||'—'))}
     ${row('Risk', v.bakiye?`<span class="${v.risk==='Yüksek'?'text-rose-400':v.risk==='Orta'?'text-amber-300':'text-emer-light'}">${v.risk}</span>`:'—')}
     ${row('Yetkili Kişi', esc(v.yetkili))}
     ${row('Telefon', esc(v.tel))}
@@ -2573,12 +2580,18 @@ function addVendorAccount(){
   const g=id=>document.getElementById(id)||{};
   const ad=(g('vaAd').value||'').trim();
   if(!ad){ toast('Ünvan / ad girin'); return; }
-  const rec={ id:'CRI-'+String(vendorAccounts.length+1).padStart(2,'0'), ad, tipi:g('vaTipi').value||'Satıcı', turu:g('vaTuru').value||'Satıcı',
+  const turu=g('vaTuru').value||'Satıcı';
+  const maxNo=vendorAccounts.reduce((m,v)=>{const n=parseInt((String(v.id).split('-')[1]||'0'),10);return n>m?n:m;},0);
+  const seq=maxNo+1;
+  const icKod=(g('vaIcKod').value||'').trim() || ((cariTurKod[turu]||'CAR')+'-'+String(seq).padStart(4,'0'));
+  const rec={ id:'CRI-'+String(seq).padStart(2,'0'), ad, tipi:g('vaTipi').value||'Satıcı', turu,
+    sirketTuru:g('vaSirketTuru').value||'', vergiNo:(g('vaVergiNo').value||'').trim(), tcNo:(g('vaTcNo').value||'').trim(),
+    resmiKod:(g('vaResmiKod').value||'').trim(), icKod,
     yetkili:(g('vaYetkili').value||'').trim(), tel:(g('vaTel').value||'').trim(), email:(g('vaEmail').value||'').trim(),
     adres:(g('vaAdres').value||'').trim(), risk:g('vaRisk').value||'Düşük', bakiye:parseInt(g('vaBakiye').value||'0',10)||0,
     suspheli:!!g('vaSuspect').checked, not:(g('vaNot').value||'').trim() };
   vendorAccounts.unshift(rec);
-  logAction('user-plus','emer', `Yeni cari kart · ${rec.ad} (${rec.tipi}/${rec.turu})${rec.suspheli?' · ŞÜPHELİ':''}`);
+  logAction('user-plus','emer', `Yeni cari kart · ${rec.ad} (${rec.tipi}/${rec.turu}) · İç kod ${rec.icKod}${rec.suspheli?' · ŞÜPHELİ':''}`);
   state.vendorView=null; render(); toast(`${rec.ad} hesabı açıldı`);
 }
 function vendorFormCard(title,sub){
@@ -2587,15 +2600,21 @@ function vendorFormCard(title,sub){
   return `<div class="card rounded-2xl p-5">
     ${sectionTitle('user-plus',title||'Cari Kart Tanımla',sub||'Yeni cari kart · merkezi cari kartlar veritabanına eklenir')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <select id="vaTipi" class="sm:col-span-3 ${selC}" title="Cari Tipi">${CARI_TIPI.map(t=>`<option>${t}</option>`).join('')}</select>
-      <select id="vaTuru" class="sm:col-span-3 ${selC}" title="Cari Türü">${CARI_TURU.map(t=>`<option ${t==='Satıcı'?'selected':''}>${t}</option>`).join('')}</select>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Cari Kodu (otomatik)</label><input value="${nextCariKod()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Cari Tipi</label><select id="vaTipi" class="w-full ${selC}">${CARI_TIPI.map(t=>`<option>${t}</option>`).join('')}</select></div>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Cari Türü</label><select id="vaTuru" class="w-full ${selC}">${CARI_TURU.map(t=>`<option ${t==='Satıcı'?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Şirket Türü</label><select id="vaSirketTuru" class="w-full ${selC}">${['Şahıs','Limited','A.Ş.','Serbest Meslek','Diğer'].map(t=>`<option>${t}</option>`).join('')}</select></div>
       <input id="vaAd" type="text" placeholder="Ünvan / Firma adı" class="sm:col-span-6 ${inpC}" />
-      <input id="vaYetkili" type="text" placeholder="Yetkili kişi" class="sm:col-span-4 ${inpC}" />
-      <input id="vaTel" type="text" placeholder="Telefon" class="sm:col-span-4 ${inpC}" />
+      <input id="vaYetkili" type="text" placeholder="Yetkili kişi" class="sm:col-span-3 ${inpC}" />
+      <input id="vaTel" type="text" placeholder="Telefon" class="sm:col-span-3 ${inpC}" />
+      <input id="vaVergiNo" type="text" placeholder="Vergi Numarası" class="sm:col-span-3 ${inpC}" />
+      <input id="vaTcNo" type="text" placeholder="TC Kimlik No" class="sm:col-span-3 ${inpC}" />
+      <input id="vaResmiKod" type="text" placeholder="Resmi Muhasebe Kodu (ör. 320.01.001)" class="sm:col-span-3 ${inpC}" />
+      <input id="vaIcKod" type="text" placeholder="İç Muhasebe Cari Kodu" class="sm:col-span-3 ${inpC}" />
       <input id="vaEmail" type="text" placeholder="E-posta" class="sm:col-span-4 ${inpC}" />
-      <input id="vaAdres" type="text" placeholder="Adres" class="sm:col-span-8 ${inpC}" />
-      <select id="vaRisk" class="sm:col-span-2 ${selC}">${RISK_LVL.map(r=>`<option>${r}</option>`).join('')}</select>
-      <input id="vaBakiye" type="number" placeholder="Açılış bakiyesi ₺" class="sm:col-span-2 ${inpC}" />
+      <input id="vaAdres" type="text" placeholder="Adres" class="sm:col-span-5 ${inpC}" />
+      <select id="vaRisk" class="sm:col-span-1 ${selC}">${RISK_LVL.map(r=>`<option>${r}</option>`).join('')}</select>
+      <input id="vaBakiye" type="number" placeholder="Açılış ₺" class="sm:col-span-2 ${inpC}" />
       <textarea id="vaNot" rows="2" placeholder="Not / açıklama…" class="sm:col-span-12 ${inpC} resize-none"></textarea>
     </div>
     <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-200 cursor-pointer"><input type="checkbox" id="vaSuspect" class="accent-gold" />Şüpheli alacak olarak işaretle</label>
@@ -5387,7 +5406,8 @@ function sysTables(){
     { kod:'TBL-0005', ad:'Satıcı / Prim Tablosu',    aciklama:'Satıcı cari hesapları ve prim bakiyeleri',          sayi:(typeof salesReps!=='undefined'?salesReps.length:0), git:"state.adminTable='TBL-0005';render()" },
     { kod:'TBL-0006', ad:'Projeler Tablosu',         aciklama:'İnşaat ve gayrimenkul proje kayıtları',             sayi:(typeof projects!=='undefined'?projects.length:0),   git:"state.adminTable='TBL-0006';render()" },
     { kod:'TBL-0007', ad:'Risk Tablosu',             aciklama:'Hukuki ve operasyonel risk maddeleri',              sayi:(typeof risks!=='undefined'?risks.length:0),         git:"state.adminTable='TBL-0007';render()" },
-    { kod:'TBL-0008', ad:'Kullanıcılar Tablosu',     aciklama:'Sistem kullanıcıları, roller ve yetkiler',          sayi:Object.keys(ROLES).length,                           git:"state.adminUsers=true;render()" }
+    { kod:'TBL-0008', ad:'Kullanıcılar Tablosu',     aciklama:'Sistem kullanıcıları, roller ve yetkiler',          sayi:Object.keys(ROLES).length,                           git:"state.adminUsers=true;render()" },
+    { kod:'TBL-0009', ad:'Cari Tür Kodları Tanımlama', aciklama:'Her cari türü için muhasebe kod öneki (iç kod üretimi)', sayi:Object.keys(cariTurKod).length,                 git:"state.adminTable='TBL-0009';render()" }
   ];
 }
 function viewAdminRecords(){
@@ -5459,6 +5479,13 @@ function viewAdminTable(kod){
   if(kod==='TBL-0005'){ return tbl('Satıcı / Prim Tablosu',[{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Ekip',f:r=>esc(r.ekip)},{h:'Şirket',f:r=>esc(r.firma)},{h:'Satış',r:1,f:r=>money(r.satis)},{h:'Tahsilat',r:1,f:r=>money(r.tahsilat)}],salesReps); }
   if(kod==='TBL-0006'){ return tbl('Projeler Tablosu',[{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Konum',f:r=>esc(r.loc)},{h:'İş Kolu',f:r=>esc(r.isKolu)},{h:'İlerleme',r:1,f:r=>'%'+r.progress}],projects); }
   if(kod==='TBL-0007'){ return tbl('Risk Tablosu',[{h:'Risk',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Kategori',f:r=>esc(r.cat||'—')},{h:'Etki',r:1,f:r=>r.impact},{h:'Olasılık',r:1,f:r=>r.prob},{h:'Sorumlu',f:r=>esc(r.owner||'—')}],risks); }
+  if(kod==='TBL-0009'){ return `${back}<div class="card rounded-2xl p-5">${sectionTitle('hash','Cari Tür Kodları Tanımlama','Her cari türü için muhasebe kod öneki · iç cari kodu bu önekle üretilir')}
+    <div class="space-y-2">${CARI_TURU.map(t=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
+      <span class="min-w-0 flex-1 text-sm text-slate-100">${t}</span>
+      <input value="${esc(cariTurKod[t]||'')}" onchange="cariTurKod['${t}']=this.value.trim().toUpperCase();render()" maxlength="5" class="w-28 font-mono bg-navy-800/70 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-gold outline-none focus:border-gold/50" />
+    </div>`).join('')}</div>
+    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Örn. Taşeron → TSR · yeni cari açılışında iç kod "TSR-0001" biçiminde otomatik üretilir.</p>
+  </div>`; }
   return back+'<div class="card rounded-2xl p-6 text-center text-slate-500">Tablo bulunamadı.</div>';
 }
 function cariFilterLeftHtml(){
