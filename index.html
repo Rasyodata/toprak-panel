@@ -2519,26 +2519,35 @@ const salesReps = [
 ];
 /* ---------- Cari Hesaplar (Satıcılar Hesabı · satıcı/taşeron/müteahhit/danışman) ---------- */
 let vendorAccounts = [
-  { id:'CRI-01', ad:'Öz-Ka İnşaat',          tip:'Taşeron',   yetkili:'Kadir Öz',      tel:'0352 •• •• 11', email:'info@ozka.com',        adres:'Kayseri OSB 12. Cad.',     risk:'Orta',   bakiye:23500000, suspheli:false, not:'' },
-  { id:'CRI-02', ad:'Delta Yapı Malz.',       tip:'Satıcı',    yetkili:'Derya Al',      tel:'0312 •• •• 22', email:'satis@deltayapi.com',  adres:'Ankara Ostim',             risk:'Düşük',  bakiye:14500000, suspheli:false, not:'' },
-  { id:'CRI-03', ad:'Anadolu Konsorsiyum',    tip:'Müteahhit', yetkili:'Mehmet Anadolu',tel:'0216 •• •• 33', email:'proje@anadolu.com',    adres:'İstanbul Ataşehir',        risk:'Yüksek', bakiye:68000000, suspheli:true,  not:'Hakediş ödemelerinde gecikme' },
-  { id:'CRI-04', ad:'Ak Hukuk & Danışmanlık', tip:'Danışman',  yetkili:'Av. Deniz Ak',  tel:'0312 •• •• 45', email:'hukuk@danisman.com',   adres:'Çankaya · Ankara',         risk:'Düşük',  bakiye:1800000,  suspheli:false, not:'' }
+  { id:'CRI-01', ad:'Öz-Ka İnşaat',       tipi:'Satıcı', turu:'Taşeron',   yetkili:'Kadir Öz',       tel:'0352 •• •• 11', email:'info@ozka.com',       adres:'Kayseri OSB 12. Cad.', risk:'Orta',   bakiye:23500000, suspheli:false, not:'' },
+  { id:'CRI-02', ad:'Delta Yapı Malz.',    tipi:'Satıcı', turu:'Satıcı',    yetkili:'Derya Al',       tel:'0312 •• •• 22', email:'satis@deltayapi.com', adres:'Ankara Ostim',        risk:'Düşük',  bakiye:14500000, suspheli:false, not:'' },
+  { id:'CRI-03', ad:'Anadolu Konsorsiyum', tipi:'Satıcı', turu:'Müteahhit', yetkili:'Mehmet Anadolu', tel:'0216 •• •• 33', email:'proje@anadolu.com',   adres:'İstanbul Ataşehir',   risk:'Yüksek', bakiye:68000000, suspheli:true,  not:'Hakediş ödemelerinde gecikme' },
+  { id:'CRI-04', ad:'Koç Mali Müşavirlik', tipi:'Danışman', turu:'Mali Müşavir', yetkili:'S. Koç',    tel:'0312 •• •• 70', email:'info@kocmusavirlik.com', adres:'Ankara Çankaya',   risk:'Düşük',  bakiye:960000,   suspheli:false, not:'' }
 ];
-const VENDOR_TIPS = ['Satıcı','Taşeron','Müteahhit','Danışman','Tedarikçi','Diğer'];
+const CARI_TIPI = ['Satıcı','Müşteri','Danışman','Diğer'];
+const CARI_TURU = ['Avukat','Satıcı','Taşeron','Müteahhit','Mali Müşavir','Tedarikçi','Diğer'];
 const RISK_LVL = ['Düşük','Orta','Yüksek'];
 const riskTone = r => r==='Yüksek'?'red':r==='Orta'?'amber':'emer';
+// Merkezi Cari Kartlar veritabanı: elle açılan hesaplar + Avukat Tanımla'dan gelen avukatlar (personel hariç)
+function getCariKartlar(){
+  const manual = vendorAccounts.map((v,vi)=>Object.assign({},v,{_src:'vendor',_vi:vi}));
+  const avukatlar = lawyers.map(a=>({ id:'AV-'+String(a.name||'').replace(/[^A-Za-zÇĞİÖŞÜçğıöşü0-9]/g,'').slice(0,8), ad:a.name, tipi:'Danışman', turu:'Avukat',
+    yetkili:a.name, tel:a.tel||'', email:a.email||'', adres:a.adres||'', risk:'Düşük', bakiye:0, suspheli:false,
+    not:[a.buro,(a.uzmanlik&&a.uzmanlik.length?a.uzmanlik.join(', '):'')].filter(Boolean).join(' · '), _src:'lawyer' }));
+  return manual.concat(avukatlar);
+}
 function setVendorView(v){ state.vendorView=v; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function toggleVendorSuspect(i){ const v=vendorAccounts[i]; if(!v) return; v.suspheli=!v.suspheli; logAction('alert-triangle', v.suspheli?'amber':'emer', `${v.ad} ${v.suspheli?'şüpheli alacaklara alındı':'şüpheli listesinden çıkarıldı'}`); render(); toast(v.suspheli?'Şüpheli alacaklara eklendi':'Şüpheli listesinden çıkarıldı'); }
 function addVendorAccount(){
   const g=id=>document.getElementById(id)||{};
   const ad=(g('vaAd').value||'').trim();
   if(!ad){ toast('Ünvan / ad girin'); return; }
-  const rec={ id:'CRI-'+String(vendorAccounts.length+1).padStart(2,'0'), ad, tip:g('vaTip').value||'Satıcı',
+  const rec={ id:'CRI-'+String(vendorAccounts.length+1).padStart(2,'0'), ad, tipi:g('vaTipi').value||'Satıcı', turu:g('vaTuru').value||'Satıcı',
     yetkili:(g('vaYetkili').value||'').trim(), tel:(g('vaTel').value||'').trim(), email:(g('vaEmail').value||'').trim(),
     adres:(g('vaAdres').value||'').trim(), risk:g('vaRisk').value||'Düşük', bakiye:parseInt(g('vaBakiye').value||'0',10)||0,
     suspheli:!!g('vaSuspect').checked, not:(g('vaNot').value||'').trim() };
   vendorAccounts.unshift(rec);
-  logAction('user-plus','emer', `Yeni cari hesap · ${rec.ad} (${rec.tip})${rec.suspheli?' · ŞÜPHELİ':''}`);
+  logAction('user-plus','emer', `Yeni cari kart · ${rec.ad} (${rec.tipi}/${rec.turu})${rec.suspheli?' · ŞÜPHELİ':''}`);
   state.vendorView=null; render(); toast(`${rec.ad} hesabı açıldı`);
 }
 function viewVendorForm(){
@@ -2546,10 +2555,11 @@ function viewVendorForm(){
   const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
   return `<button onclick="setVendorView(null)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Cari Hesaplara Dön</button>
   <div class="card rounded-2xl p-5">
-    ${sectionTitle('user-plus','Hesap Aç','Yeni cari hesap · satıcı / taşeron / müteahhit / danışman')}
+    ${sectionTitle('user-plus','Cari Kart Aç','Yeni cari hesap · merkezi cari kartlar veritabanına eklenir')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <select id="vaTip" class="sm:col-span-4 ${selC}">${VENDOR_TIPS.map(t=>`<option>${t}</option>`).join('')}</select>
-      <input id="vaAd" type="text" placeholder="Ünvan / Firma adı" class="sm:col-span-8 ${inpC}" />
+      <select id="vaTipi" class="sm:col-span-3 ${selC}" title="Cari Tipi">${CARI_TIPI.map(t=>`<option>${t}</option>`).join('')}</select>
+      <select id="vaTuru" class="sm:col-span-3 ${selC}" title="Cari Türü">${CARI_TURU.map(t=>`<option ${t==='Satıcı'?'selected':''}>${t}</option>`).join('')}</select>
+      <input id="vaAd" type="text" placeholder="Ünvan / Firma adı" class="sm:col-span-6 ${inpC}" />
       <input id="vaYetkili" type="text" placeholder="Yetkili kişi" class="sm:col-span-4 ${inpC}" />
       <input id="vaTel" type="text" placeholder="Telefon" class="sm:col-span-4 ${inpC}" />
       <input id="vaEmail" type="text" placeholder="E-posta" class="sm:col-span-4 ${inpC}" />
@@ -2565,26 +2575,29 @@ function viewVendorForm(){
     </div>
   </div>`;
 }
-function vendorCardHtml(v,vi){
+function vendorCardHtml(v){
+  const fromLawyer = v._src==='lawyer';
   return `<div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
     <div class="flex items-start justify-between gap-2 flex-wrap">
       <div class="min-w-0">
-        <div class="flex items-center gap-2 flex-wrap"><span class="font-mono text-[11px] text-gold">${v.id}</span>${badge(v.tip,'slate')}${badge('Risk: '+v.risk, riskTone(v.risk))}${v.suspheli?badge('Şüpheli Alacak','red'):''}</div>
+        <div class="flex items-center gap-2 flex-wrap"><span class="font-mono text-[11px] text-gold">${v.id}</span>${badge(v.tipi||'—','gold')}${badge(v.turu||'—','slate')}${v.bakiye?badge('Risk: '+v.risk, riskTone(v.risk)):''}${v.suspheli?badge('Şüpheli Alacak','red'):''}${fromLawyer?badge('Avukat Tanımla','emer'):''}</div>
         <p class="mt-1 text-sm font-semibold text-slate-100">${esc(v.ad)}</p>
         <p class="text-[11px] text-slate-500">${esc(v.yetkili||'—')} · ${esc(v.tel||'—')} · ${esc(v.email||'—')}</p>
         ${v.adres?`<p class="text-[11px] text-slate-500">${esc(v.adres)}</p>`:''}
+        ${v.not?`<p class="text-[11px] text-slate-500 truncate">${esc(v.not)}</p>`:''}
       </div>
-      <div class="text-right shrink-0"><p class="text-[11px] text-slate-500">Bakiye</p><p class="text-sm font-bold ${v.bakiye>0?'text-amber-300':'text-emer-light'}">${money(v.bakiye)}</p></div>
+      <div class="text-right shrink-0"><p class="text-[11px] text-slate-500">Bakiye</p><p class="text-sm font-bold ${v.bakiye>0?'text-amber-300':'text-emer-light'}">${money(v.bakiye||0)}</p></div>
     </div>
-    <div class="mt-3 flex justify-end">
-      <button onclick="toggleVendorSuspect(${vi})" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] border ${v.suspheli?'border-emer/40 text-emer-light hover:bg-emer/10':'border-rose-400/40 text-rose-300 hover:bg-rose-500/10'} transition"><i data-lucide="${v.suspheli?'shield-check':'alert-triangle'}" class="h-3.5 w-3.5"></i>${v.suspheli?'Şüpheliden Çıkar':'Şüpheli Alacağı Çek'}</button>
-    </div>
+    ${fromLawyer ? `<div class="mt-3 flex justify-end"><span class="text-[11px] text-slate-500 inline-flex items-center gap-1"><i data-lucide="scale" class="h-3.5 w-3.5 text-gold"></i>Avukat kaydı · Hukuk modülünden yönetilir</span></div>`
+      : `<div class="mt-3 flex justify-end">
+      <button onclick="toggleVendorSuspect(${v._vi})" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] border ${v.suspheli?'border-emer/40 text-emer-light hover:bg-emer/10':'border-rose-400/40 text-rose-300 hover:bg-rose-500/10'} transition"><i data-lucide="${v.suspheli?'shield-check':'alert-triangle'}" class="h-3.5 w-3.5"></i>${v.suspheli?'Şüpheliden Çıkar':'Şüpheli Alacağı Çek'}</button>
+    </div>`}
   </div>`;
 }
 function viewVendorSuspect(){
-  const list = vendorAccounts.map((v,vi)=>({v,vi})).filter(x=>x.v.suspheli);
-  const tot = list.reduce((a,x)=>a+x.v.bakiye,0);
-  const yuksek = list.filter(x=>x.v.risk==='Yüksek').length;
+  const list = getCariKartlar().filter(v=>v.suspheli);
+  const tot = list.reduce((a,v)=>a+(v.bakiye||0),0);
+  const yuksek = list.filter(v=>v.risk==='Yüksek').length;
   return `<button onclick="setVendorView(null)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Cari Hesaplara Dön</button>
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
     ${kpi('alert-triangle','Şüpheli Hesap', list.length+' Adet','Takipte','true','red')}
@@ -2594,7 +2607,7 @@ function viewVendorSuspect(){
   <div class="card rounded-2xl p-5">
     ${sectionTitle('alert-triangle','Şüpheli Alacaklar / Riskler Hesabı','Şüpheli işaretli cari hesaplar')}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      ${list.length?list.map(x=>vendorCardHtml(x.v,x.vi)).join(''):'<p class="text-sm text-slate-500 py-6 text-center">Şüpheli alacak yok.</p>'}
+      ${list.length?list.map(v=>vendorCardHtml(v)).join(''):'<p class="text-sm text-slate-500 py-6 text-center">Şüpheli alacak yok.</p>'}
     </div>
   </div>`;
 }
@@ -2643,11 +2656,13 @@ function salesAccountHtml(){
     <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Prim yalnızca tahsil edilen tutar üzerinden hak edilir · bakiye sonraki bordroda ödenir.</p>
   </div>
   <div data-sub="saticilar" class="card rounded-2xl p-5 mt-5">
-    ${sectionTitle('users','Cari Hesaplar','Satıcı · taşeron · müteahhit · danışman · '+vendorAccounts.length+' hesap')}
+    ${(()=>{ const kart=getCariKartlar(); return `
+    ${sectionTitle('database','Cari Kartlar','Merkezi cari veritabanı · satıcı/müşteri/danışman/avukat · '+kart.length+' kart')}
+    <div class="flex flex-wrap gap-2 mb-3 text-[11px]">${CARI_TURU.map(t=>{const n=kart.filter(k=>k.turu===t).length; return n?`<span class="px-2 py-1 rounded-lg bg-navy-700/60 border border-white/10 text-slate-300">${t}: <b class="text-gold">${n}</b></span>`:'';}).join('')}</div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      ${vendorAccounts.map((v,vi)=>vendorCardHtml(v,vi)).join('')}
+      ${kart.map(v=>vendorCardHtml(v)).join('')}
     </div>
-    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Yeni hesap için sol bardan "Hesap Aç" · şüpheli işaretlenenler "Şüpheli Alacaklar / Riskler"e düşer.</p>
+    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Yeni kart için sol bardan "Hesap Aç" · Avukat Tanımla'daki avukatlar otomatik buraya gelir · personel hariç tüm cari açılışları burada toplanır.</p>`;})()}
   </div>
   <div data-sub="saticilar" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('bar-chart-3','Satıcı Performansı','Satış hacmi · tahsilat oranı')}
@@ -5307,8 +5322,39 @@ function viewCompany(){
 /* ============================================================
    VIEW: ADMIN (Sistem Yöneticisi — Kullanıcılar & Görüntüle)
    ============================================================ */
+function viewAdminRecords(){
+  const kart=getCariKartlar();
+  return `
+  <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-5">
+    ${kpi('database','Toplam Cari Kart', kart.length+' Kayıt','Merkezi veritabanı','true','gold')}
+    ${kpi('scale','Avukat', kart.filter(k=>k.turu==='Avukat').length+' Kayıt','Otomatik','true','emer')}
+    ${kpi('users','Satıcı / Taşeron / Müteahhit', kart.filter(k=>['Satıcı','Taşeron','Müteahhit'].includes(k.turu)).length+' Kayıt','Tedarik','true','gold')}
+    ${kpi('alert-triangle','Şüpheli', kart.filter(k=>k.suspheli).length+' Kayıt','Riskli','true','red')}
+  </div>
+  <div class="card rounded-2xl p-5">
+    ${sectionTitle('database','Cari Kayıtlar','Kodlu cari kart veritabanı · personel hariç tüm cariler')}
+    <div class="overflow-x-auto"><table class="w-full text-sm min-w-[860px]">
+      <thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>
+        <th class="text-left py-2 font-medium">Kod</th><th class="text-left font-medium">Ünvan</th>
+        <th class="text-left font-medium">Cari Tipi</th><th class="text-left font-medium">Cari Türü</th>
+        <th class="text-left font-medium">Yetkili / İletişim</th><th class="text-right font-medium">Bakiye</th>
+        <th class="text-right font-medium">Durum</th></tr></thead>
+      <tbody>${kart.map(k=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">
+        <td class="py-2.5 font-mono text-[12px] text-gold">${k.id}</td>
+        <td class="text-slate-100 font-medium">${esc(k.ad)}</td>
+        <td class="text-slate-300">${k.tipi||'—'}</td>
+        <td>${badge(k.turu||'—','slate')}</td>
+        <td class="text-slate-400 text-[12px]">${esc(k.yetkili||'—')}${k.tel?' · '+esc(k.tel):''}</td>
+        <td class="text-right ${k.bakiye>0?'text-amber-300':'text-slate-400'}">${money(k.bakiye||0)}</td>
+        <td class="text-right">${k.suspheli?badge('Şüpheli','red'):badge('Aktif','emer')}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Her cari kart benzersiz kodla listelenir (CRI-… elle açılan · AV-… Avukat Tanımla'dan). Yeni kayıt: Finans › Satıcılar Hesabı › Hesap Aç.</p>
+  </div>`;
+}
 function viewAdmin(){
   if(!isAdminUser() && !state.viewAs) return viewUnauthorized({name:'Sistem Yöneticisi'});
+  if(currentSub()==='kayitlar') return viewAdminRecords();
   const card = (k)=>{ const v=ROLES[k]; const mods=MODULES.filter(m=>m.roles.includes(k));
     return `
     <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
@@ -5815,7 +5861,7 @@ function viewContracts(){
       <input id="ceValue" type="number" value="${c.value||0}" placeholder="Değer ₺" class="sm:col-span-4 ${inpC}" />
       <input id="ceParty" value="${esc(c.party||'')}" placeholder="Karşı taraf" class="sm:col-span-5 ${inpC}" />
       <select id="ceRisk" class="sm:col-span-3 ${selC}">${RISK_LVL.map(r=>`<option ${c.risk===r?'selected':''}>${r}</option>`).join('')}</select>
-      <select onchange="fillContractFromVendor('${c.id}',this.value)" class="sm:col-span-4 ${selC}"><option value="">Cari hesaptan çek…</option>${vendorAccounts.map(v=>`<option value="${v.id}">${esc(v.ad)} (${v.tip})</option>`).join('')}</select>
+      <select onchange="fillContractFromVendor('${c.id}',this.value)" class="sm:col-span-4 ${selC}"><option value="">Cari karttan çek…</option>${getCariKartlar().map(v=>`<option value="${v.id}">${esc(v.ad)} (${v.turu})</option>`).join('')}</select>
     </div>
     <p id="ceVendorInfo" class="mt-2 text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="link" class="h-3.5 w-3.5"></i>${c.vendorYetkili?`${esc(c.vendorYetkili)} · ${esc(c.vendorTel||'')} · ${esc(c.vendorEmail||'')}`:'Cari hesap seçilince yetkili/iletişim bilgileri karttan buraya gelir.'}</p>
     <div class="mt-3 flex justify-end gap-2">
@@ -5838,9 +5884,9 @@ function viewContracts(){
 }
 function setContractEdit(id){ state.contractEdit = state.contractEdit===id?null:id; state._ceVendor=null; render(); }
 function fillContractFromVendor(id, vid){
-  const v=vendorAccounts.find(x=>x.id===vid); if(!v) return;
+  const v=getCariKartlar().find(x=>x.id===vid); if(!v) return;
   const p=document.getElementById('ceParty'); if(p) p.value=v.ad;
-  const inf=document.getElementById('ceVendorInfo'); if(inf) inf.textContent = v.tip+' · '+(v.yetkili||'—')+' · '+(v.tel||'—')+' · '+(v.email||'—');
+  const inf=document.getElementById('ceVendorInfo'); if(inf) inf.textContent = (v.turu||v.tipi)+' · '+(v.yetkili||'—')+' · '+(v.tel||'—')+' · '+(v.email||'—');
   state._ceVendor = vid;
 }
 function saveContractEdit(id){
@@ -5849,7 +5895,7 @@ function saveContractEdit(id){
   c.party=(g('ceParty').value||c.party).trim();
   c.value=parseInt(g('ceValue').value||'0',10)||c.value;
   c.risk=g('ceRisk').value||c.risk;
-  const vid=state._ceVendor; if(vid){ const v=vendorAccounts.find(x=>x.id===vid); if(v){ c.vendorId=vid; c.vendorTel=v.tel; c.vendorEmail=v.email; c.vendorYetkili=v.yetkili; } }
+  const vid=state._ceVendor; if(vid){ const v=getCariKartlar().find(x=>x.id===vid); if(v){ c.vendorId=vid; c.vendorTel=v.tel; c.vendorEmail=v.email; c.vendorYetkili=v.yetkili; } }
   state.contractEdit=null; state._ceVendor=null;
   logAction('pencil','gold', `${c.id} sözleşmesi düzenlendi${c.party?' · '+c.party:''}`);
   render(); toast('Sözleşme güncellendi ✓');
@@ -6349,7 +6395,8 @@ const SUBTABS = {
   contracts:     [{id:'insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat'},{id:'ik',label:'İK Sözleşmeleri',icon:'users'},{id:'danismanlik',label:'Danışmanlık',icon:'briefcase'},{id:'tedarik',label:'Tedarik',icon:'truck'},{id:'tumu',label:'Tümü',icon:'list'}],
   company:       [{id:'kunye',label:'Firma Bilgileri',icon:'building-2'},{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
-  hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}]
+  hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}],
+  admin:         [{id:'kullanicilar',label:'Kullanıcılar',icon:'users'},{id:'kayitlar',label:'Kayıtlar',icon:'database'}]
 };
 function isLawyer(){ return !!ROLES[state.role].lawyer; }
 function getSubs(){
