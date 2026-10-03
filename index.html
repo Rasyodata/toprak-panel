@@ -1365,7 +1365,8 @@ function onayKarar(kind,id,action){
 const birimOnaylayan = {
   'Şantiye Şefi':'Mehmet Demir','Satın Alma':'Burak Yıldız','Finans':'Elif Kaya (CFO)','Finans Müdürü':'Elif Kaya',
   'Muhasebe':'Derya Şahin','Hukuk':'Av. Deniz Ak','Patron':'Ahmet Yıldız (CEO)','İlgili Birim':'Birim Sorumlusu',
-  'Emlak':'Serkan Demir','Satış Müdürü':'Okan Arslan','Proje Müdürü':'Ays. Kaya'
+  'Emlak':'Serkan Demir','Satış Müdürü':'Okan Arslan','Proje Müdürü':'Ays. Kaya',
+  'Gerçekleştirme Görevlisi':'Burak Yıldız','Harcama Yetkilisi':'Selin Demir (CFO)','Muhasebe Yetkilisi':'Derya Şahin','Talep Eden Birim':'Birim Sorumlusu'
 };
 const onayZinciriTpl = {
   po:['Şantiye Şefi','Satın Alma','Finans'],
@@ -1379,7 +1380,12 @@ const onayZinciriTpl = {
 let akisState = {};
 function getAkis(kind,id){
   if(!akisState[id]){
-    const tpl=(onayZinciriTpl[kind]||['İlgili Birim','Satın Alma','Finans']).slice();
+    let tplArr=onayZinciriTpl[kind]||['İlgili Birim','Satın Alma','Finans'];
+    // Belgeye özel 3'lü onay zincirleri (id önekine göre)
+    if(kind==='od' && /^ÖEB/.test(id)) tplArr=['Gerçekleştirme Görevlisi','Harcama Yetkilisi','Muhasebe Yetkilisi'];
+    else if(kind==='od' && /^ÖSZ/.test(id)) tplArr=['Talep Eden Birim','Finans','Patron'];
+    else if(kind==='po' && /^SAT/.test(id)) tplArr=['Talep Eden Birim','Satın Alma','Finans'];
+    const tpl=tplArr.slice();
     const o=onayItem(kind,id);
     const st=o?(o.status||o.durum||o.onay||''):'';
     const steps=tpl.map(u=>({unit:u,by:'',status:'pending'}));
