@@ -2323,19 +2323,6 @@ function viewDashboard(){
         </tbody></table></div>
     </div>
 
-    <!-- CANLI nakit hareketleri -->
-    <div data-sub="nakit" class="card rounded-2xl p-5 mt-5">
-      <div class="flex items-center justify-between mb-3">
-        ${sectionTitle('activity','Canlı Nakit Hareketleri','Tüm iştiraklerden anlık giriş/çıkış')}
-        <div class="flex items-center gap-3 text-xs">
-          <span class="text-slate-400">Bugünkü net: <b id="nakitNetBugun" style="color:${nakitNetBugun>=0?'#059669':'#e11d48'}">${(nakitNetBugun>=0?'+':'−')+money(Math.abs(nakitNetBugun))}</b></span>
-          <span class="text-slate-400"><b id="nakitIslemSay" class="text-gold">${nakitAkislari.length}</b> işlem</span>
-          <span class="inline-flex items-center gap-1.5 text-rose-500 font-semibold"><span class="h-2 w-2 rounded-full bg-rose-500 live-dot"></span>CANLI</span>
-        </div>
-      </div>
-      <div id="nakitFeed">${nakitFeedRows()}</div>
-    </div>
-
     <div data-sub="nakit" class="card rounded-2xl p-5 mt-5">
       <div class="flex items-center gap-2.5 mb-4 flex-wrap">
         <span class="h-8 w-8 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center text-gold"><i data-lucide="banknote" class="h-4 w-4"></i></span>
