@@ -653,6 +653,46 @@ function logAction(icon, tone, text, modul){
   catch(e){ time = 'şimdi'; }
   auditLog.unshift({ icon, tone, text, modul: modul||currentModuleName(), who:ROLES[state.role].name+' ('+ROLES[state.role].tag+')', time });
 }
+/* Lansman: mevcut talep/onay/ödeme/fiyat/dava kayıtlarının geçmişini İşlem Logları'na işle */
+let __auditSeeded=false;
+function seedAuditFromData(){
+  if(__auditSeeded) return; __auditSeeded=true;
+  const ekle=[];
+  const P=(icon,tone,modul,text,who)=>ekle.push({icon,tone,modul,text,who});
+  const tEden=id=>(typeof talepEdenOf==='function'?talepEdenOf(id):'Birim')+' ';
+  // Satın Alma talepleri
+  (purchaseRequests||[]).forEach(p=>{
+    P('shopping-cart','gold','Satın Alma',`${p.id} satın alma talebi oluşturuldu · ${p.item}`, tEden(p.id));
+    if(p.status==='approved') P('check-circle-2','emer','İş Onay Akışı',`${p.id} onay zinciri tamamlandı · ONAYLANDI (${money(p.amount)})`, 'Ahmet Yıldız (CEO)');
+    else if(p.status==='patron') P('stamp','gold','İş Onay Akışı',`${p.id} patron onayına yükseltildi`, 'Burak Yıldız (Satın Alma)');
+    else if(p.status==='rejected') P('x-circle','red','İş Onay Akışı',`${p.id} reddedildi`, 'Ahmet Yıldız (CEO)');
+  });
+  // Ödeme talepleri
+  (typeof odemeTalepleri!=='undefined'?odemeTalepleri:[]).forEach(o=>{
+    P('banknote','gold','Ödeme',`${o.id} ödeme talebi oluşturuldu · ${o.aciklama} (${money(o.amount)})`, tEden(o.id));
+    if(o.status==='approved') P('check-circle-2','emer','Ödeme',`${o.id} ödeme onaylandı`, 'Elif Kaya (CFO)');
+    else if(o.status==='patron') P('stamp','gold','Ödeme',`${o.id} patron onayında`, 'Elif Kaya (Finans)');
+  });
+  // Fiyat talepleri (RFQ)
+  (typeof fiyatTalepleri!=='undefined'?fiyatTalepleri:[]).forEach(f=>{
+    P('tag','gold','Fiyat',`${f.id} fiyat talebi açıldı · ${f.kalem}`, tEden(f.id));
+    if(f.durum==='Onaylandı') P('check-circle-2','emer','Fiyat',`${f.id} fiyat onaylandı`, 'Burak Yıldız (Satın Alma)');
+    else if(f.durum==='Onaya Hazır') P('clipboard-check','gold','Fiyat',`${f.id} teklifleri değerlendirmeye hazır`, 'Satın Alma Birimi');
+  });
+  // Sözleşmeler (onay sürecindekiler)
+  (contracts||[]).filter(c=>c.status==='pending'||c.status==='patron').forEach(c=>{
+    P('file-signature','gold','Sözleşmeler',`${c.id} sözleşme onaya sunuldu · ${c.title}`, (c.avukat||'Hukuk'));
+    if(c.status==='patron') P('stamp','gold','İş Onay Akışı',`${c.id} patron onayında`, 'Av. Deniz Ak (Hukuk)');
+  });
+  // Dava / Hukuk
+  (lawsuits||[]).slice(0,5).forEach(l=>{
+    P('gavel', l.hal==='Biten'?'emer':'gold','Hukuk',`${l.no} ${l.tur} · ${l.subject}`, (l.avukat||'Hukuk'));
+  });
+  // Zaman damgalari: en yeni ustte olacak sekilde geriye dogru
+  let hh=17, mm=35;
+  ekle.forEach(e=>{ e.time='02.10.2026 '+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0'); mm-=4; if(mm<0){mm+=60; hh--; if(hh<8) hh=17;} });
+  auditLog = [...ekle, ...auditLog];
+}
 
 /* ============================================================
    RENDER CORE
@@ -5991,6 +6031,7 @@ document.addEventListener('keydown',(e)=>{
 /* ---------- BOOT ---------- */
 /* Erişilebilirlik: tüm dekoratif ikonlara aria-hidden ekle (ekran okuyucu atlar) */
 try{ if(window.lucide && lucide.createIcons){ const _ci=lucide.createIcons.bind(lucide); lucide.createIcons=(o={})=>_ci({attrs:{'aria-hidden':'true','focusable':'false'}, ...o}); } }catch(e){}
+try{ seedAuditFromData(); }catch(e){}
 render();
 initCookie();
 /* Canlı güncelleme — tek global timer (İş Zekası piyasası + İstekler paneli, yalnız görünürken) */
