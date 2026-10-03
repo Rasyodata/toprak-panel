@@ -5374,27 +5374,36 @@ function cariGroupedCardsHtml(){
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">${list.filter(k=>k.turu===t).map(cariRecordCard).join('')}</div>
     </div>`).join(''):'<p class="text-sm text-slate-500 py-6 text-center">Bu filtrede cari kayıt yok.</p>'}`;
 }
+function sysTables(){
+  return [
+    { kod:'TBL-0001', ad:'Cari Kartlar Tablosu',    aciklama:'Satıcı / müşteri / danışman / avukat cari kartları', sayi:getCariKartlar().length, git:"(state.sub=state.sub||{},state.sub.profitability='saticilar',setModule('profitability'))" },
+    { kod:'TBL-0002', ad:'Dava & İcra Tablosu',      aciklama:'Hukuk davaları ve icra takip dosyaları',           sayi:lawsuits.length,          git:"(state.sub=state.sub||{},state.sub.legal='dava',setModule('legal'))" },
+    { kod:'TBL-0003', ad:'Avukat Tanıtım Tablosu',   aciklama:'Tanımlı avukatlar, büro ve yetki bilgileri',        sayi:lawyers.length,           git:"(state.sub=state.sub||{},state.sub.legal='avukatlar',setModule('legal'))" },
+    { kod:'TBL-0004', ad:'Sözleşmeler Tablosu',      aciklama:'İnşaat / İK / danışmanlık / tedarik sözleşmeleri',  sayi:contracts.length,         git:"(state.sub=state.sub||{},state.sub.legal='c_tumu',setModule('legal'))" },
+    { kod:'TBL-0005', ad:'Satıcı / Prim Tablosu',    aciklama:'Satıcı cari hesapları ve prim bakiyeleri',          sayi:(typeof salesReps!=='undefined'?salesReps.length:0), git:"(state.sub=state.sub||{},state.sub.profitability='saticilar',setModule('profitability'))" },
+    { kod:'TBL-0006', ad:'Projeler Tablosu',         aciklama:'İnşaat ve gayrimenkul proje kayıtları',             sayi:(typeof projects!=='undefined'?projects.length:0),   git:"setModule('projects')" },
+    { kod:'TBL-0007', ad:'Risk Tablosu',             aciklama:'Hukuki ve operasyonel risk maddeleri',              sayi:(typeof risks!=='undefined'?risks.length:0),         git:"(state.sub=state.sub||{},state.sub.legal='analiz',setModule('legal'))" }
+  ];
+}
 function viewAdminRecords(){
-  const kart=getCariKartlar();
+  const tbl=sysTables();
   return `
   <div class="card rounded-2xl p-5">
-    ${sectionTitle('database','Cari Kartlar', kart.length+' kayıt · kodlu cari tablo')}
-    <div class="overflow-x-auto"><table class="w-full text-sm min-w-[820px]">
+    ${sectionTitle('database','Kayıtlar · Sistem Tabloları', tbl.length+' tablo · kod · düzenle')}
+    <div class="overflow-x-auto"><table class="w-full text-sm min-w-[720px]">
       <thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>
-        <th class="text-left py-2 font-medium">Kod</th><th class="text-left font-medium">Ünvan</th>
-        <th class="text-left font-medium">Cari Tipi</th><th class="text-left font-medium">Cari Türü</th>
-        <th class="text-left font-medium">Yetkili / İletişim</th><th class="text-right font-medium">Bakiye</th>
-        <th class="text-right font-medium">Durum</th></tr></thead>
-      <tbody>${kart.map(k=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">
-        <td class="py-2.5 font-mono text-[12px] text-gold">${k.kayitNo}</td>
-        <td class="text-slate-100 font-medium">${esc(k.ad)}</td>
-        <td class="text-slate-300">${k.tipi||'—'}</td>
-        <td>${badge(k.turu||'—','slate')}</td>
-        <td class="text-slate-400 text-[12px]">${esc(k.yetkili||'—')}${k.tel?' · '+esc(k.tel):''}</td>
-        <td class="text-right ${k.bakiye>0?'text-amber-300':'text-slate-400'}">${money(k.bakiye||0)}</td>
-        <td class="text-right">${k.suspheli?badge('Şüpheli','red'):badge('Aktif','emer')}</td>
+        <th class="text-left py-2 font-medium">Kod</th><th class="text-left font-medium">Tablo Adı</th>
+        <th class="text-left font-medium">Açıklama</th><th class="text-right font-medium">Kayıt</th>
+        <th class="text-right font-medium">Düzenle</th></tr></thead>
+      <tbody>${tbl.map(t=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">
+        <td class="py-2.5 font-mono text-[12px] text-gold">${t.kod}</td>
+        <td class="text-slate-100 font-medium">${t.ad}</td>
+        <td class="text-slate-400 text-[12px]">${t.aciklama}</td>
+        <td class="text-right text-slate-300">${t.sayi}</td>
+        <td class="text-right"><button onclick="${t.git}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 text-slate-200 text-[12px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzenle</button></td>
       </tr>`).join('')}</tbody>
     </table></div>
+    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Her tablo kendi modülünde düzenlenir · "Düzenle" ilgili tabloya gider.</p>
   </div>`;
 }
 function cariFilterLeftHtml(){
