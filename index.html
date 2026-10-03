@@ -6076,9 +6076,21 @@ function leftSpecialSubsHtml(){
       </button>`;
   // Hukuk & Risk · Dava sekmesi → Dava işlemleri sol barda (İcra üst barda kalır)
   if(state.module==='legal' && active==='dava'){
+    const vis = lawsuits.filter(legalCanSee);
+    const types = [
+      {v:'Hukuk Davası', l:'Hukuk', n:vis.filter(l=>l.tur==='Hukuk Davası').length},
+      {v:'Ceza', l:'Ceza', n:vis.filter(l=>l.tur==='Ceza').length},
+      {v:'İş Hukuku', l:'İş Hukuku', n:vis.filter(l=>l.tur==='İş Hukuku').length},
+      {v:'Planlanan', l:'Açılması Planlanan', n:vis.filter(l=>l.onay==='bekliyor').length}
+    ];
+    const dsub = (v,label,n)=>{ const on=state.davaKpi===v; return `
+      <button onclick="setDavaKpi('${v}')" class="w-full flex items-center gap-2 pl-7 pr-3 py-2 rounded-xl text-[13px] transition ${on?'bg-[#8a2a1a]/80 text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
+        <span class="h-1.5 w-1.5 rounded-full shrink-0 ${on?'bg-[#f0a58a]':'bg-slate-500'}"></span><span class="truncate flex-1 text-left">${label}</span><span class="text-[11px] ${on?'text-[#f0a58a]':'text-slate-500'}">${n}</span>
+      </button>`;};
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Dava İşlemleri</div>`
       + lbtn("document.getElementById('davaGirisForm')?.scrollIntoView({behavior:'smooth'})",'folder-plus','Dava Aç',false)
       + lbtn("document.getElementById('davaListesi')?.scrollIntoView({behavior:'smooth'})",'gavel','Davalar',false)
+      + types.map(t=>dsub(t.v,t.l,t.n)).join('')
       + sep;
   }
   // Sözleşmeler alanı → sözleşme türleri sol barda
