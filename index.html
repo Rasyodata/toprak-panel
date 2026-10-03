@@ -940,7 +940,7 @@ function buildNav(){
         <i data-lucide="shield-check" class="h-4 w-4 ${a?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">Sistem Yöneticisi</span></button>`; })() : '');
 
   // SOL BAR — aktif modülün alt-sekmeleri + Patron Ekranı · Duyurular · Erişim + Şirket Seçimi + Sistem Yöneticisi
-  nav.innerHTML = (state.company==='insaat' ? '' : subTabsLeftHtml()) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
+  nav.innerHTML = (state.company!=='all' ? '' : subTabsLeftHtml()) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
     const active = m.id===state.module;
     return `
     <button onclick="setModule('${m.id}')"
@@ -6038,8 +6038,8 @@ function buildSubNav(){
   const bar = document.getElementById('subNav');
   if(!bar) return;
   const subs = getSubs();
-  // İnşaat şirketinde alt-sekmeler üst yatay alt-barda (üst barın hemen altında); diğer şirketlerde sol barda.
-  if(state.company==='insaat' && subs && subs.length>=2){
+  // Tüm şirketlerde alt-sekmeler üst yatay alt-barda (üst barın hemen altında); yalnızca Konsolide'de sol barda.
+  if(state.company!=='all' && subs && subs.length>=2){
     const active = currentSub();
     const modName = (MODULES.find(m=>m.id===state.module)||{}).name || '';
     bar.style.display='';
