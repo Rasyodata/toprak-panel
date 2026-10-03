@@ -3663,7 +3663,30 @@ function legalAreaPanel(key){
   return '';
 }
 const DVA_MGRS = [{id:'ceo',def:'edit'},{id:'cfo',def:'view'},{id:'auditor',def:'none'}];
-const YETKI_LBL = {none:'Görmez', view:'Görür', edit:'Değiştirir'};
+const YETKI_LBL = {none:'Görmez', view:'Görür', add:'Ekler', edit:'Değiştir'};
+const YETKI_OPTS = [{v:'none',l:'Görmez'},{v:'view',l:'Görür'},{v:'add',l:'Ekler'},{v:'edit',l:'Değiştir'}];
+function setAtamaYetki(kind,key,val){ state.atama=state.atama||{}; state.atama[kind]=state.atama[kind]||{}; state.atama[kind][key]=val; render(); }
+function viewAtama(kind){
+  const isAv = kind==='avukat';
+  const title = isAv?'Avukat Atama & Yetkiler':'Personel Atama & Yetkiler';
+  const icon = isAv?'scale':'user';
+  const people = isAv ? lawyers.map(a=>({name:a.name, sub:a.buro||a.title||'Avukat'})) : DVA_PERSONEL.map(p=>{const parts=p.split(' · ');return {name:parts[0],sub:parts[1]||''};});
+  const store = (state.atama&&state.atama[kind])||{};
+  const defPerm = isAv?'edit':'view';
+  const initials = n => (n.match(/\b[\wÇĞİÖŞÜçğıöşü]/g)||[]).slice(0,2).join('').toUpperCase();
+  const sel=(key,cur)=>`<select onchange="setAtamaYetki('${kind}','${esc(key)}',this.value)" class="shrink-0 bg-navy-800/70 border border-white/10 rounded-lg px-2 py-1.5 text-[13px] text-slate-200 outline-none">${YETKI_OPTS.map(o=>`<option value="${o.v}" ${((cur||defPerm)===o.v)?'selected':''}>${o.l}</option>`).join('')}</select>`;
+  return `<button onclick="state.assignView=null;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Davalara Dön</button>
+  <div class="card rounded-2xl p-5">
+    ${sectionTitle(icon,title,'Görür / Görmez / Ekler / Değiştir yetkisi')}
+    <div class="space-y-2">${people.map(p=>`
+      <div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
+        <span class="h-8 w-8 rounded-full bg-gold/15 text-gold text-[11px] font-bold flex items-center justify-center shrink-0">${initials(p.name)}</span>
+        <span class="min-w-0 flex-1"><span class="block text-sm text-slate-100 truncate">${esc(p.name)}</span><span class="block text-[11px] text-slate-500 truncate">${esc(p.sub)}</span></span>
+        ${sel(p.name, store[p.name])}
+      </div>`).join('')}</div>
+    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Yetkiler dava dosyaları için geçerlidir · değişiklikler otomatik kaydedilir.</p>
+  </div>`;
+}
 const DVA_PERSONEL = ['Mehmet Demir · Şantiye Şefi','Burak Yıldız · Satın Alma','Elif Kaya · Mali İşler','Ayşe Kaya · Proje Müdürü','Serkan Demir · Emlak','Okan Arslan · Satış Müdürü','Nilgün Er · Denetim'];
 function davaFormInner(){
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
@@ -3687,11 +3710,7 @@ function davaFormInner(){
         <div class="flex items-center gap-3 rounded-lg border border-white/10 bg-navy-700/50 px-3 py-2">
           <span class="h-7 w-7 rounded-full bg-gold/15 text-gold text-[11px] font-bold flex items-center justify-center shrink-0">${r.short||''}</span>
           <span class="min-w-0 flex-1"><span class="block text-sm text-slate-100 truncate">${r.name||m.id}</span><span class="block text-[11px] text-slate-500 truncate">${r.title||''}</span></span>
-          <select id="dvYetki_${m.id}" class="shrink-0 bg-navy-800/70 border border-white/10 rounded-lg px-2 py-1.5 text-[13px] text-slate-200 outline-none">
-            <option value="none" ${m.def==='none'?'selected':''}>Görmez</option>
-            <option value="view" ${m.def==='view'?'selected':''}>Görür</option>
-            <option value="edit" ${m.def==='edit'?'selected':''}>Değiştirir</option>
-          </select>
+          <select id="dvYetki_${m.id}" class="shrink-0 bg-navy-800/70 border border-white/10 rounded-lg px-2 py-1.5 text-[13px] text-slate-200 outline-none">${YETKI_OPTS.map(o=>`<option value="${o.v}" ${m.def===o.v?'selected':''}>${o.l}</option>`).join('')}</select>
         </div>`;}).join('')}</div>
     </div>
     <div class="mt-3 flex items-center justify-between gap-2 flex-wrap">
@@ -3706,6 +3725,8 @@ function viewDavaForm(){
 function viewLegal(){
   // Dava Aç → formu sağdaki içerik alanında ayrı sayfa olarak aç
   if(state.module==='legal' && state.davaNew && (state.role==='ceo'||state.role==='cfo')) return viewDavaForm();
+  // Avukat / Personel Atama → sağdaki içerik alanında yetki yönetim sayfası
+  if(state.module==='legal' && state.assignView) return viewAtama(state.assignView);
   // Sözleşmeler artık Hukuk & Risk içinde — ilgili alt-sekmelerde sözleşme görünümünü göster
   { const _cs=currentSub(); if(_cs && _cs.indexOf('c_')===0) return viewContracts(); }
   // Dava numarasına tıklandıysa ayrıntıyı sağdaki içerik alanında göster
@@ -6091,7 +6112,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.davaNew=false; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.davaNew=false; state.assignView=null; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
@@ -6136,10 +6157,12 @@ function leftSpecialSubsHtml(){
     const hdr = isIcra ? 'İcra İşlemleri' : 'Dava İşlemleri';
     const addLbl = isIcra ? 'İcra Aç' : 'Dava Aç';
     const listId = isIcra ? 'icraListesi' : 'davaListesi';
-    // Dosyalar sağdaki içerik alanında listelenir; sol barda yalnızca "Dosyalar" düğmesi
+    // Dosyalar sağdaki içerik alanında listelenir; atamalar ayrı yetki sayfalarında
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${hdr}</div>`
-      + lbtn("state.davaNew=true;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'folder-plus',addLbl,false)
-      + lbtn("state.caseView=null;state.davaNew=false;render();setTimeout(function(){var e=document.getElementById('"+listId+"');if(e)e.scrollIntoView({behavior:'smooth'})},60)",'folder','Dosyalar',!state.caseView&&!state.davaNew)
+      + lbtn("state.davaNew=true;state.assignView=null;state.caseView=null;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'folder-plus',addLbl,false)
+      + lbtn("state.assignView='avukat';state.davaNew=false;state.caseView=null;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'scale','Avukat Atama',state.assignView==='avukat')
+      + lbtn("state.assignView='personel';state.davaNew=false;state.caseView=null;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'user','Personel Atama',state.assignView==='personel')
+      + lbtn("state.caseView=null;state.davaNew=false;state.assignView=null;render();setTimeout(function(){var e=document.getElementById('"+listId+"');if(e)e.scrollIntoView({behavior:'smooth'})},60)",'folder','Dosyalar',!state.caseView&&!state.davaNew&&!state.assignView)
       + sep;
   }
   // Sözleşmeler alanı → sözleşme türleri sol barda
