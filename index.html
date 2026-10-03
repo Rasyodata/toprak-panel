@@ -3810,7 +3810,7 @@ function viewLegal(){
       </div>
     </div>
 
-    <div data-sub="dava" class="xl:col-span-2 card rounded-2xl p-5">
+    <div id="davaListesi" data-sub="dava" class="xl:col-span-2 card rounded-2xl p-5">
       ${sectionTitle('gavel','Davalar', state.davaKpi?('Filtre: '+state.davaKpi):(ROLES[state.role].lawyer?'Kendi dosyalarınız':'Hukuk · Ceza · İş Hukuku'))}
       <div class="space-y-3">
         ${lawsuits.map((l,li)=>({l,li})).filter(x=>legalCanSee(x.l) && x.l.tur!=='İcra Takibi' && (!state.davaKpi || (state.davaKpi==='Planlanan'?x.l.onay==='bekliyor':x.l.tur===state.davaKpi))).map(({l,li})=>`
@@ -3864,7 +3864,7 @@ function viewLegal(){
     <p class="mt-2 text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Ödeme tarihi & giderler otomatik olarak Mali Yönetim nakit akışına yazılır.</p>
   </div>
 
-  <div data-sub="dava" class="card rounded-2xl p-5 mt-5">
+  <div id="avukatlarBolum" data-sub="dava" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('scale','Avukat Tanımları & Yetkiler', state.role==='ceo'?'Yönetici onayı':'Görüntüleme')}
     <div class="space-y-2">
       ${lawyers.map((a,ai)=>`
@@ -6068,15 +6068,29 @@ function buildSubNav(){
 function leftSpecialSubsHtml(){
   const all = getSubs();
   if(!all) return '';
-  const left = all.filter(s=>s.left);
-  if(!left.length) return '';
   const active = currentSub();
-  return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Sözleşme Türleri</div>`
-    + left.map(s=>`
-      <button onclick="setSub('${s.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${s.id===active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
-        <i data-lucide="${s.icon}" class="h-[18px] w-[18px] ${s.id===active?'text-[#f0a58a]':''}"></i><span class="truncate">${s.label}</span>
-      </button>`).join('')
-    + '<div class="my-2 border-t border-white/5"></div>';
+  const sep = '<div class="my-2 border-t border-white/5"></div>';
+  const lbtn = (onclick,icon,label,on)=>`
+      <button onclick="${onclick}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
+        <i data-lucide="${icon}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${label}</span>
+      </button>`;
+  // Hukuk & Risk · Dava sekmesi → Dava işlemleri sol barda (İcra üst barda kalır)
+  if(state.module==='legal' && active==='dava'){
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Dava İşlemleri</div>`
+      + lbtn("document.getElementById('davaGirisForm')?.scrollIntoView({behavior:'smooth'})",'folder-plus','Dava Aç',false)
+      + lbtn("document.getElementById('davaListesi')?.scrollIntoView({behavior:'smooth'})",'gavel','Dava ve İcralar',false)
+      + lbtn("document.getElementById('avukatlarBolum')?.scrollIntoView({behavior:'smooth'})",'scale','Avukatlar',false)
+      + sep;
+  }
+  // Sözleşmeler alanı → sözleşme türleri sol barda
+  const left = all.filter(s=>s.left);
+  const inContracts = active==='c_tumu' || left.some(s=>s.id===active);
+  if(left.length && inContracts){
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Sözleşme Türleri</div>`
+      + left.map(s=>lbtn(`setSub('${s.id}')`, s.icon, s.label, s.id===active)).join('')
+      + sep;
+  }
+  return '';
 }
 function subTabsLeftHtml(){
   const subs = getSubs();
