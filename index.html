@@ -2283,9 +2283,11 @@ function viewDashboard(){
     const rows = nakitByYear[yil] || nakitByYear[2026];
     const mx = Math.max(...rows.map(r=>Math.max(r[0],r[1])));
     const topIn = rows.reduce((a,r)=>a+r[0],0);
-    // Bütçe Çıkış Kartları tutarları nakit akışa planlı çıkış olarak etki eder (TL → Mn)
-    const planliCikisTL = butceCikisKartlari.reduce((a,r)=>a+((r.tutar||0)*(r.tekrar==='Belirli Tekrar'&&r.kez?r.kez:1)),0);
+    // Bütçe Çıkış + Ödeme Emri + Ödeme Sözü tutarları nakit akışa planlı çıkış olarak etki eder (TL → Mn)
+    const odemeCikisTL = odemeEmriKartlari.reduce((a,r)=>a+(r.net||0),0) + odemeSozuKartlari.reduce((a,r)=>a+(r.tutar||0),0);
+    const planliCikisTL = butceCikisKartlari.reduce((a,r)=>a+((r.tutar||0)*(r.tekrar==='Belirli Tekrar'&&r.kez?r.kez:1)),0) + odemeCikisTL;
     const planliCikis = planliCikisTL/1000000;
+    const planliKalem = butceCikisKartlari.length + odemeEmriKartlari.length + odemeSozuKartlari.length;
     const topOut = rows.reduce((a,r)=>a+r[1],0) + planliCikis;
     nakitSeed();
     // Şirket bazlı konsolide dağılım (ciro ağırlığına göre)
@@ -2299,7 +2301,7 @@ function viewDashboard(){
       ${kpi('arrow-up-from-line','Konsolide Çıkış', mn(topOut),yil+' toplam','true','red')}
       ${kpi('wallet','Konsolide Net', mn(topIn-topOut),'serbest nakit','true', (topIn-topOut)>=0?'emer':'red')}
     </div>
-    ${planliCikis>0?`<div data-sub="nakit" class="mt-2 text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap"><i data-lucide="trending-down" class="h-3.5 w-3.5 text-rose-400"></i>Bütçe Çıkış Kartlarından planlı çıkış dahildir: <b class="text-rose-300">${mn(planliCikis)}</b> · ${butceCikisKartlari.length} kalem${(()=>{const p=state.nakitPeriod||'ay';const d=p==='gun'?planliCikis/30:p==='hafta'?planliCikis/4.3:planliCikis;const l=p==='gun'?'Günlük':p==='hafta'?'Haftalık':'Aylık';return ' · <span class="text-slate-300">'+l+' ort: '+mn(d)+'</span>';})()}</div>`:''}
+    ${planliCikis>0?`<div data-sub="nakit" class="mt-2 text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap"><i data-lucide="trending-down" class="h-3.5 w-3.5 text-rose-400"></i>Bütçe çıkış + ödeme emri/sözü planlı çıkış dahildir: <b class="text-rose-300">${mn(planliCikis)}</b> · ${planliKalem} kalem${(()=>{const p=state.nakitPeriod||'ay';const d=p==='gun'?planliCikis/30:p==='hafta'?planliCikis/4.3:planliCikis;const l=p==='gun'?'Günlük':p==='hafta'?'Haftalık':'Aylık';return ' · <span class="text-slate-300">'+l+' ort: '+mn(d)+'</span>';})()}</div>`:''}
 
     <!-- Şirket bazlı konsolide tablo -->
     <div data-sub="nakit" class="card rounded-2xl p-5 mt-5">
