@@ -567,31 +567,9 @@ const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','
 const mn = (v) => money((v||0) * 1000000); // Nakit değerleri milyon-birimli; tüm panelde tek tip gösterim (Milyar/Milyon)
 
 /* ---------- MUTABLE DEMO DATA (interactive) ---------- */
-let purchaseRequests = [
-  { id:'PO-2041', firm:'Toprak İnşaat', item:'Kule Vinç Kiralama (6 Ay)',          amount:4850000, dept:'Saha Operasyon', urgent:true,  status:'pending' },
-  { id:'PO-2042', firm:'Toprak Gayrimenkul', item:'Trafo & Pano Ekipmanları',           amount:2740000, dept:'Elektrik',       urgent:false, status:'pending' },
-  { id:'PO-2043', firm:'Toprak Turizm',item:'12 Adet Çekici Filo Yenileme',      amount:11200000,dept:'Filo Yönetimi',  urgent:true,  status:'pending' },
-  { id:'PO-2044', firm:'Toprak İnşaat', item:'Hazır Beton Tedarik Sözleşmesi',     amount:3600000, dept:'Satın Alma',     urgent:false, status:'pending' },
-  { id:'PO-2045', firm:'Toprak Grup',item:'Kurumsal ERP Lisans Yenileme',       amount:1950000, dept:'Bilgi İşlem',    urgent:false, status:'pending' }
-];
+let purchaseRequests = [];
 
-let contracts = [
-  // İNŞAAT
-  { id:'SZ-88',  kategori:'İnşaat', alt:'Proje Sözleşmesi',      title:'Konsorsiyum İş Ortaklığı Protokolü', party:'Anadolu Konsorsiyum', value:68000000, risk:'Yüksek', status:'pending',  avukat:'Av. Deniz Ak' },
-  { id:'SZ-91',  kategori:'İnşaat', alt:'Yapı Denetim',          title:'Yapı Denetim Hizmet Sözleşmesi',     party:'Kayseri Yapı Denetim', value:4200000, risk:'Orta',  status:'approved', avukat:'Av. Deniz Ak' },
-  { id:'SZ-92',  kategori:'İnşaat', alt:'Taşeronluk',            title:'Kaba İnşaat Taşeronluk Sözleşmesi',  party:'Öz-Ka İnşaat',        value:23500000, risk:'Orta',   status:'pending',  avukat:'Av. Mert Kaya' },
-  { id:'SZ-93',  kategori:'İnşaat', alt:'Taşeronluk',            title:'Elektrik & Mekanik Taşeronluk',      party:'Volt Elektrik Ltd.',  value:11800000, risk:'Düşük',  status:'patron',   avukat:'Av. Mert Kaya' },
-  { id:'SZ-94',  kategori:'İnşaat', alt:'Taahhüt',               title:'Anahtar Teslim İnşaat Taahhüt Söz.',  party:'Melikgazi Belediyesi',value:54000000, risk:'Yüksek', status:'pending',  avukat:'Av. Deniz Ak' },
-  // İK
-  { id:'SZ-95',  kategori:'İK',     alt:'İş Sözleşmesi',         title:'Belirsiz Süreli Toplu İş Sözleşmesi', party:'Çalışanlar (240)',   value:0,        risk:'Düşük',  status:'approved', avukat:'Av. Deniz Ak' },
-  { id:'SZ-96',  kategori:'İK',     alt:'Gizlilik (NDA)',        title:'Gizlilik & Rekabet Yasağı (NDA)',     party:'Üst Yönetim',         value:0,        risk:'Orta',   status:'pending',  avukat:'Av. Deniz Ak' },
-  // DANIŞMANLIK
-  { id:'SZ-97',  kategori:'Danışmanlık', alt:'Hukuk',            title:'Hukuk Danışmanlığı Çerçeve Söz.',     party:'Ak Hukuk & Danışmanlık', value:1800000, risk:'Düşük', status:'approved', avukat:'Av. Deniz Ak' },
-  { id:'SZ-98',  kategori:'Danışmanlık', alt:'Mali Müşavirlik',  title:'Mali Müşavirlik & Tam Tasdik',        party:'Koç Mali Müşavirlik', value:960000,   risk:'Düşük',  status:'pending',  avukat:'Av. Mert Kaya' },
-  // TEDARİK
-  { id:'SZ-89',  kategori:'Tedarik', alt:'Malzeme',             title:'Uzun Dönem Hazır Beton Tedarik',      party:'Delta Yapı Malz.',    value:14500000, risk:'Orta',   status:'pending',  avukat:'Av. Mert Kaya' },
-  { id:'SZ-90',  kategori:'Tedarik', alt:'Enerji',              title:'Enerji Alım Garanti Anlaşması',        party:'EPİAŞ / Toptan',      value:92000000, risk:'Düşük',  status:'pending',  avukat:'Av. Deniz Ak' }
-];
+let contracts = [];
 function contractCanSee(c){
   if(ROLES[state.role].kind==='external' && ROLES[state.role].lawyer){ return c.avukat===ROLES[state.role].lawyer; }
   return true;
@@ -599,25 +577,8 @@ function contractCanSee(c){
 
 /* ---------- EMLAK: 24 daireli proje + randevular ---------- */
 const realtyProject = { name:'TOPRAK PARK RESIDENCE', loc:'Kayseri / Kocasinan', total:24 };
-let units = (function(){
-  const arr=[]; const tipler=['2+1','3+1','3+1','4+1'];
-  for(let k=0;k<24;k++){
-    const blok = k<12?'A':'B';
-    const kat = Math.floor((k%12)/3)+1;      // 1..4
-    const daireNo = (k%3)+1;                   // 1..3
-    const tip = tipler[k%4];
-    const m2 = tip==='2+1'?95:tip==='3+1'?135:165;
-    const fiyat = Math.round((m2*42000)/1000)*1000; // ~ m2 bazlı
-    let durum='Müsait';
-    if(k===0||k===5) durum='Satıldı'; else if(k===2||k===9) durum='Rezerve';
-    arr.push({ id:'D-'+blok+''+kat+'0'+daireNo, blok, kat, tip, m2, fiyat, durum, realtor:'Serkan Demir', musteri: durum==='Satıldı'?'—':'' });
-  }
-  return arr;
-})();
-let appointments = [
-  { id:'RND-01', musteri:'Ahmet Çelik', tel:'0535 •• •• 21', unit:'D-A201', tarih:'03.10.2026 14:00', durum:'Onay Bekliyor', realtor:'Serkan Demir' },
-  { id:'RND-02', musteri:'Fatma Kurt',  tel:'0542 •• •• 09', unit:'D-B102', tarih:'04.10.2026 11:30', durum:'Onaylı',       realtor:'Serkan Demir' }
-];
+let units = [];
+let appointments = [];
 function myUnits(){ const me=ROLES[state.role].realtor; return me?units.filter(u=>u.realtor===me):units; }
 function myAppointments(){ const me=ROLES[state.role].realtor; return me?appointments.filter(a=>a.realtor===me):appointments; }
 function unitTone(d){ return d==='Satıldı'?'emer':d==='Rezerve'?'gold':d==='Onayda'?'amber':'slate'; }
@@ -835,7 +796,7 @@ function render(){
         <i data-lucide="eye" class="h-4 w-4 text-emer-light shrink-0"></i>
         <span class="text-slate-200 min-w-0">Dış kullanıcı · <b class="text-emer-light">${ROLES[state.role].title}</b> — salt görünüm erişimi</span>
       </div>` : '';
-    c.innerHTML = `<div class="fade-in">${imp}${ext}${banner}${fn(mod)}</div>`;
+    c.innerHTML = (`<div class="fade-in">${imp}${ext}${banner}${fn(mod)}</div>`).replace(/₺NaN/g,'₺0').replace(/%NaN/g,'%0').replace(/\bNaN\b/g,'0').replace(/\bInfinity\b/g,'0');
   }
   applySub();
   lucide.createIcons();
@@ -1094,9 +1055,9 @@ function viewUnauthorized(mod){
    VIEW: DASHBOARD (Holding Genel & Mali)
    ============================================================ */
 const companies = [
-  { name:'Toprak İnşaat',  ciro:1840000000, net:286000000, margin:15.5, cash:'Pozitif', trend:+8.4, color:'gold' },
-  { name:'Toprak Gayrimenkul',  ciro:2310000000, net:498000000, margin:21.6, cash:'Pozitif', trend:+12.1,color:'emer' },
-  { name:'Toprak Turizm',ciro:960000000,  net:112000000, margin:11.7, cash:'Nötr',    trend:-2.3, color:'red' }
+  { name:'Toprak İnşaat',  ciro:0, net:0, margin:0, cash:'—', trend:0, color:'gold' },
+  { name:'Toprak Gayrimenkul',  ciro:0, net:0, margin:0, cash:'—', trend:0,color:'emer' },
+  { name:'Toprak Turizm',ciro:0,  net:0, margin:0, cash:'—', trend:0, color:'red' }
 ];
 const firmInfo = {
   'Toprak İnşaat': {
@@ -1110,9 +1071,9 @@ const firmInfo = {
 };
 const AYLAR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
 const nakitByYear = {
-  2026: [[380,340],[410,360],[460,390],[420,410],[480,400],[560,430],[600,470],[520,500],[640,520],[700,540],[580,560],[760,590]],
-  2027: [[640,560],[680,600],[720,610],[700,640],[760,650],[820,690],[880,720],[800,760],[920,800],[980,820],[900,860],[1040,900]],
-  2028: [[900,820],[940,860],[1010,880],[980,920],[1060,940],[1140,980],[1220,1010],[1180,1040],[1280,1080],[1360,1120],[1240,1160],[1420,1200]]
+  2026: [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],
+  2027: [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],
+  2028: [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
 };
 function setNakitYil(y){ state.nakitYil = y; render(); }
 /* ---- Canlı nakit hareketleri (Yönetim Paneli · konsolide) ---- */
@@ -1166,18 +1127,8 @@ const agendaEvents = [
    YETKİLER — Onaylar · Ödeme/Satın Alma/Fiyat Talepleri · Loglar
    (yalnızca Toprak Grup · konsolide) — dashboard tarzı
    ============================================================ */
-let odemeTalepleri = [
-  { id:'OD-5012', firm:'Toprak İnşaat',      alacakli:'Öz-Ka İnşaat Ltd.',    aciklama:'Kaba inşaat hakediş #4',   amount:8600000, tarih:'02.10.2026', status:'pending' },
-  { id:'OD-5011', firm:'Toprak Gayrimenkul', alacakli:'Volt Elektrik',        aciklama:'Elektrik tesisat avansı',  amount:2400000, tarih:'01.10.2026', status:'patron'  },
-  { id:'OD-5010', firm:'Toprak Turizm',      alacakli:'Delta Yapı A.Ş.',      aciklama:'Malzeme tedarik ödemesi',  amount:1750000, tarih:'30.09.2026', status:'approved'},
-  { id:'OD-5009', firm:'Toprak İnşaat',      alacakli:'Kayseri Yapı Denetim', aciklama:'Yapı denetim bedeli',      amount:640000,  tarih:'29.09.2026', status:'pending' }
-];
-let fiyatTalepleri = [
-  { id:'FY-3021', firm:'Toprak İnşaat',      kalem:'Hazır Beton C30 · 2.000 m³', teklif:4, tahmini:3200000,  durum:'Toplanıyor' },
-  { id:'FY-3020', firm:'Toprak Gayrimenkul', kalem:'Asansör · 6 durak × 3',      teklif:3, tahmini:5400000,  durum:'Değerlendirme' },
-  { id:'FY-3019', firm:'Toprak İnşaat',      kalem:'İnşaat demiri · 180 ton',    teklif:5, tahmini:7200000,  durum:'Onaya Hazır' },
-  { id:'FY-3018', firm:'Toprak Turizm',      kalem:'Filo lastik · 48 adet',      teklif:2, tahmini:980000,   durum:'Toplanıyor' }
-];
+let odemeTalepleri = [];
+let fiyatTalepleri = [];
 let istekLive = { islenen:35600000 };
 function istekLiveTick(){
   const lv=document.getElementById('lvIslenen');
@@ -2615,36 +2566,18 @@ const unitSales = [
   { project:'Kıyıpark Adana',            total:320, sold:140, reserved:48, revenue:980000000 }
 ];
 /* ---------- Satıcılar (satış temsilcileri) cari hesabı ---------- */
-const salesReps = [
-  { ad:'Serkan Demir',  ekip:'Konut Satış',   firma:'Toprak Gayrimenkul', satis:428000000, tahsilat:362000000, oran:1.2, odenen:3860000 },
-  { ad:'Elif Kaya',     ekip:'Konut Satış',   firma:'Toprak Gayrimenkul', satis:364000000, tahsilat:318000000, oran:1.2, odenen:3200000 },
-  { ad:'Burak Yıldız',  ekip:'Ticari Satış',  firma:'Toprak İnşaat',      satis:512000000, tahsilat:398000000, oran:1.0, odenen:3900000 },
-  { ad:'Derya Şahin',   ekip:'Konut Satış',   firma:'Toprak İnşaat',      satis:296000000, tahsilat:271000000, oran:1.3, odenen:2600000 },
-  { ad:'Okan Arslan',   ekip:'Proje Satış',   firma:'Toprak Turizm',      satis:188000000, tahsilat:142000000, oran:1.5, odenen:1400000 }
-];
+const salesReps = [];
 /* ---------- Cari Hesaplar (Satıcılar Hesabı · satıcı/taşeron/müteahhit/danışman) ---------- */
-let vendorAccounts = [
-  { id:'CRI-01', ad:'Öz-Ka İnşaat',       tipi:'Satıcı', turu:'Taşeron',   yetkili:'Kadir Öz',       tel:'0352 •• •• 11', email:'info@ozka.com',       adres:'Kayseri OSB 12. Cad.', risk:'Orta',   bakiye:23500000, suspheli:false, not:'' },
-  { id:'CRI-02', ad:'Delta Yapı Malz.',    tipi:'Satıcı', turu:'Satıcı',    yetkili:'Derya Al',       tel:'0312 •• •• 22', email:'satis@deltayapi.com', adres:'Ankara Ostim',        risk:'Düşük',  bakiye:14500000, suspheli:false, not:'' },
-  { id:'CRI-03', ad:'Anadolu Konsorsiyum', tipi:'Satıcı', turu:'Müteahhit', yetkili:'Mehmet Anadolu', tel:'0216 •• •• 33', email:'proje@anadolu.com',   adres:'İstanbul Ataşehir',   risk:'Yüksek', bakiye:68000000, suspheli:true,  not:'Hakediş ödemelerinde gecikme' },
-  { id:'CRI-04', ad:'Koç Mali Müşavirlik', tipi:'Danışman', turu:'Mali Müşavir', yetkili:'S. Koç',    tel:'0312 •• •• 70', email:'info@kocmusavirlik.com', adres:'Ankara Çankaya',   risk:'Düşük',  bakiye:960000,   suspheli:false, not:'' }
-];
+let vendorAccounts = [];
 const CARI_TIPI = ['Satıcı','Müşteri','Danışman','Diğer'];
 const CARI_TURU = ['Avukat','Satıcı','Taşeron','Müteahhit','Mali Müşavir','Tedarikçi','Diğer'];
 let cariTurKod = { 'Avukat':'AVK','Satıcı':'STC','Taşeron':'TSR','Müteahhit':'MTH','Mali Müşavir':'MLM','Tedarikçi':'TDR','Diğer':'DGR' };
 function nextCariKod(){ const max=vendorAccounts.reduce((m,v)=>{const n=parseInt((String(v.id).split('-')[1]||'0'),10);return n>m?n:m;},0); return 'CARI-'+String(max+1).padStart(4,'0'); }
-let satinAlmaTalepKartlari = [
-  { no:'SAT-2026-0001', adSoyad:'Burak Yıldız', departman:'Satın Alma', tarih:'28.09.2026', iletisim:'Dahili 3019', urun:'Hazır Beton C30', teknik:'C30/37 · pompalı teslim', miktar:120, birim:'m²', gerekce:'Melikgazi şantiyesi temel betonu', teslimTarih:'05.10.2026', teslimat:'Yüreğir Şantiye', masraf:'İNŞ-320', tahmini:3600000, proje:'Melikgazi Kentsel Dönüşüm', tedarikci:'Delta Yapı Malz.', belgeler:'Ön teklif eklendi', depOnay:'Mehmet Demir', finansOnay:'', durum:'Teklif Toplanıyor' }
-];
+let satinAlmaTalepKartlari = [];
 function nextSatNo(){ const max=satinAlmaTalepKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'SAT-2026-'+String(max+1).padStart(4,'0'); }
 const PERSONEL_BOLUM = ['Şirket','Proje','Yap-Sat','Al-Sat','Satın Alma','Finans','İnşaat','İK','Bilgi İşlem','Saha Operasyon','Diğer'];
 const HIZMET_TURU = ['İşçilik','Danışmanlık','Taşıma / Nakliye','Bakım - Onarım','Kiralama','Taşeronluk','Diğer'];
-let personelKartlari = [
-  { no:'PRS-0001', ad:'Mehmet Demir', bolum:'İnşaat',     unvan:'Şantiye Şefi',        tel:'Dahili 3011', email:'mehmet@toprakyatirim.com', sirket:'Toprak İnşaat' },
-  { no:'PRS-0002', ad:'Burak Yıldız', bolum:'Satın Alma', unvan:'Satın Alma Uzmanı',   tel:'Dahili 3019', email:'burak@toprakyatirim.com',  sirket:'Toprak Grup' },
-  { no:'PRS-0003', ad:'Elif Kaya',    bolum:'Finans',     unvan:'Mali İşler',          tel:'Dahili 3002', email:'elif@toprakyatirim.com',   sirket:'Toprak Grup' },
-  { no:'PRS-0004', ad:'Ayşe Kaya',    bolum:'Proje',      unvan:'Proje Müdürü',        tel:'Dahili 3040', email:'ayse@toprakyatirim.com',   sirket:'Toprak Gayrimenkul' }
-];
+let personelKartlari = [];
 function nextPrsNo(){ const max=personelKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[1]||'0'),10);return n>m?n:m;},0); return 'PRS-'+String(max+1).padStart(4,'0'); }
 let odemeEmriKartlari = [];
 function nextOeNo(){ const max=odemeEmriKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'ÖEB-2026-'+String(max+1).padStart(4,'0'); }
@@ -2922,13 +2855,7 @@ function salesAccountHtml(){
     </div>
   </div>`;
 }
-const invoices = [
-  { no:'FT-7781', client:'Marmara Belediyesi', firm:'Toprak İnşaat',  amount:8600000, date:'28.09.2026', status:'Ödendi' },
-  { no:'FT-7780', client:'TeknoPark A.Ş.',      firm:'Toprak Gayrimenkul',  amount:5240000, date:'26.09.2026', status:'Ödendi' },
-  { no:'FT-7779', client:'Doğu Lojistik Ltd.',  firm:'Toprak Turizm',amount:3980000, date:'24.09.2026', status:'Bekliyor' },
-  { no:'FT-7778', client:'Akdeniz Turizm',      firm:'Toprak İnşaat',  amount:3110000, date:'22.09.2026', status:'Ödendi' },
-  { no:'FT-7777', client:'Ege Sanayi Sitesi',   firm:'Toprak Gayrimenkul',  amount:2760000, date:'20.09.2026', status:'Gecikmede' }
-];
+const invoices = [];
 function viewSales(){
   const sf = scopeFirm();
   const invList = sf ? invoices.filter(i=>i.firm===sf) : invoices;
@@ -3224,50 +3151,8 @@ function actPurchase(id,action){
 /* ============================================================
    VIEW: PROJECTS (Proje Yönetimi)
    ============================================================ */
-const projects = [
-  // İNŞAAT TAAHHÜT
-  { name:'Melikgazi Karacaoğlu Kentsel Dönüşüm', loc:'Kayseri / Melikgazi', isKolu:'İnşaat Taahhüt', type:'Kentsel Dönüşüm', progress:78, budget:640000000,  spent:498000000, due:'Q3 2027', status:'Zamanında' },
-  { name:'Sır GYO Talas Kentsel Dönüşüm',        loc:'Kayseri / Talas',     isKolu:'İnşaat Taahhüt', type:'Kentsel Dönüşüm', progress:64, budget:520000000,  spent:332000000, due:'Q4 2027', status:'Zamanında' },
-  { name:'Kıyıpark Adana Yüreğir Belediyesi',    loc:'Adana / Yüreğir',     isKolu:'İnşaat Taahhüt', type:'Kentsel Dönüşüm', progress:55, budget:710000000,  spent:390000000, due:'Q1 2028', status:'Zamanında' },
-  { name:'Melikgazi Osman Kavuncu Kentsel Dönüşüm', loc:'Kayseri / Melikgazi', isKolu:'İnşaat Taahhüt', type:'Kentsel Dönüşüm', progress:33, budget:560000000, spent:185000000, due:'Q3 2028', status:'Temel Aşaması' },
-  { name:'Toprak İnş. Ataşehir Kentsel Dönüşüm', loc:'İstanbul / Ataşehir', isKolu:'İnşaat Taahhüt', type:'Kentsel Dönüşüm', progress:5,  budget:1250000000, spent:62000000,  due:'2029',    status:'Mimari Onay' },
-  // YAP-SAT (konut geliştirme & satış)
-  { name:'AFME Neveser Projesi',                 loc:'Kayseri',             isKolu:'Yap-Sat', type:'Konut',           progress:48, budget:430000000,  spent:206000000, due:'Q2 2028', status:'Zamanında' },
-  { name:'TKN Flats',                            loc:'Kayseri',             isKolu:'Yap-Sat', type:'Konut',           progress:71, budget:380000000,  spent:270000000, due:'Q4 2027', status:'Zamanında' },
-  { name:'Toprak Park Residence',                loc:'Kayseri / Kocasinan', isKolu:'Yap-Sat', type:'Konut',           progress:40, budget:880000000,  spent:352000000, due:'Q3 2028', status:'Zamanında' },
-  // PROJE (mimari / tasarım)
-  { name:'Qatar Aspire Ataşehir',                loc:'İstanbul / Ataşehir', isKolu:'Proje', type:'Ticari',  hal:'Devam Eden', yil:2027, tarih:'12.01.2027', konu:'Karma kullanımlı kule · mimari & statik proje', mimar:'Y.Mimar Elif Şahin', ekip:['İç Mimar Can Ok','Statik Müh. Barış Ün'], musteri:'Qatar Aspire Zone', sozlesme:'SZ-PR-11 · Proje Hizmet Sözleşmesi', asamalar:[['Avan Proje','Tamamlandı'],['Uygulama Projesi','Devam Eden'],['Ruhsat','Bekliyor']], progress:22, budget:980000000,  spent:216000000, due:'Q1 2029', status:'Temel Aşaması' },
-  { name:'Hitit Üniversitesi Master Plan',       loc:'Çorum',               isKolu:'Proje', type:'Kamu',    hal:'Devam Eden', yil:2026, tarih:'03.06.2026', konu:'Kampüs master plan & peyzaj tasarımı', mimar:'Prof. Dr. Ahmet Gür', ekip:['Şehir Plancısı Deniz Ak','Peyzaj Mim. Su Yıldız'], musteri:'Hitit Üniversitesi', sozlesme:'SZ-PR-08 · Kamu İhale Sözleşmesi', asamalar:[['Analiz & Etüt','Tamamlandı'],['Master Plan','Devam Eden'],['Uygulama','Bekliyor']], progress:60, budget:120000000,  spent:72000000,  due:'Q4 2027', status:'Zamanında' },
-  { name:'Medi Mall+ Mimari Tasarım',            loc:'Kayseri / Merkez',    isKolu:'Proje', type:'Ticari',  hal:'Biten',      yil:2026, tarih:'20.02.2026', konu:'AVM mimari konsept & uygulama projesi', mimar:'Y.Mimar Selin Toprak', ekip:['İç Mimar Ece Kaya'], musteri:'Toprak Gayrimenkul', sozlesme:'SZ-PR-05 · Tasarım Sözleşmesi', asamalar:[['Konsept','Tamamlandı'],['Uygulama Projesi','Tamamlandı'],['Teslim','Tamamlandı']], progress:100, budget:90000000,   spent:88000000,  due:'Teslim Edildi', status:'Tamamlandı' },
-  // YAPI DENETİM
-  { name:'Stroton 1. OSB Yapı Denetim',          loc:'Kayseri / OSB',       isKolu:'Yapı Denetim', type:'Sanayi',   progress:45, budget:28000000,   spent:12000000,  due:'Q4 2028', status:'Zamanında' },
-  { name:'Park Royal Göksu Yapı Denetim',        loc:'Kayseri / Göksu',     isKolu:'Yapı Denetim', type:'Konut',    progress:68, budget:34000000,   spent:23000000,  due:'Q3 2027', status:'Zamanında' }
-];
-let katProjeler = [
-  { id:'KK-01', ad:'Sahabiye Kat Karşılığı', loc:'Kayseri / Kocasinan', arsaSahibi:'Yılmaz Ailesi', arsaSoz:'arsa_sozlesmesi_01.pdf',
-    hedefKar:290000000, yapimYili:'2026-2028', hedefMaliyet:640000000, hedefGelir:930000000,
-    tapu:{ ada:'1245', parsel:'17', alan:'2.850 m²', no:'KYS-2026/4412', malik:'Yılmaz Ailesi', belge:'tapu_sahabiye.pdf' }, katIrtifaki:'Tesis Edildi', satisAktarildi:false,
-    paylasim:[['Toprak İnşaat',55],['Arsa Sahibi',45]], toplamDaire:48, mustahkak:22, satildi:14, rezerve:6,
-    emlakci:'Serkan Demir', satisci:'', hukukcu:'Av. Deniz Ak',
-    hissedarlar:[
-      { ad:'Toprak İnşaat A.Ş.', pay:'%55 · 26 daire', tip:'Yüklenici', tel:'0352 •• •• 00', email:'info@toprakyatirim.com', notlar:['Paylaşım oranı mutabakatı sağlandı (12.01.2026)'], belgeler:['İnşaat sözleşmesi.pdf','İmza sirküleri.pdf'] },
-      { ad:'Hasan Yılmaz (Arsa Sahibi)', pay:'%25 · 12 daire', tip:'Arsa Sahibi', tel:'0532 •• •• 41', email:'hasan.yilmaz@mail.com', notlar:['Kat irtifakı için vekalet verildi','3. kat daireleri talep ediyor'], belgeler:['Vekaletname_hyilmaz.pdf','Tapu fotokopisi.pdf'] },
-      { ad:'Ayşe Yılmaz (Arsa Sahibi)', pay:'%20 · 10 daire', tip:'Arsa Sahibi', tel:'0533 •• •• 77', email:'ayse.yilmaz@mail.com', notlar:['Teslim takvimi hakkında bilgilendirildi'], belgeler:['Vekaletname_ayilmaz.pdf'] }
-    ],
-    sozlesmeler:[['Arsa Payı Karşılığı İnşaat Söz.','İmzalandı'],['Vekaletname (H. Yılmaz)','Tamam'],['Vekaletname (A. Yılmaz)','Tamam'],['Kat İrtifakı','Tescil Bekliyor']],
-    ruhsat:[['Zemin Etüt','Tamamlandı'],['İmar Durumu','Tamamlandı'],['Yapı Ruhsatı','Alındı'],['Yapı Kullanma İzni','Bekliyor']] },
-  { id:'KK-02', ad:'Talas Bağları Kat Karşılığı', loc:'Kayseri / Talas', arsaSahibi:'Demir & Ortakları', arsaSoz:'',
-    hedefKar:180000000, yapimYili:'2027-2029', hedefMaliyet:480000000, hedefGelir:660000000,
-    tapu:{ ada:'3380', parsel:'5', alan:'1.920 m²', no:'KYS-2026/5518', malik:'Demir & Ortakları', belge:'' }, katIrtifaki:'Bekliyor', satisAktarildi:false,
-    paylasim:[['Toprak İnşaat',50],['Arsa Sahibi',50]], toplamDaire:36, mustahkak:18, satildi:0, rezerve:4,
-    emlakci:'', satisci:'', hukukcu:'',
-    hissedarlar:[
-      { ad:'Toprak İnşaat A.Ş.', pay:'%50 · 18 daire', tip:'Yüklenici', tel:'0352 •• •• 00', email:'info@toprakyatirim.com', notlar:['Ön protokol imzalandı'], belgeler:['Ön protokol.pdf'] },
-      { ad:'Demir & Ortakları', pay:'%50 · 18 daire', tip:'Arsa Sahibi', tel:'0541 •• •• 23', email:'demir@ortaklar.com', notlar:['Paylaşım oranı görüşülüyor','Vekalet bekleniyor'], belgeler:[] }
-    ],
-    sozlesmeler:[['Arsa Payı Karşılığı İnşaat Söz.','Taslak'],['Vekaletname','Bekliyor']],
-    ruhsat:[['Zemin Etüt','Devam Eden'],['İmar Durumu','Bekliyor'],['Yapı Ruhsatı','Bekliyor']] }
-];
+const projects = [];
+let katProjeler = [];
 function openKatPage(id){ state.katView=id; state.hisseView=null; render(); }
 function gotoProjeSema(name){
   const n=(name||'').toLocaleLowerCase('tr-TR');
@@ -3897,30 +3782,10 @@ const segmentProfit = [
 /* ============================================================
    VIEW: LEGAL & RISK (Hukuk & Risk)
    ============================================================ */
-const risks = [
-  { name:'Döviz Kur Riski',     cat:'Finansal',    impact:3, prob:3, owner:'CFO · Hazine',      action:'Forward sözleşmeleri & doğal hedge',        status:'Uygulamada' },
-  { name:'İş Kazası / İSG',     cat:'Operasyonel', impact:3, prob:2, owner:'Saha / İSG Uzmanı', action:'İSG eğitimleri & saha denetimleri',          status:'Sürekli' },
-  { name:'Vergi İncelemesi',    cat:'Hukuki',      impact:2, prob:2, owner:'Mali Müşavir',      action:'Tam tasdik & belge arşivi güncelleme',       status:'Planlı' },
-  { name:'Tedarik Gecikmesi',   cat:'Operasyonel', impact:2, prob:3, owner:'Satın Alma',        action:'Alternatif tedarikçi havuzu & stok tamponu', status:'Uygulamada' },
-  { name:'Sözleşme İhtilafı',   cat:'Hukuki',      impact:3, prob:1, owner:'Hukuk Müşaviri',    action:'Standart sözleşme şablonları & tahkim şartı',status:'Tamamlandı' },
-  { name:'Likidite Riski',      cat:'Finansal',    impact:2, prob:1, owner:'CFO',               action:'Rotatif kredi limiti & nakit rezervi',       status:'İzlemede' }
-];
+const risks = [];
 /* ---------- AVUKATLAR (tanım + yönetici onayı) ---------- */
-let lawyers = [
-  { name:'Av. Deniz Ak',    email:'hukuk@danisman.com',  approved:true },
-  { name:'Av. Mert Kaya',   email:'mert@hukukburosu.com', approved:true },
-  { name:'Av. Selda Tuna',  email:'selda@hukukburosu.com',approved:false }
-];
-let lawsuits = [
-  { no:'DVA-312', tur:'Hukuk Davası', hal:'Devam Eden', subject:'İstimlak Bedeli İhtilafı', side:'Lehine',  value:24000000, win:78, avukat:'Av. Deniz Ak',  gider:180000, poa:'vekaletname_312.pdf', viewers:['ceo','cfo'], onay:'onaylı',   payments:[{date:'15.11.2026', amount:180000, desc:'Bilirkişi & harç'}] },
-  { no:'DVA-309', tur:'Hukuk Davası', hal:'Devam Eden', subject:'Alacak Davası (Tedarikçi)', side:'Lehine',  value:8600000,  win:65, avukat:'Av. Mert Kaya',  gider:90000,  poa:'vekaletname_309.pdf', viewers:['ceo','cfo'], onay:'onaylı',   payments:[{date:'01.12.2026', amount:90000,  desc:'Dava masrafı'}] },
-  { no:'DVA-305', tur:'İş Hukuku', hal:'Biten', subject:'İş Hukuku Tazminat',        side:'Aleyhine',value:3200000,  win:40, avukat:'Av. Deniz Ak',  gider:60000,  poa:'',                    viewers:['ceo','cfo'], onay:'onaylı',   payments:[{date:'20.10.2026', amount:60000,  desc:'Vekalet ücreti'}] },
-  { no:'DVA-298', tur:'Ceza', hal:'Devam Eden', subject:'Çevre Mevzuatı Cezası',      side:'Aleyhine',value:5400000,  win:35, avukat:'Av. Selda Tuna', gider:40000,  poa:'',                    viewers:['ceo','cfo'], onay:'bekliyor', payments:[{date:'05.11.2026', amount:40000,  desc:'İtiraz başvuru'}] },
-  { no:'HKK-401', tur:'Hukuk Davası', hal:'Devam Eden', subject:'Ticari Alacak Davası (Yüklenici)', side:'Lehine', value:14200000, win:72, avukat:'Av. Deniz Ak', gider:120000, poa:'vekaletname_401.pdf', docs:['Dava dilekçesi.pdf','Sözleşme sureti.pdf','Fatura ekleri.pdf'], viewers:['ceo','cfo'], onay:'onaylı', payments:[{date:'10.11.2026', amount:70000, desc:'Harç & başvuru'},{date:'15.12.2026', amount:50000, desc:'Bilirkişi avansı'}] },
-  { no:'ICR-502', tur:'İcra Takibi', hal:'Devam Eden', subject:'İcra Takibi · Kira Alacağı', side:'Lehine', value:3800000, win:81, avukat:'Av. Mert Kaya', gider:65000, poa:'vekaletname_502.pdf', docs:['İcra takip talebi.pdf','Ödeme emri.pdf','Kira sözleşmesi.pdf'], viewers:['ceo','cfo'], onay:'onaylı', payments:[{date:'08.11.2026', amount:35000, desc:'İcra harcı'},{date:'20.11.2026', amount:30000, desc:'Tahsilat masrafı'}] },
-  { no:'ICR-505', tur:'İcra Takibi', hal:'Biten', subject:'İcra Takibi · Cari Hesap', side:'Lehine', value:2100000, win:90, avukat:'Av. Mert Kaya', gider:28000, poa:'', docs:['Takip talebi.pdf'], viewers:['ceo','cfo'], onay:'onaylı', payments:[{date:'02.10.2026', amount:28000, desc:'İcra harcı'}] },
-  { no:'HKK-403', tur:'Hukuk Davası', hal:'Devam Eden', subject:'Tapu İptal ve Tescil Davası', side:'Lehine', value:9600000, win:68, avukat:'Av. Mert Kaya', gider:95000, poa:'vekaletname_403.pdf', docs:['Dava dilekçesi.pdf','Tapu kaydı.pdf','Keşif raporu.pdf'], viewers:['ceo','cfo'], onay:'onaylı', payments:[{date:'12.11.2026', amount:55000, desc:'Harç & keşif'},{date:'05.12.2026', amount:40000, desc:'Bilirkişi'}] }
-];
+let lawyers = [];
+let lawsuits = [];
 function legalCanSee(l){
   if(ROLES[state.role].kind==='external' && ROLES[state.role].lawyer){ return l.avukat===ROLES[state.role].lawyer && l.onay==='onaylı'; }
   return true; // iç yöneticiler tümünü görür
@@ -3936,25 +3801,14 @@ function cellColor(score){ // 1..9
   return 'bg-emer/25 border-emer/30';
 }
 /* ---------- KURUMSAL YÖNETİM verileri ---------- */
-const govAssemblies = [
-  { type:'Olağan Genel Kurul', year:'2025', date:'28.03.2026', quorum:92, status:'Tamamlandı' },
-  { type:'Olağanüstü Genel Kurul', year:'Sermaye Artırımı', date:'14.10.2026', quorum:0, status:'Planlandı' }
-];
-const govBoard = [
-  { no:'YK-2026/15', topic:'2026 bütçe revizyonu onayı',            date:'22.09.2026', result:'Oybirliği', status:'Karara Bağlandı' },
-  { no:'YK-2026/14', topic:'Toprak Gayrimenkul sermaye artırımı',     date:'18.09.2026', result:'Oybirliği', status:'Karara Bağlandı' },
-  { no:'YK-2026/16', topic:'İç denetim yıllık plan onayı',          date:'05.10.2026', result:'—',        status:'Gündemde' }
-];
+const govAssemblies = [];
+const govBoard = [];
 const govAmendments = [
   { article:'Madde 6 — Sermaye', change:'Kayıtlı sermaye tavanı ₺2 Milyar', stage:'Ticaret Sicili Tescili', pct:80, tone:'emer' },
   { article:'Madde 11 — Yönetim Kurulu', change:'Üye sayısı 5→7', stage:'Genel Kurul Onayı Bekliyor', pct:45, tone:'amber' },
   { article:'Madde 18 — Temsil & İlzam', change:'İmza yetki grupları güncellemesi', stage:'Taslak Hazırlık', pct:20, tone:'gold' }
 ];
-const govCommittees = [
-  { name:'Denetim Komitesi', members:3, head:'Bağımsız Üye', freq:'3 ayda 1', last:'12.09.2026' },
-  { name:'Kurumsal Yönetim Komitesi', members:3, head:'YK Başkan Vk.', freq:'6 ayda 1', last:'20.07.2026' },
-  { name:'Riskin Erken Saptanması', members:4, head:'CFO', freq:'3 ayda 1', last:'01.10.2026' }
-];
+const govCommittees = [];
 const govAuthority = [
   { group:'(A) Grubu — Patron/CEO', scope:'Sınırsız temsil & ilzam', color:'gold' },
   { group:'(B) Grubu — CFO + 1 Müdür', scope:'₺10M’e kadar çift imza', color:'emer' },
@@ -4661,24 +4515,9 @@ function actContract(id,action){
 /* ============================================================
    VIEW: PARTNERSHIP (Ortaklık Yönetimi)
    ============================================================ */
-const shareStructure = [
-  { firm:'Toprak İnşaat',  holding:55, partners:[['Anadolu Konsorsiyum',45]] },
-  { firm:'Toprak Gayrimenkul',  holding:70, partners:[['Nordic Energy (Yabancı)',30]] },
-  { firm:'Toprak Turizm',holding:100,partners:[] }
-];
-const dividends = [
-  { firm:'Toprak Gayrimenkul',  period:'2025 FY', total:149400000, holdingShare:104580000, status:'Dağıtıldı' },
-  { firm:'Toprak İnşaat',  period:'2025 FY', total:85800000,  holdingShare:47190000,  status:'Onaylandı' },
-  { firm:'Toprak Turizm',period:'2025 FY', total:33600000,  holdingShare:33600000,  status:'Planlandı' }
-];
-const boardDecisions = [
-  { no:'OK-2026/14', title:'Toprak Gayrimenkul sermaye artırımı (₺250M)', date:'18.09.2026', kind:'Olağanüstü', favor:100, abstain:0, against:0, signed:true,  registry:'Tescil Edildi',   status:'Tamamlandı',   impl:100 },
-  { no:'OK-2026/13', title:'Nordic Energy ortaklık payı revizyonu (%30→%25)', date:'02.09.2026', kind:'Olağanüstü', favor:72, abstain:8, against:20, signed:false, registry:'Beklemede',       status:'İmza Sürecinde', impl:60 },
-  { no:'OK-2026/12', title:'2025 temettü dağıtım kararı (₺268,8M)', date:'21.08.2026', kind:'Olağan',     favor:100, abstain:0, against:0, signed:true,  registry:'Gerekmez',       status:'Tamamlandı',   impl:100 },
-  { no:'OK-2026/11', title:'Yeni iştirak kuruluşu (Toprak Teknoloji A.Ş.)', date:'05.08.2026', kind:'Olağanüstü', favor:85, abstain:15, against:0, signed:false, registry:'Beklemede',   status:'Onay Bekliyor', impl:35 },
-  { no:'OK-2026/10', title:'Bağımsız denetim firması seçimi', date:'19.07.2026', kind:'Olağan',     favor:100, abstain:0, against:0, signed:true,  registry:'Gerekmez',       status:'Tamamlandı',   impl:100 },
-  { no:'OK-2026/09', title:'Yönetim kurulu üye sayısı değişikliği (5→7)', date:'28.06.2026', kind:'Olağanüstü', favor:64, abstain:0, against:36, signed:false, registry:'Beklemede',   status:'Uygulamada',   impl:45 }
-];
+const shareStructure = [];
+const dividends = [];
+const boardDecisions = [];
 function viewPartnership(){
   const sf = scopeFirm();
   const shList = sf ? shareStructure.filter(s=>s.firm===sf) : shareStructure;
@@ -5177,16 +5016,8 @@ const budgetVsActual = [
 /* ============================================================
    VIEW: HR (İK Yönetimi)
    ============================================================ */
-const salaryBands = [
-  { band:'20-35B', count:1980 }, { band:'35-50B', count:1240 }, { band:'50-75B', count:620 },
-  { band:'75-120B', count:310 }, { band:'120B+', count:130 }
-];
-const hrByCompany = [
-  { firm:'Toprak İnşaat',  count:1860, blue:1420, white:440 },
-  { firm:'Toprak Gayrimenkul',  count:1240, blue:720,  white:520 },
-  { firm:'Toprak Turizm',count:980,  blue:810,  white:170 },
-  { firm:'Toprak Grup', count:200,  blue:20,   white:180 }
-];
+const salaryBands = [];
+const hrByCompany = [];
 const hrDepartments = [ ['Saha / Üretim',52,'gold'],['Operasyon & Lojistik',21,'emer'],['Mühendislik',12,'emer'],['İdari & Finans',9,'gold'],['Satış & Pazarlama',6,'amber'] ];
 const openPositions = [
   { title:'Şantiye Şefi',          firm:'Toprak İnşaat',  level:'Yönetici', cand:14, urgent:true },
@@ -5788,7 +5619,7 @@ function butceCikisFormCard(title,sub,v){
     ${sectionTitle('trending-down',edit?('Bütçe Çıkışı Düzelt · '+v.no):(title||'Tahminlenen Bütçe Çıkış Kartı'),sub||'Belge No otomatik · TBÇ-2026-XXXX · öngörülen harcama')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
       <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Belge No</label><input value="${v?esc(v.no):nextTbcNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
-      <input id="bcTarih" value="${val('tarih')}" placeholder="Tarih (gg.aa.yyyy)" class="sm:col-span-3 ${inpC}" />
+      <input id="bcTarih" type="date" value="${v&&v.tarih?esc(v.tarih):(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}" />
       <select id="bcCikisTipi" class="sm:col-span-3 ${selC}" title="Çıkış Tipi">${CIKIS_TIPI.map(o=>opt(o,v&&v.cikisTipi)).join('')}</select>
       <select id="bcCikisTuru" class="sm:col-span-3 ${selC}" title="Çıkış Türü">${GIDER_TURU.map(o=>opt(o,v&&v.cikisTuru)).join('')}</select>
       <input id="bcKalem" value="${val('kalem')}" placeholder="Harcama Kalemi / Açıklama" class="sm:col-span-6 ${inpC}" />
