@@ -3595,6 +3595,8 @@ const govAuthority = [
 
 function setLegalArea(k){ state.legalArea = (state.legalArea===k?null:k); render(); }
 function setDavaKpi(v){ state.davaKpi = state.davaKpi===v?null:v; render(); }
+function setIcraKpi(v){ state.icraKpi = state.icraKpi===v?null:v; render(); }
+function icraKpiMatch(l){ const v=state.icraKpi; if(!v) return true; if(v==='Devam Eden') return (l.hal||'Devam Eden')==='Devam Eden'; if(v==='Biten') return l.hal==='Biten'; if(v==='Lehine') return l.side==='Lehine'; if(v==='Aleyhine') return l.side==='Aleyhine'; return true; }
 function setDavaTur(t){ state.davaTur=t; state.legalArea='dava'; render(); }
 function setDavaHal(h){ state.davaHal=h; state.legalArea='dava'; render(); }
 function legalAreaPanel(key){
@@ -3824,7 +3826,29 @@ function viewLegal(){
       ${dk('Planlanan','calendar-plus','Açılması Planlanan', _vis.filter(l=>l.onay==='bekliyor').length,'Onay bekliyor','emer')}
       ${_acBtn('dava','Dava Aç')}
     </div>${state.davaKpi?`<div class="mt-2"><button onclick="setDavaKpi('${state.davaKpi}')" class="text-[11px] text-slate-400 hover:text-white inline-flex items-center gap-1"><i data-lucide="x" class="h-3.5 w-3.5"></i>Filtre: ${state.davaKpi} · temizle</button></div>`:''}`;
-  } else if(_sub!=='analiz'){ // icra, onleyici, taslak, kvkk → üst bar gereksiz
+  } else if(_sub==='icra'){ // İcra — Dava ile bire bir: KPI kartları + İcra Aç
+    const ic = _vis.filter(l=>l.tur==='İcra Takibi');
+    const dk2=(val,icon,label,count,sub,tone)=>{const act=state.icraKpi===val;return `
+      <button onclick="setIcraKpi('${val}')" class="card ${act?'card-gold':''} rounded-2xl p-5 text-left relative overflow-hidden hover:border-gold/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="h-10 w-10 rounded-xl bg-navy-700/70 border border-white/10 flex items-center justify-center ${tone==='red'?'text-rose-400':tone==='emer'?'text-emer-light':tone==='amber'?'text-amber-300':'text-gold'}"><i data-lucide="${icon}" class="h-5 w-5"></i></span>
+          ${act?'<i data-lucide="check" class="h-4 w-4 text-gold"></i>':''}
+        </div>
+        <p class="mt-3 text-2xl font-bold text-white">${count} <span class="text-sm font-normal text-slate-400">Dosya</span></p>
+        <p class="text-xs text-slate-400 mt-0.5">${label}</p>
+        <p class="text-[11px] text-slate-500">${sub}</p>
+      </button>`;};
+    const acBtnPage = `<button onclick="state.davaNew=true;render()" class="card card-gold rounded-2xl p-5 flex flex-col items-center justify-center gap-2 hover:brightness-110 transition">
+      <span class="h-10 w-10 rounded-xl bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 flex items-center justify-center"><i data-lucide="plus" class="h-5 w-5"></i></span>
+      <span class="text-sm font-semibold text-slate-100">İcra Aç</span></button>`;
+    topRow = `<div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+      ${dk2('Devam Eden','trending-up','Devam Eden', ic.filter(l=>(l.hal||'Devam Eden')==='Devam Eden').length,'Tahsilat süreci','gold')}
+      ${dk2('Biten','check-circle-2','Biten', ic.filter(l=>l.hal==='Biten').length,'Tahsil edildi','emer')}
+      ${dk2('Lehine','thumbs-up','Lehine', ic.filter(l=>l.side==='Lehine').length,'Lehte','emer')}
+      ${dk2('Aleyhine','thumbs-down','Aleyhine', ic.filter(l=>l.side==='Aleyhine').length,'Aleyhte','red')}
+      ${acBtnPage}
+    </div>${state.icraKpi?`<div class="mt-2"><button onclick="setIcraKpi('${state.icraKpi}')" class="text-[11px] text-slate-400 hover:text-white inline-flex items-center gap-1"><i data-lucide="x" class="h-3.5 w-3.5"></i>Filtre: ${state.icraKpi} · temizle</button></div>`:''}`;
+  } else if(_sub!=='analiz'){ // onleyici, taslak, kvkk → üst bar gereksiz
     topRow = '';
   } else { // analiz
     topRow = `<div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -3959,7 +3983,7 @@ function viewLegal(){
   <div id="icraListesi" data-sub="icra" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('receipt-text','İcra Takipleri', ROLES[state.role].lawyer?'Kendi dosyalarınız':'Kira · cari hesap · alacak')}
     <div class="space-y-3">
-      ${lawsuits.map((l,li)=>({l,li})).filter(x=>legalCanSee(x.l) && x.l.tur==='İcra Takibi').map(({l,li})=>`
+      ${lawsuits.map((l,li)=>({l,li})).filter(x=>legalCanSee(x.l) && x.l.tur==='İcra Takibi' && icraKpiMatch(x.l)).map(({l,li})=>`
       <div onclick="openCaseDetail(${li})" class="rounded-xl border border-white/8 bg-navy-700/40 p-3 cursor-pointer hover:border-gold/30 transition flex items-center gap-3">
         <span class="font-mono text-[11px] text-gold shrink-0">${l.no}</span>
         ${badge(l.hal||'Devam Eden',(l.hal==='Biten')?'emer':'slate')}
