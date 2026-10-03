@@ -2530,11 +2530,42 @@ const RISK_LVL = ['Düşük','Orta','Yüksek'];
 const riskTone = r => r==='Yüksek'?'red':r==='Orta'?'amber':'emer';
 // Merkezi Cari Kartlar veritabanı: elle açılan hesaplar + Avukat Tanımla'dan gelen avukatlar (personel hariç)
 function getCariKartlar(){
-  const manual = vendorAccounts.map((v,vi)=>Object.assign({},v,{_src:'vendor',_vi:vi}));
-  const avukatlar = lawyers.map(a=>({ id:'AV-'+String(a.name||'').replace(/[^A-Za-zÇĞİÖŞÜçğıöşü0-9]/g,'').slice(0,8), ad:a.name, tipi:'Danışman', turu:'Avukat',
+  const kno = n => 'CARI-'+String(n).padStart(4,'0');
+  const manual = vendorAccounts.map((v,vi)=>Object.assign({},v,{_src:'vendor',_vi:vi, kayitNo:kno(parseInt((String(v.id).split('-')[1]||'0'),10)||(vi+1))}));
+  let base = manual.reduce((m,v)=>Math.max(m, parseInt(v.kayitNo.split('-')[1],10)||0),0);
+  const avukatlar = lawyers.map((a,ai)=>({ id:'AV-'+String(a.name||'').replace(/[^A-Za-zÇĞİÖŞÜçğıöşü0-9]/g,'').slice(0,8), ad:a.name, tipi:'Danışman', turu:'Avukat',
     yetkili:a.name, tel:a.tel||'', email:a.email||'', adres:a.adres||'', risk:'Düşük', bakiye:0, suspheli:false,
-    not:[a.buro,(a.uzmanlik&&a.uzmanlik.length?a.uzmanlik.join(', '):'')].filter(Boolean).join(' · '), _src:'lawyer' }));
+    not:[a.buro,(a.uzmanlik&&a.uzmanlik.length?a.uzmanlik.join(', '):'')].filter(Boolean).join(' · '), _src:'lawyer', kayitNo:kno(base+ai+1) }));
   return manual.concat(avukatlar);
+}
+function setCariView(id){ state.cariView = id; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
+function viewCariDetail(id){
+  const v = getCariKartlar().find(x=>x.id===id);
+  if(!v) return viewAdminRecords();
+  const row=(lbl,val)=>`<div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">${lbl}</p><p class="text-sm text-slate-100 font-medium">${val||'—'}</p></div>`;
+  return `<button onclick="state.cariView=null;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Kayıtlara Dön</button>
+  <div class="card card-gold rounded-2xl p-5 mb-4">
+    <div class="flex items-start justify-between gap-3 flex-wrap">
+      <div>
+        <div class="flex items-center gap-2 flex-wrap"><span class="font-mono text-sm text-gold">${v.kayitNo}</span>${badge(v.tipi||'—','gold')}${badge(v.turu||'—','slate')}${v.suspheli?badge('Şüpheli Alacak','red'):''}${v._src==='lawyer'?badge('Avukat Tanımla','emer'):''}</div>
+        <h2 class="mt-2 text-xl font-bold text-white">${esc(v.ad)}</h2>
+        <p class="text-[11px] text-slate-500 mt-0.5">Sistem Kodu: ${v.id}</p>
+      </div>
+      <div class="text-right"><p class="text-[11px] text-slate-500">Bakiye</p><p class="text-2xl font-bold ${v.bakiye>0?'text-amber-300':'text-emer-light'}">${money(v.bakiye||0)}</p></div>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    ${row('Cari Tipi', v.tipi)}
+    ${row('Cari Türü', v.turu)}
+    ${row('Risk', v.bakiye?`<span class="${v.risk==='Yüksek'?'text-rose-400':v.risk==='Orta'?'text-amber-300':'text-emer-light'}">${v.risk}</span>`:'—')}
+    ${row('Yetkili Kişi', esc(v.yetkili))}
+    ${row('Telefon', esc(v.tel))}
+    ${row('E-posta', esc(v.email))}
+    ${row('Adres', esc(v.adres))}
+    ${row('Not', esc(v.not))}
+    ${row('Durum', v.suspheli?'<span class="text-rose-400">Şüpheli Alacak</span>':'<span class="text-emer-light">Aktif</span>')}
+  </div>
+  ${v._src==='vendor'?`<div class="mt-4"><button onclick="toggleVendorSuspect(${v._vi})" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border ${v.suspheli?'border-emer/40 text-emer-light hover:bg-emer/10':'border-rose-400/40 text-rose-300 hover:bg-rose-500/10'} transition"><i data-lucide="${v.suspheli?'shield-check':'alert-triangle'}" class="h-4 w-4"></i>${v.suspheli?'Şüpheliden Çıkar':'Şüpheli Alacağı Çek'}</button></div>`:`<p class="mt-4 text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="scale" class="h-3.5 w-3.5 text-gold"></i>Avukat kaydı · Hukuk & Risk › Avukatlar ekranından yönetilir.</p>`}`;
 }
 function setVendorView(v){ state.vendorView=v; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function toggleVendorSuspect(i){ const v=vendorAccounts[i]; if(!v) return; v.suspheli=!v.suspheli; logAction('alert-triangle', v.suspheli?'amber':'emer', `${v.ad} ${v.suspheli?'şüpheli alacaklara alındı':'şüpheli listesinden çıkarıldı'}`); render(); toast(v.suspheli?'Şüpheli alacaklara eklendi':'Şüpheli listesinden çıkarıldı'); }
@@ -5335,18 +5366,19 @@ function viewAdminRecords(){
     ${sectionTitle('database','Cari Kayıtlar','Kodlu cari kart veritabanı · personel hariç tüm cariler')}
     <div class="overflow-x-auto"><table class="w-full text-sm min-w-[860px]">
       <thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>
-        <th class="text-left py-2 font-medium">Kod</th><th class="text-left font-medium">Ünvan</th>
+        <th class="text-left py-2 font-medium">Kayıt No</th><th class="text-left font-medium">Ünvan</th>
         <th class="text-left font-medium">Cari Tipi</th><th class="text-left font-medium">Cari Türü</th>
         <th class="text-left font-medium">Yetkili / İletişim</th><th class="text-right font-medium">Bakiye</th>
-        <th class="text-right font-medium">Durum</th></tr></thead>
-      <tbody>${kart.map(k=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">
-        <td class="py-2.5 font-mono text-[12px] text-gold">${k.id}</td>
+        <th class="text-right font-medium">Durum</th><th></th></tr></thead>
+      <tbody>${kart.map(k=>`<tr onclick="setCariView('${k.id}')" class="border-b border-white/5 hover:bg-white/[.03] cursor-pointer">
+        <td class="py-2.5 font-mono text-[12px] text-gold">${k.kayitNo}</td>
         <td class="text-slate-100 font-medium">${esc(k.ad)}</td>
         <td class="text-slate-300">${k.tipi||'—'}</td>
         <td>${badge(k.turu||'—','slate')}</td>
         <td class="text-slate-400 text-[12px]">${esc(k.yetkili||'—')}${k.tel?' · '+esc(k.tel):''}</td>
         <td class="text-right ${k.bakiye>0?'text-amber-300':'text-slate-400'}">${money(k.bakiye||0)}</td>
         <td class="text-right">${k.suspheli?badge('Şüpheli','red'):badge('Aktif','emer')}</td>
+        <td class="text-right"><i data-lucide="chevron-right" class="h-4 w-4 text-slate-500"></i></td>
       </tr>`).join('')}</tbody>
     </table></div>
     <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Her cari kart benzersiz kodla listelenir (CRI-… elle açılan · AV-… Avukat Tanımla'dan). Yeni kayıt: Finans › Satıcılar Hesabı › Hesap Aç.</p>
@@ -5354,7 +5386,7 @@ function viewAdminRecords(){
 }
 function viewAdmin(){
   if(!isAdminUser() && !state.viewAs) return viewUnauthorized({name:'Sistem Yöneticisi'});
-  if(currentSub()==='kayitlar') return viewAdminRecords();
+  if(currentSub()==='kayitlar') return state.cariView ? viewCariDetail(state.cariView) : viewAdminRecords();
   const card = (k)=>{ const v=ROLES[k]; const mods=MODULES.filter(m=>m.roles.includes(k));
     return `
     <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
@@ -6413,7 +6445,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
