@@ -3662,20 +3662,33 @@ function legalAreaPanel(key){
   }
   return '';
 }
+const DVA_MGRS = [{id:'ceo',name:'Patron (CEO)'},{id:'cfo',name:'CFO · Mali İşler'},{id:'auditor',name:'Bağımsız Denetçi'}];
 function davaFormInner(){
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
   return `
     ${sectionTitle('folder-plus','Dava Girişi & Avukat Atama','Yeni dosya · yönetici onayına düşer')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <input id="dvKonu" type="text" placeholder="Dava konusu…" class="sm:col-span-4 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <select id="dvTaraf" class="sm:col-span-2 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Lehine</option><option>Aleyhine</option></select>
-      <select id="dvAvukat" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none">${lawyers.filter(a=>a.approved).map(a=>`<option>${a.name}</option>`).join('')}</select>
-      <input id="dvTutar" type="number" placeholder="Anlaşma/Bütçe ₺" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <input id="dvGider" type="number" placeholder="Dava gideri ₺" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <input id="dvOdemeTarih" type="text" placeholder="Ödeme tarihi (gg.aa.yyyy)" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <input id="dvPoa" type="text" placeholder="Vekaletname dosyası" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <button onclick="addLawsuit()" class="sm:col-span-3 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Dava Ekle</button>
+      <input id="dvKonu" type="text" placeholder="Dava konusu…" class="sm:col-span-5 ${inpC}" />
+      <select id="dvTur" class="sm:col-span-4 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Hukuk Davası</option><option>İcra Takibi</option><option>Ceza</option><option>İş Hukuku</option></select>
+      <select id="dvTaraf" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Lehine</option><option>Aleyhine</option></select>
+      <select id="dvAvukat" class="sm:col-span-4 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none">${lawyers.filter(a=>a.approved).map(a=>`<option>${a.name}</option>`).join('')}</select>
+      <input id="dvTutar" type="number" placeholder="Anlaşma/Bütçe ₺" class="sm:col-span-4 ${inpC}" />
+      <input id="dvGider" type="number" placeholder="Dava gideri ₺" class="sm:col-span-4 ${inpC}" />
+      <input id="dvOdemeTarih" type="text" placeholder="Ödeme tarihi (gg.aa.yyyy)" class="sm:col-span-6 ${inpC}" />
+      <input id="dvPoa" type="text" placeholder="Vekaletname dosyası" class="sm:col-span-6 ${inpC}" />
+      <textarea id="dvYorum" rows="2" placeholder="Avukat yorumu / strateji notu…" class="sm:col-span-12 ${inpC} resize-none"></textarea>
     </div>
-    <p class="mt-2 text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Ödeme tarihi & giderler otomatik olarak Mali Yönetim nakit akışına yazılır.</p>`;
+    <div class="mt-3">
+      <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="user-check" class="h-3.5 w-3.5"></i>Yetki Verilen Yöneticiler</p>
+      <div class="flex flex-wrap gap-2">${DVA_MGRS.map(m=>`
+        <label class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-navy-700/50 px-3 py-1.5 text-sm text-slate-200 cursor-pointer hover:border-gold/40">
+          <input type="checkbox" id="dvYetki_${m.id}" ${m.id==='ceo'||m.id==='cfo'?'checked':''} class="accent-gold" />${m.name}
+        </label>`).join('')}</div>
+    </div>
+    <div class="mt-3 flex items-center justify-between gap-2 flex-wrap">
+      <p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Ödeme tarihi & giderler otomatik olarak Mali Yönetim nakit akışına yazılır.</p>
+      <button onclick="addLawsuit()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Dava Ekle</button>
+    </div>`;
 }
 function viewDavaForm(){
   return `<button onclick="state.davaNew=false;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Davalara Dön</button>
@@ -5256,6 +5269,18 @@ function caseDetailPage(i){
     </div>
   </div>
 
+  ${(l.avukatYorum || (l.viewers&&l.viewers.length)) ? `
+  <div class="card rounded-2xl p-5 mb-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div>
+      <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="message-square-quote" class="h-3.5 w-3.5"></i>Avukat Yorumu</p>
+      <p class="text-sm text-slate-200 leading-relaxed">${l.avukatYorum?esc(l.avukatYorum):'<span class="text-slate-500">Yorum girilmedi.</span>'}</p>
+    </div>
+    <div>
+      <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="user-check" class="h-3.5 w-3.5"></i>Yetki Verilen Yöneticiler</p>
+      <div class="flex flex-wrap gap-2">${(l.viewers||[]).map(v=>badge((ROLES[v]&&ROLES[v].name)||v,'gold')).join('')||'<span class="text-sm text-slate-500">—</span>'}</div>
+    </div>
+  </div>` : ''}
+
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
     <div class="xl:col-span-2 space-y-4">
       <div class="card rounded-2xl p-5">
@@ -5868,14 +5893,18 @@ function addLawsuit(){
   const gider=parseInt((document.getElementById('dvGider')||{}).value||'0',10);
   const odeme=((document.getElementById('dvOdemeTarih')||{}).value||'').trim();
   const poa=((document.getElementById('dvPoa')||{}).value||'').trim();
+  const tur=(document.getElementById('dvTur')||{}).value||'Hukuk Davası';
+  const yorum=((document.getElementById('dvYorum')||{}).value||'').trim();
+  const viewers=['ceo','cfo','auditor'].filter(id=>(document.getElementById('dvYetki_'+id)||{}).checked);
   if(!konu){ toast('Dava konusu girin'); return; }
   if(!avukat){ toast('Avukat seçin'); return; }
   const maxNo=lawsuits.reduce((m,l)=>{const n=parseInt((l.no.split('-')[1]||'0'),10);return n>m?n:m;},312);
-  const no='DVA-'+(maxNo+1);
+  const pref = tur==='İcra Takibi'?'ICR':tur==='Ceza'?'CEZ':'DVA';
+  const no=pref+'-'+(maxNo+1);
   const payments = (odeme&&gider)?[{date:odeme, amount:gider, desc:'Dava gideri / vekalet'}]:[];
-  lawsuits.unshift({ no, subject:konu, side:taraf, value:tutar||0, win:50, avukat, gider:gider||0, poa, viewers:['ceo','cfo'], onay:'bekliyor', payments });
+  lawsuits.unshift({ no, subject:konu, tur, hal:'Devam Eden', side:taraf, value:tutar||0, win:50, avukat, avukatYorum:yorum, gider:gider||0, poa, viewers:(viewers.length?viewers:['ceo','cfo']), onay:'bekliyor', payments });
   logAction('folder-plus','amber', `${no} dava açıldı · ${konu} · ${avukat} (yönetici onayı bekliyor)`);
-  render(); toast(`${no} oluşturuldu · yönetici onayına düştü`);
+  state.davaNew=false; render(); toast(`${no} oluşturuldu · yönetici onayına düştü`);
 }
 function approveLawsuit(i){
   const l=lawsuits[i]; if(!l) return; l.onay='onaylı';
