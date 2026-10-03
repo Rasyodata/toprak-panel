@@ -2097,6 +2097,36 @@ function viewPerformance(){
     </div>
   </div>`;
 }
+function nakitRaporData(){
+  const r=nakitByYear[2026]; const per=state.nakitPeriod||'ay';
+  let mi=9; try{ const m=new Date().getMonth(); if(m>=0&&m<=11) mi=m; }catch(e){}
+  const yin=r.reduce((a,x)=>a+x[0],0), yout=r.reduce((a,x)=>a+x[1],0);
+  let tin,tout,lbl,etiket;
+  if(per==='yil'){ tin=yin; tout=yout; lbl='Yıl'; etiket='2026 Yılı'; }
+  else if(per==='hafta'){ tin=r[mi][0]/4.3; tout=r[mi][1]/4.3; lbl='Hafta'; etiket=AYLAR[mi]+' · o hafta'; }
+  else if(per==='gun'){ tin=r[mi][0]/30; tout=r[mi][1]/30; lbl='Gün'; etiket=AYLAR[mi]+' · o gün'; }
+  else { tin=r[mi][0]; tout=r[mi][1]; lbl='Ay'; etiket=AYLAR[mi]+' 2026'; }
+  return {r,tin,tout,lbl,etiket,mi,yin,yout}; }
+function exportNakitExcel(){
+  const {r,tin,tout,lbl,etiket}=nakitRaporData(); const firm=(typeof scopeFirm==='function'&&scopeFirm())||'Konsolide';
+  const rows=[['Toprak Yatırım · Nakit Akış Raporu'],[firm+' · '+lbl+' · '+etiket],[],['Dönem','Giriş (Mn TL)','Çıkış (Mn TL)','Net (Mn TL)'],[etiket,tin.toFixed(2),tout.toFixed(2),(tin-tout).toFixed(2)],[],['Ay (2026)','Giriş (Mn TL)','Çıkış (Mn TL)','Net (Mn TL)']];
+  r.forEach((x,i)=>rows.push([AYLAR[i],x[0],x[1],x[0]-x[1]])); rows.push(['TOPLAM',tin,tout,tin-tout]);
+  const csv='﻿'+rows.map(row=>row.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='nakit-akis-raporu-'+firm.replace(/\s+/g,'_')+'.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+  logAction('file-down','emer','Nakit akış raporu Excel/CSV dışa aktarıldı · '+firm); toast('Excel (CSV) indirildi ✓');
+}
+function exportNakitPdf(){
+  const {r,tin,tout,lbl,etiket}=nakitRaporData(); const firm=(typeof scopeFirm==='function'&&scopeFirm())||'Konsolide';
+  const html='<html><head><meta charset="utf-8"><title>Nakit Akış Raporu · '+firm+'</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:28px;color:#111}h1{font-size:18px;margin:0}h2{font-size:12px;color:#666;font-weight:normal;margin:4px 0 14px}table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}th,td{border:1px solid #ddd;padding:6px 9px;text-align:right}th:first-child,td:first-child{text-align:left}thead{background:#f3f4f6}.sum td{font-weight:bold;background:#faf7ec}</style></head><body>'
+    +'<h1>Toprak Yatırım · Nakit Akış Raporu</h1><h2>'+firm+' · '+lbl+' · '+etiket+'</h2>'
+    +'<table><thead><tr><th>Dönem</th><th>Giriş (Mn ₺)</th><th>Çıkış (Mn ₺)</th><th>Net (Mn ₺)</th></tr></thead><tbody><tr><td>'+etiket+'</td><td>'+tin.toFixed(2)+'</td><td>'+tout.toFixed(2)+'</td><td>'+(tin-tout).toFixed(2)+'</td></tr></tbody></table>'
+    +'<table><thead><tr><th>Ay (2026)</th><th>Giriş</th><th>Çıkış</th><th>Net</th></tr></thead><tbody>'
+    +r.map((x,i)=>'<tr><td>'+AYLAR[i]+'</td><td>'+x[0]+'</td><td>'+x[1]+'</td><td>'+(x[0]-x[1])+'</td></tr>').join('')
+    +'<tr class="sum"><td>TOPLAM</td><td>'+tin+'</td><td>'+tout+'</td><td>'+(tin-tout)+'</td></tr></tbody></table>'
+    +'<p style="margin-top:16px;font-size:11px;color:#999">Yazdır penceresinden "PDF olarak kaydet" seçerek indirebilirsiniz.</p></body></html>';
+  const w=window.open('','_blank'); if(!w){ toast('Açılır pencere engellendi — izin verin'); return; } w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>{try{w.print();}catch(e){}},500);
+  logAction('file-text','gold','Nakit akış raporu PDF (yazdır) dışa aktarıldı · '+firm); toast('PDF yazdırma açıldı ✓');
+}
 function viewTopluNakit(){
   const toplam=butceCikisKartlari.reduce((a,r)=>a+((r.tutar||0)*(r.tekrar==='Belirli Tekrar'&&r.kez?r.kez:1)),0);
   return `<button onclick="state.topluNakit=false;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Nakit Akışa Dön</button>
@@ -3732,14 +3762,20 @@ function viewProfit(){
   <div data-sub="nakit" class="card rounded-2xl p-5">
     ${sectionTitle('banknote','Nakit Akış Özeti','Giriş · çıkış · net · milyon ₺')}
     ${(()=>{ const r=nakitByYear[2026]; const tin=r.reduce((a,x)=>a+x[0],0),tout=r.reduce((a,x)=>a+x[1],0);
-      const per=state.nakitPeriod||'ay'; const div=per==='gun'?365:per==='hafta'?52:per==='ay'?12:1; const lbl=per==='gun'?'Günlük':per==='hafta'?'Haftalık':per==='ay'?'Aylık':'Yıllık';
+      const rp=nakitRaporData();
       return `
     <div class="rounded-xl border border-gold/25 bg-gold/5 p-3 mb-3">
-      <p class="text-[11px] uppercase tracking-wider text-gold mb-1.5 flex items-center gap-1.5"><i data-lucide="file-bar-chart" class="h-3.5 w-3.5"></i>Nakit Akış Raporu · ${lbl} ortalama</p>
+      <div class="flex items-center justify-between gap-2 flex-wrap mb-1.5">
+        <p class="text-[11px] uppercase tracking-wider text-gold flex items-center gap-1.5"><i data-lucide="file-bar-chart" class="h-3.5 w-3.5"></i>Nakit Akış Raporu · ${rp.etiket}</p>
+        <div class="flex gap-1.5">
+          <button onclick="exportNakitExcel()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-emer/40 text-emer-light text-[11px] hover:bg-emer/10 transition"><i data-lucide="file-spreadsheet" class="h-3.5 w-3.5"></i>Excel</button>
+          <button onclick="exportNakitPdf()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="file-text" class="h-3.5 w-3.5"></i>PDF</button>
+        </div>
+      </div>
       <div class="grid grid-cols-3 gap-3 text-center text-sm">
-        <div><span class="block text-[11px] text-slate-500">Giriş</span><span class="font-bold text-emer-light">${mn(tin/div)}</span></div>
-        <div><span class="block text-[11px] text-slate-500">Çıkış</span><span class="font-bold text-rose-400">${mn(tout/div)}</span></div>
-        <div><span class="block text-[11px] text-slate-500">Net</span><span class="font-bold text-gold">${mn((tin-tout)/div)}</span></div>
+        <div><span class="block text-[11px] text-slate-500">Giriş</span><span class="font-bold text-emer-light">${mn(rp.tin)}</span></div>
+        <div><span class="block text-[11px] text-slate-500">Çıkış</span><span class="font-bold text-rose-400">${mn(rp.tout)}</span></div>
+        <div><span class="block text-[11px] text-slate-500">Net</span><span class="font-bold text-gold">${mn(rp.tin-rp.tout)}</span></div>
       </div>
     </div>
     <div class="grid grid-cols-3 gap-3 text-center mb-3">
