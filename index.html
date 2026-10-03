@@ -3728,31 +3728,21 @@ const DVA_PERSONEL = ['Mehmet Demir · Şantiye Şefi','Burak Yıldız · Satın
 function davaFormInner(){
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
   return `
-    ${sectionTitle('folder-plus','Dava Girişi & Avukat Atama','Yeni dosya · yönetici onayına düşer')}
+    ${sectionTitle('folder-plus','Dava / İcra Girişi','Yeni dosya · yönetici onayına düşer · yetkiler Avukat/Personel Atamadan verilir')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <input id="dvKonu" type="text" placeholder="Dava konusu…" class="sm:col-span-5 ${inpC}" />
-      <select id="dvTur" class="sm:col-span-4 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Hukuk Davası</option><option>İcra Takibi</option><option>Ceza</option><option>İş Hukuku</option></select>
+      <input id="dvKonu" type="text" placeholder="Dava / icra konusu…" class="sm:col-span-6 ${inpC}" />
+      <select id="dvTur" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Hukuk Davası</option><option>İcra Takibi</option><option>Ceza</option><option>İş Hukuku</option></select>
       <select id="dvTaraf" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Lehine</option><option>Aleyhine</option></select>
-      <select id="dvAvukat" class="sm:col-span-4 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none">${lawyers.filter(a=>a.approved).map(a=>`<option>${a.name}</option>`).join('')}</select>
-      <select id="dvPersonel" class="sm:col-span-4 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option value="">İlgili personel (opsiyonel)…</option>${DVA_PERSONEL.map(p=>`<option>${p}</option>`).join('')}</select>
       <input id="dvTutar" type="number" placeholder="Anlaşma/Bütçe ₺" class="sm:col-span-4 ${inpC}" />
-      <input id="dvGider" type="number" placeholder="Dava gideri ₺" class="sm:col-span-4 ${inpC}" />
-      <input id="dvOdemeTarih" type="text" placeholder="Ödeme tarihi (gg.aa.yyyy)" class="sm:col-span-6 ${inpC}" />
-      <input id="dvPoa" type="text" placeholder="Vekaletname dosyası" class="sm:col-span-6 ${inpC}" />
-      <textarea id="dvYorum" rows="2" placeholder="Avukat yorumu / strateji notu…" class="sm:col-span-12 ${inpC} resize-none"></textarea>
-    </div>
-    <div class="mt-3">
-      <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="user-check" class="h-3.5 w-3.5"></i>Yetki Verilen Yöneticiler</p>
-      <div class="space-y-2">${DVA_MGRS.map(m=>{ const r=ROLES[m.id]||{}; return `
-        <div class="flex items-center gap-3 rounded-lg border border-white/10 bg-navy-700/50 px-3 py-2">
-          <span class="h-7 w-7 rounded-full bg-gold/15 text-gold text-[11px] font-bold flex items-center justify-center shrink-0">${r.short||''}</span>
-          <span class="min-w-0 flex-1"><span class="block text-sm text-slate-100 truncate">${r.name||m.id}</span><span class="block text-[11px] text-slate-500 truncate">${r.title||''}</span></span>
-          <select id="dvYetki_${m.id}" class="shrink-0 bg-navy-800/70 border border-white/10 rounded-lg px-2 py-1.5 text-[13px] text-slate-200 outline-none">${YETKI_OPTS.map(o=>`<option value="${o.v}" ${m.def===o.v?'selected':''}>${o.l}</option>`).join('')}</select>
-        </div>`;}).join('')}</div>
+      <input id="dvGider" type="number" placeholder="Dava/icra gideri ₺" class="sm:col-span-4 ${inpC}" />
+      <input id="dvOdemeTarih" type="text" placeholder="Ödeme tarihi (gg.aa.yyyy)" class="sm:col-span-4 ${inpC}" />
+      <input id="dvPoa" type="text" placeholder="Vekaletname / dayanak dosyası" class="sm:col-span-6 ${inpC}" />
+      <input id="dvKarsi" type="text" placeholder="Karşı taraf / borçlu" class="sm:col-span-6 ${inpC}" />
+      <textarea id="dvYorum" rows="2" placeholder="Açıklama / strateji notu…" class="sm:col-span-12 ${inpC} resize-none"></textarea>
     </div>
     <div class="mt-3 flex items-center justify-between gap-2 flex-wrap">
-      <p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Ödeme tarihi & giderler otomatik olarak Mali Yönetim nakit akışına yazılır.</p>
-      <button onclick="addLawsuit()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Dava Ekle</button>
+      <p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Avukat ve personel yetkilendirmesi "Avukat Atama" / "Personel Atama" ekranlarından yapılır.</p>
+      <button onclick="addLawsuit()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Dosya Oluştur</button>
     </div>`;
 }
 function viewDavaForm(){
@@ -5333,7 +5323,25 @@ function returnToAdmin(){
    ============================================================ */
 function setLawyerTab(t){ state.module='avukat'; state.lawyerTab=t; state.caseView=null; render(); }
 function openCasePage(i){ state.module='avukat'; state.lawyerTab='davalar'; state.caseView=i; render(); }
-function backToCases(){ state.caseView=null; render(); }
+function backToCases(){ state.caseView=null; state.caseEdit=false; render(); }
+function saveCaseEdit(i){
+  const l=lawsuits[i]; if(!l) return; const g=id=>document.getElementById(id)||{};
+  l.no=(g('ce_no').value||l.no).trim();
+  l.subject=(g('ce_subject').value||'').trim();
+  l.tur=g('ce_tur').value||l.tur;
+  l.hal=g('ce_hal').value||l.hal;
+  l.side=g('ce_side').value||l.side;
+  l.win=parseInt(g('ce_win').value||'0',10);
+  l.value=parseInt(g('ce_value').value||'0',10);
+  l.gider=parseInt(g('ce_gider').value||'0',10);
+  l.avukat=(g('ce_avukat').value||'').trim();
+  l.karsi=(g('ce_karsi').value||'').trim();
+  l.poa=(g('ce_poa').value||'').trim();
+  l.avukatYorum=(g('ce_yorum').value||'').trim();
+  state.caseEdit=false;
+  logAction('pencil','gold', `${l.no} dosyası Sistem Yöneticisi tarafından güncellendi`);
+  render(); toast('Dosya güncellendi ✓');
+}
 function addCaseProcess(i){
   const l=lawsuits[i]; if(!l) return;
   const text=((document.getElementById('cpText')||{}).value||'').trim();
@@ -5360,8 +5368,37 @@ function caseDetailPage(i){
   const winTone = winColor(l.win);
   const proc = l.process||[];
   const belgeler = (l.docs||[]).concat(l.poa?['Vekaletname · '+l.poa]:[]);
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
+  const adminEdit = isAdminUser() ? `
+    <div class="mb-4">
+      <button onclick="state.caseEdit=!state.caseEdit;render()" class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border ${state.caseEdit?'border-gold/50 bg-gold/10 text-gold':'border-white/15 text-slate-200 hover:border-gold/40'}"><i data-lucide="pencil" class="h-4 w-4"></i>${state.caseEdit?'Düzenlemeyi Kapat':'Tüm Alanları Düzenle (Sistem Yöneticisi)'}</button>
+    </div>
+    ${state.caseEdit?`
+    <div class="card card-gold rounded-2xl p-5 mb-4">
+      ${sectionTitle('shield-check','Yönetici Düzenleme','Sistem Yöneticisi · dosyanın her alanını değiştir')}
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+        <input id="ce_no" value="${esc(l.no)}" placeholder="Dosya No" class="sm:col-span-3 ${inpC}" />
+        <input id="ce_subject" value="${esc(l.subject||'')}" placeholder="Konu" class="sm:col-span-9 ${inpC}" />
+        <select id="ce_tur" class="sm:col-span-3 ${selC}">${['Hukuk Davası','İcra Takibi','Ceza','İş Hukuku'].map(t=>`<option ${l.tur===t?'selected':''}>${t}</option>`).join('')}</select>
+        <select id="ce_hal" class="sm:col-span-3 ${selC}">${['Devam Eden','Biten'].map(t=>`<option ${(l.hal||'Devam Eden')===t?'selected':''}>${t}</option>`).join('')}</select>
+        <select id="ce_side" class="sm:col-span-3 ${selC}">${['Lehine','Aleyhine'].map(t=>`<option ${l.side===t?'selected':''}>${t}</option>`).join('')}</select>
+        <input id="ce_win" type="number" value="${l.win||0}" placeholder="Kazanma %" class="sm:col-span-3 ${inpC}" />
+        <input id="ce_value" type="number" value="${l.value||0}" placeholder="Değer ₺" class="sm:col-span-4 ${inpC}" />
+        <input id="ce_gider" type="number" value="${l.gider||0}" placeholder="Gider ₺" class="sm:col-span-4 ${inpC}" />
+        <input id="ce_avukat" value="${esc(l.avukat||'')}" placeholder="Atanan Avukat" class="sm:col-span-4 ${inpC}" />
+        <input id="ce_karsi" value="${esc(l.karsi||'')}" placeholder="Karşı taraf / borçlu" class="sm:col-span-6 ${inpC}" />
+        <input id="ce_poa" value="${esc(l.poa||'')}" placeholder="Vekaletname / dayanak" class="sm:col-span-6 ${inpC}" />
+        <textarea id="ce_yorum" rows="2" placeholder="Açıklama / strateji notu" class="sm:col-span-12 ${inpC} resize-none">${esc(l.avukatYorum||'')}</textarea>
+      </div>
+      <div class="mt-3 flex justify-end gap-2">
+        <button onclick="state.caseEdit=false;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button>
+        <button onclick="saveCaseEdit(${i})" class="px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition inline-flex items-center gap-1.5"><i data-lucide="save" class="h-4 w-4"></i>Kaydet</button>
+      </div>
+    </div>`:''}` : '';
   return `
   <button onclick="backToCases()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Davalara Dön</button>
+  ${adminEdit}
 
   <div class="card card-gold rounded-2xl p-5 mb-5">
     <div class="flex items-start justify-between gap-3 flex-wrap">
@@ -6009,24 +6046,21 @@ function openLawsuit(i){
 function addLawsuit(){
   const konu=((document.getElementById('dvKonu')||{}).value||'').trim();
   const taraf=(document.getElementById('dvTaraf')||{}).value||'Lehine';
-  const avukat=(document.getElementById('dvAvukat')||{}).value||'';
   const tutar=parseInt((document.getElementById('dvTutar')||{}).value||'0',10);
   const gider=parseInt((document.getElementById('dvGider')||{}).value||'0',10);
   const odeme=((document.getElementById('dvOdemeTarih')||{}).value||'').trim();
   const poa=((document.getElementById('dvPoa')||{}).value||'').trim();
+  const karsi=((document.getElementById('dvKarsi')||{}).value||'').trim();
   const tur=(document.getElementById('dvTur')||{}).value||'Hukuk Davası';
   const yorum=((document.getElementById('dvYorum')||{}).value||'').trim();
-  const personel=((document.getElementById('dvPersonel')||{}).value||'').trim();
-  const yetki={}; ['ceo','cfo','auditor'].forEach(id=>{ const v=(document.getElementById('dvYetki_'+id)||{}).value||'none'; if(v!=='none') yetki[id]=v; });
-  const viewers=Object.keys(yetki);
-  if(!konu){ toast('Dava konusu girin'); return; }
-  if(!avukat){ toast('Avukat seçin'); return; }
+  if(!konu){ toast('Dava / icra konusu girin'); return; }
   const maxNo=lawsuits.reduce((m,l)=>{const n=parseInt((l.no.split('-')[1]||'0'),10);return n>m?n:m;},312);
   const pref = tur==='İcra Takibi'?'ICR':tur==='Ceza'?'CEZ':'DVA';
   const no=pref+'-'+(maxNo+1);
-  const payments = (odeme&&gider)?[{date:odeme, amount:gider, desc:'Dava gideri / vekalet'}]:[];
-  lawsuits.unshift({ no, subject:konu, tur, hal:'Devam Eden', side:taraf, value:tutar||0, win:50, avukat, personel, avukatYorum:yorum, yetki, gider:gider||0, poa, viewers:(viewers.length?viewers:['ceo','cfo']), onay:'bekliyor', payments });
-  logAction('folder-plus','amber', `${no} dava açıldı · ${konu} · ${avukat} (yönetici onayı bekliyor)`);
+  const payments = (odeme&&gider)?[{date:odeme, amount:gider, desc:'Dosya gideri'}]:[];
+  // avukat & personel & yetkiler Atama ekranlarından verilir
+  lawsuits.unshift({ no, subject:konu, tur, hal:'Devam Eden', side:taraf, value:tutar||0, win:50, avukat:'', karsi, avukatYorum:yorum, gider:gider||0, poa, viewers:['ceo','cfo'], onay:'bekliyor', payments });
+  logAction('folder-plus','amber', `${no} dosya açıldı · ${konu} (yönetici onayı bekliyor · avukat ataması bekleniyor)`);
   state.davaNew=false; render(); toast(`${no} oluşturuldu · yönetici onayına düştü`);
 }
 function approveLawsuit(i){
@@ -6203,7 +6237,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.davaNew=false; state.assignView=null; state.avukatNew=false; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
