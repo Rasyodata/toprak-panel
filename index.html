@@ -2532,6 +2532,18 @@ let satinAlmaTalepKartlari = [
   { no:'SAT-2026-0001', adSoyad:'Burak Yıldız', departman:'Satın Alma', tarih:'28.09.2026', iletisim:'Dahili 3019', urun:'Hazır Beton C30', teknik:'C30/37 · pompalı teslim', miktar:120, birim:'m²', gerekce:'Melikgazi şantiyesi temel betonu', teslimTarih:'05.10.2026', teslimat:'Yüreğir Şantiye', masraf:'İNŞ-320', tahmini:3600000, proje:'Melikgazi Kentsel Dönüşüm', tedarikci:'Delta Yapı Malz.', belgeler:'Ön teklif eklendi', depOnay:'Mehmet Demir', finansOnay:'', durum:'Teklif Toplanıyor' }
 ];
 function nextSatNo(){ const max=satinAlmaTalepKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'SAT-2026-'+String(max+1).padStart(4,'0'); }
+const PERSONEL_BOLUM = ['Şirket','Proje','Yap-Sat','Al-Sat','Satın Alma','Finans','İnşaat','İK','Bilgi İşlem','Saha Operasyon','Diğer'];
+const HIZMET_TURU = ['İşçilik','Danışmanlık','Taşıma / Nakliye','Bakım - Onarım','Kiralama','Taşeronluk','Diğer'];
+let personelKartlari = [
+  { no:'PRS-0001', ad:'Mehmet Demir', bolum:'İnşaat',     unvan:'Şantiye Şefi',        tel:'Dahili 3011', email:'mehmet@toprakyatirim.com', sirket:'Toprak İnşaat' },
+  { no:'PRS-0002', ad:'Burak Yıldız', bolum:'Satın Alma', unvan:'Satın Alma Uzmanı',   tel:'Dahili 3019', email:'burak@toprakyatirim.com',  sirket:'Toprak Grup' },
+  { no:'PRS-0003', ad:'Elif Kaya',    bolum:'Finans',     unvan:'Mali İşler',          tel:'Dahili 3002', email:'elif@toprakyatirim.com',   sirket:'Toprak Grup' },
+  { no:'PRS-0004', ad:'Ayşe Kaya',    bolum:'Proje',      unvan:'Proje Müdürü',        tel:'Dahili 3040', email:'ayse@toprakyatirim.com',   sirket:'Toprak Gayrimenkul' }
+];
+function nextPrsNo(){ const max=personelKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[1]||'0'),10);return n>m?n:m;},0); return 'PRS-'+String(max+1).padStart(4,'0'); }
+function addPersonelKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g('psAd').value||'').trim(); if(!ad){toast('Ad soyad girin');return;} const no=nextPrsNo();
+  personelKartlari.unshift({ no, ad, bolum:g('psBolum').value||'Diğer', unvan:(g('psUnvan').value||'').trim(), tel:(g('psTel').value||'').trim(), email:(g('psEmail').value||'').trim(), sirket:(g('psSirket').value||'').trim() });
+  logAction('id-card','emer', `Personel tanımlandı · ${no} · ${ad} (${g('psBolum').value||'—'})`); render(); toast(no+' · '+ad+' eklendi'); }
 const RISK_LVL = ['Düşük','Orta','Yüksek'];
 const riskTone = r => r==='Yüksek'?'red':r==='Orta'?'amber':'emer';
 // Merkezi Cari Kartlar veritabanı: elle açılan hesaplar + Avukat Tanımla'dan gelen avukatlar (personel hariç)
@@ -5433,7 +5445,8 @@ function sysTables(){
     { kod:'TBL-0007', ad:'Risk Tablosu',             aciklama:'Hukuki ve operasyonel risk maddeleri',              sayi:(typeof risks!=='undefined'?risks.length:0),         git:"state.adminTable='TBL-0007';render()" },
     { kod:'TBL-0008', ad:'Kullanıcılar Tablosu',     aciklama:'Sistem kullanıcıları, roller ve yetkiler',          sayi:Object.keys(ROLES).length,                           git:"state.adminUsers=true;render()" },
     { kod:'TBL-0009', ad:'Cari Tür Kodları Tanımlama', aciklama:'Her cari türü için muhasebe kod öneki (iç kod üretimi)', sayi:Object.keys(cariTurKod).length,                 git:"state.adminTable='TBL-0009';render()" },
-    { kod:'TBL-0010', ad:'Satın Alma Talep Kartı',   aciklama:'Talep oluşturma · detay · bütçe · tedarikçi · onay süreci', sayi:satinAlmaTalepKartlari.length,                   git:"state.adminTable='TBL-0010';render()" }
+    { kod:'TBL-0010', ad:'Satın Alma Talep Kartı',   aciklama:'Talep oluşturma · detay · bütçe · tedarikçi · onay süreci', sayi:satinAlmaTalepKartlari.length,                   git:"state.adminTable='TBL-0010';render()" },
+    { kod:'TBL-0011', ad:'Personel Tanıtım Kartı',   aciklama:'Personel · bölüm (şirket/proje/yap-sat/al-sat) · ünvan · iletişim', sayi:personelKartlari.length,                 git:"state.adminTable='TBL-0011';render()" }
   ];
 }
 function viewAdminRecords(){
@@ -5463,7 +5476,7 @@ function delRow(kod,i){
     if(i < vendorAccounts.length){ const r=vendorAccounts.splice(i,1)[0]; logAction('trash-2','red','Cari kart silindi · '+(r&&r.ad||'')); }
     else { const li=i-vendorAccounts.length; const r=lawyers.splice(li,1)[0]; logAction('trash-2','red','Avukat kaydı silindi · '+(r&&r.name||'')); }
   } else {
-    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari};
+    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari};
     const arr=map[kod]; if(arr&&i>=0&&i<arr.length){ const r=arr.splice(i,1)[0]; logAction('trash-2','red','Kayıt silindi · '+kod+' · '+((r&&(r.name||r.ad||r.title||r.subject||r.no))||'')); }
   }
   render(); toast('Kayıt silindi ✓');
@@ -5480,11 +5493,13 @@ function satinAlmaFormCard(){
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
       <div class="sm:col-span-4"><label class="block text-[10px] text-slate-500 mb-0.5">Talep No (otomatik)</label><input value="${nextSatNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
       ${sec('1 · Talep Oluşturan')}
-      <input id="saAdSoyad" placeholder="Talep Eden Ad - Soyad" class="sm:col-span-4 ${inpC}" />
-      <input id="saDepartman" placeholder="Departman / Birim" class="sm:col-span-4 ${inpC}" />
+      <select id="saAdSoyad" onchange="saPersonelSel(this.value)" class="sm:col-span-4 ${selC}"><option value="">Talep Eden (personel seç)…</option>${personelKartlari.map(p=>`<option value="${esc(p.ad)}">${esc(p.ad)} · ${esc(p.bolum)}</option>`).join('')}</select>
+      <select id="saDepartman" class="sm:col-span-4 ${selC}"><option value="">Departman / Bölüm…</option>${PERSONEL_BOLUM.map(b=>`<option>${b}</option>`).join('')}</select>
       <input id="saTarih" placeholder="Talep Tarihi (gg.aa.yyyy)" class="sm:col-span-2 ${inpC}" />
       <input id="saIletisim" placeholder="İletişim / Dahili No" class="sm:col-span-2 ${inpC}" />
       ${sec('2 · Talep Detayları ve İhtiyaç')}
+      <select id="saKalemTipi" class="sm:col-span-3 ${selC}" title="Kalem Tipi"><option>Ürün</option><option>Hizmet</option></select>
+      <select id="saHizmetTuru" class="sm:col-span-3 ${selC}" title="Hizmet Türü"><option value="">Hizmet Türü (hizmetse)…</option>${HIZMET_TURU.map(h=>`<option>${h}</option>`).join('')}</select>
       <input id="saUrun" placeholder="Ürün / Hizmet Adı" class="sm:col-span-6 ${inpC}" />
       <input id="saMiktar" type="number" placeholder="Miktar" class="sm:col-span-2 ${inpC}" />
       <select id="saBirim" class="sm:col-span-2 ${selC}">${['Adet','Metre','Kg','Paket','Lisans','Saat','m²'].map(o=>`<option>${o}</option>`).join('')}</select>
@@ -5496,9 +5511,11 @@ function satinAlmaFormCard(){
       <input id="saMasraf" placeholder="Masraf Merkezi / Bütçe Kodu" class="sm:col-span-4 ${inpC}" />
       <input id="saTahmini" type="number" placeholder="Tahmini Bütçe / Birim Fiyat ₺" class="sm:col-span-4 ${inpC}" />
       <input id="saProje" placeholder="Proje Adı / Kodu (varsa)" class="sm:col-span-4 ${inpC}" />
-      ${sec('4 · Tedarikçi Önerisi')}
+      ${sec('4 · Tedarikçi Önerisi & Cari Sınıfı')}
+      <select id="saCariTipi" class="sm:col-span-3 ${selC}" title="Cari Tipi">${CARI_TIPI.map(t=>`<option>${t}</option>`).join('')}</select>
+      <select id="saCariTuru" class="sm:col-span-3 ${selC}" title="Cari Türü">${CARI_TURU.map(t=>`<option ${t==='Satıcı'?'selected':''}>${t}</option>`).join('')}</select>
       <input id="saTedarikci" placeholder="Önerilen Tedarikçi / Firma" class="sm:col-span-6 ${inpC}" />
-      <input id="saBelgeler" placeholder="Ekli belgeler / teklifler" class="sm:col-span-6 ${inpC}" />
+      <input id="saBelgeler" placeholder="Ekli belgeler / teklifler" class="sm:col-span-12 ${inpC}" />
       ${sec('5 · Onay ve Süreç Takibi')}
       <input id="saDepOnay" placeholder="Departman Yöneticisi Onayı" class="sm:col-span-4 ${inpC}" />
       <input id="saFinansOnay" placeholder="Bütçe / Finans Onayı" class="sm:col-span-4 ${inpC}" />
@@ -5507,15 +5524,17 @@ function satinAlmaFormCard(){
     <div class="mt-3 flex justify-end"><button onclick="addSatinAlmaKart()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Talep Kartı Oluştur</button></div>
   </div>`;
 }
+function saPersonelSel(ad){ const p=personelKartlari.find(x=>x.ad===ad); if(!p) return; const d=document.getElementById('saDepartman'); if(d) d.value=p.bolum||''; const it=document.getElementById('saIletisim'); if(it) it.value=p.tel||''; }
 function addSatinAlmaKart(){
   const g=i=>document.getElementById(i)||{}; const urun=(g('saUrun').value||'').trim();
   if(!urun){ toast('Ürün / Hizmet adı girin'); return; }
   const no=nextSatNo();
   const departman=(g('saDepartman').value||'').trim(), miktar=parseInt(g('saMiktar').value||'0',10)||0, birim=g('saBirim').value||'Adet', tahmini=parseInt(g('saTahmini').value||'0',10)||0, proje=(g('saProje').value||'').trim();
+  const kalemTipi=g('saKalemTipi').value||'Ürün', hizmetTuru=g('saHizmetTuru').value||'', cariTipi=g('saCariTipi').value||'', cariTuru=g('saCariTuru').value||'';
   satinAlmaTalepKartlari.unshift({ no, adSoyad:(g('saAdSoyad').value||'').trim(), departman, tarih:(g('saTarih').value||'').trim(), iletisim:(g('saIletisim').value||'').trim(),
-    urun, teknik:(g('saTeknik').value||'').trim(), miktar, birim, gerekce:(g('saGerekce').value||'').trim(), teslimTarih:(g('saTeslimTarih').value||'').trim(), teslimat:(g('saTeslimat').value||'').trim(),
+    kalemTipi, hizmetTuru, urun, teknik:(g('saTeknik').value||'').trim(), miktar, birim, gerekce:(g('saGerekce').value||'').trim(), teslimTarih:(g('saTeslimTarih').value||'').trim(), teslimat:(g('saTeslimat').value||'').trim(),
     masraf:(g('saMasraf').value||'').trim(), tahmini, proje,
-    tedarikci:(g('saTedarikci').value||'').trim(), belgeler:(g('saBelgeler').value||'').trim(),
+    cariTipi, cariTuru, tedarikci:(g('saTedarikci').value||'').trim(), belgeler:(g('saBelgeler').value||'').trim(),
     depOnay:(g('saDepOnay').value||'').trim(), finansOnay:(g('saFinansOnay').value||'').trim(), durum:g('saDurum').value||'Beklemede' });
   // Onay akışına da düşsün (İş Onay Akışı · Satın Alma Talepleri — purchaseRequests)
   purchaseRequests.unshift({ id:no, firm:proje||'Toprak Grup', item:urun+(miktar?` (${miktar} ${birim})`:''), amount:tahmini, dept:departman||'Satın Alma', urgent:false, status:'pending', satNo:no });
@@ -5528,6 +5547,8 @@ function tblForm(kod){
   const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
   const btn=(oc,lbl)=>`<div class="mt-3 flex justify-end"><button onclick="${oc}" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> ${lbl}</button></div>`;
   const wrap=(title,sub,body,bt)=>`<div class="card rounded-2xl p-5 mb-4">${sectionTitle('plus-circle',title,sub)}<div class="grid grid-cols-1 sm:grid-cols-12 gap-2">${body}</div>${bt}</div>`;
+  if(kod==='TBL-0011') return wrap('Personel Tanımla','Yeni personel kartı · talep oluşturanlar buradan gelir',
+      `<div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Personel No (otomatik)</label><input value="${nextPrsNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div><input id="psAd" placeholder="Ad - Soyad" class="sm:col-span-5 ${inpC}"/><select id="psBolum" class="sm:col-span-4 ${selC}">${PERSONEL_BOLUM.map(b=>`<option>${b}</option>`).join('')}</select><input id="psUnvan" placeholder="Ünvan / Görev" class="sm:col-span-4 ${inpC}"/><input id="psTel" placeholder="Telefon / Dahili" class="sm:col-span-4 ${inpC}"/><input id="psEmail" placeholder="E-posta" class="sm:col-span-4 ${inpC}"/><input id="psSirket" placeholder="Şirket" class="sm:col-span-12 ${inpC}"/>`, btn('addPersonelKart()','Personel Tanımla'));
   if(kod==='TBL-0002') return `<div class="card rounded-2xl p-5 mb-4">${davaFormInner()}</div>`;
   if(kod==='TBL-0003') return wrap('Avukat Tanımla','Yeni avukat kaydı · yönetici onayına düşer',
       `<input id="avAd" placeholder="Avukat adı (Av. …)" class="sm:col-span-6 ${inpC}"/><input id="avMail" placeholder="E-posta" class="sm:col-span-6 ${inpC}"/><input id="avTel" placeholder="Telefon" class="sm:col-span-4 ${inpC}"/><input id="avBuro" placeholder="Büro / Şirket" class="sm:col-span-8 ${inpC}"/><input id="avBaro" placeholder="Baro / Sicil No" class="sm:col-span-6 ${inpC}"/><input id="avAdres" placeholder="Adres" class="sm:col-span-6 ${inpC}"/><input id="avUzmanlik" placeholder="Uzmanlık alanları (virgülle)" class="sm:col-span-12 ${inpC}"/>`, btn('addLawyer()','Avukat Tanımla'));
@@ -5558,6 +5579,7 @@ function viewAdminTable(kod){
   if(kod==='TBL-0005'){ return tbl('Satıcı / Prim Tablosu',[{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Ekip',f:r=>esc(r.ekip)},{h:'Şirket',f:r=>esc(r.firma)},{h:'Satış',r:1,f:r=>money(r.satis)},{h:'Tahsilat',r:1,f:r=>money(r.tahsilat)}],salesReps); }
   if(kod==='TBL-0006'){ return tbl('Projeler Tablosu',[{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Konum',f:r=>esc(r.loc)},{h:'İş Kolu',f:r=>esc(r.isKolu)},{h:'İlerleme',r:1,f:r=>'%'+r.progress}],projects); }
   if(kod==='TBL-0007'){ return tbl('Risk Tablosu',[{h:'Risk',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Kategori',f:r=>esc(r.cat||'—')},{h:'Etki',r:1,f:r=>r.impact},{h:'Olasılık',r:1,f:r=>r.prob},{h:'Sorumlu',f:r=>esc(r.owner||'—')}],risks); }
+  if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Bölüm',f:r=>badge(r.bolum||'—','gold')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')}],personelKartlari); }
   if(kod==='TBL-0010'){
     const durumTone=d=>d==='Sipariş Verildi'?'emer':d==='Reddedildi'?'red':d==='Teklif Toplanıyor'?'gold':'amber';
     return `${back}${satinAlmaFormCard()}
