@@ -2541,6 +2541,23 @@ let personelKartlari = [
   { no:'PRS-0004', ad:'Ayşe Kaya',    bolum:'Proje',      unvan:'Proje Müdürü',        tel:'Dahili 3040', email:'ayse@toprakyatirim.com',   sirket:'Toprak Gayrimenkul' }
 ];
 function nextPrsNo(){ const max=personelKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[1]||'0'),10);return n>m?n:m;},0); return 'PRS-'+String(max+1).padStart(4,'0'); }
+let odemeEmriKartlari = [];
+function nextOeNo(){ const max=odemeEmriKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'ÖEB-2026-'+String(max+1).padStart(4,'0'); }
+function sayiYazi(n){ n=Math.round(Math.abs(n||0)); if(n===0) return 'Sıfır'; const b=['','Bir','İki','Üç','Dört','Beş','Altı','Yedi','Sekiz','Dokuz']; const o=['','On','Yirmi','Otuz','Kırk','Elli','Altmış','Yetmiş','Seksen','Doksan']; const gr=['','Bin','Milyon','Milyar','Trilyon'];
+  const uc=x=>{let s='';const y=Math.floor(x/100),k=Math.floor((x%100)/10),t=x%10;if(y)s+=(y>1?b[y]:'')+'Yüz';if(k)s+=o[k];if(t)s+=b[t];return s;};
+  let parts=[],i=0; while(n>0){let g3=n%1000; if(g3){let p=uc(g3); if(i===1&&g3===1)p=''; parts.unshift(p+gr[i]);} n=Math.floor(n/1000); i++;} return parts.join(''); }
+function oeHesapNet(){ const g=i=>parseFloat((document.getElementById(i)||{}).value||'0')||0; const net=g('oeBrut')-(g('oeStopaj')+g('oeDamga')+g('oeKdvTevkifat')+g('oeDigerKesinti')); const el=document.getElementById('oeNet'); if(el) el.value='₺'+new Intl.NumberFormat('tr-TR').format(net); const y=document.getElementById('oeNetYazi'); if(y) y.textContent=sayiYazi(net)+' TL'; }
+function addOdemeEmri(){ const g=i=>document.getElementById(i)||{}; const gv=i=>parseInt((g(i).value||'0').replace(/[^\d-]/g,''),10)||0;
+  const hak=(g('oeHakSahibi').value||'').trim(); if(!hak){ toast('Hak sahibi girin'); return; }
+  const brut=gv('oeBrut'), st=gv('oeStopaj'), dm=gv('oeDamga'), kd=gv('oeKdvTevkifat'), dg=gv('oeDigerKesinti'); const net=brut-(st+dm+kd+dg);
+  const no=nextOeNo();
+  odemeEmriKartlari.unshift({ no, kurum:(g('oeKurum').value||'').trim(), kurumKod:(g('oeKurumKod').value||'').trim(), tarih:(g('oeTarih').value||'').trim(), butceYili:(g('oeButceYili').value||'2026').trim(),
+    hakSahibi:hak, tcVergi:(g('oeTcVergi').value||'').trim(), iban:(g('oeIban').value||'').trim(), banka:(g('oeBanka').value||'').trim(),
+    aciklama:(g('oeAciklama').value||'').trim(), butceTertibi:(g('oeButceTertibi').value||'').trim(), dayanak:(g('oeDayanak').value||'').trim(),
+    brut, stopaj:st, damga:dm, kdvTevkifat:kd, digerKesinti:dg, net, netYazi:sayiYazi(net)+' TL',
+    duzenleyen:(g('oeDuzenleyen').value||'').trim(), harcamaYetkili:(g('oeHarcamaYetkili').value||'').trim(), muhasebeYetkili:(g('oeMuhasebeYetkili').value||'').trim(), durum:g('oeDurum').value||'Hazırlandı' });
+  logAction('receipt-text','gold', `Ödeme emri · ${no} · ${hak} · net ${money(net)} (${g('oeDurum').value||'Hazırlandı'})`);
+  render(); toast(`${no} ödeme emri oluşturuldu`); }
 function addPersonelKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g('psAd').value||'').trim(); if(!ad){toast('Ad soyad girin');return;} const no=nextPrsNo();
   personelKartlari.unshift({ no, ad, bolum:g('psBolum').value||'Diğer', unvan:(g('psUnvan').value||'').trim(), tel:(g('psTel').value||'').trim(), email:(g('psEmail').value||'').trim(), sirket:(g('psSirket').value||'').trim() });
   logAction('id-card','emer', `Personel tanımlandı · ${no} · ${ad} (${g('psBolum').value||'—'})`); render(); toast(no+' · '+ad+' eklendi'); }
@@ -5446,7 +5463,8 @@ function sysTables(){
     { kod:'TBL-0008', ad:'Kullanıcılar Tablosu',     aciklama:'Sistem kullanıcıları, roller ve yetkiler',          sayi:Object.keys(ROLES).length,                           git:"state.adminUsers=true;render()" },
     { kod:'TBL-0009', ad:'Cari Tür Kodları Tanımlama', aciklama:'Her cari türü için muhasebe kod öneki (iç kod üretimi)', sayi:Object.keys(cariTurKod).length,                 git:"state.adminTable='TBL-0009';render()" },
     { kod:'TBL-0010', ad:'Satın Alma Talep Kartı',   aciklama:'Talep oluşturma · detay · bütçe · tedarikçi · onay süreci', sayi:satinAlmaTalepKartlari.length,                   git:"state.adminTable='TBL-0010';render()" },
-    { kod:'TBL-0011', ad:'Personel Tanıtım Kartı',   aciklama:'Personel · bölüm (şirket/proje/yap-sat/al-sat) · ünvan · iletişim', sayi:personelKartlari.length,                 git:"state.adminTable='TBL-0011';render()" }
+    { kod:'TBL-0011', ad:'Personel Tanıtım Kartı',   aciklama:'Personel · bölüm (şirket/proje/yap-sat/al-sat) · ünvan · iletişim', sayi:personelKartlari.length,                 git:"state.adminTable='TBL-0011';render()" },
+    { kod:'TBL-0012', ad:'Ödeme Emri Kartı',         aciklama:'Ödeme emri belgesi · hak sahibi · bütçe · kesinti · onay silsilesi', sayi:odemeEmriKartlari.length,                git:"state.adminTable='TBL-0012';render()" }
   ];
 }
 function viewAdminRecords(){
@@ -5476,7 +5494,7 @@ function delRow(kod,i){
     if(i < vendorAccounts.length){ const r=vendorAccounts.splice(i,1)[0]; logAction('trash-2','red','Cari kart silindi · '+(r&&r.ad||'')); }
     else { const li=i-vendorAccounts.length; const r=lawyers.splice(li,1)[0]; logAction('trash-2','red','Avukat kaydı silindi · '+(r&&r.name||'')); }
   } else {
-    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari};
+    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari};
     const arr=map[kod]; if(arr&&i>=0&&i<arr.length){ const r=arr.splice(i,1)[0]; logAction('trash-2','red','Kayıt silindi · '+kod+' · '+((r&&(r.name||r.ad||r.title||r.subject||r.no))||'')); }
   }
   render(); toast('Kayıt silindi ✓');
@@ -5542,6 +5560,46 @@ function addSatinAlmaKart(){
   logAction('git-pull-request','gold', `${no} satın alma talebi İş Onay Akışına düştü · ${departman||'İlgili Birim'} → Satın Alma → Finans`, 'İş Onay Akışı');
   render(); toast(`${no} oluşturuldu · onay akışına düştü`);
 }
+function odemeEmriFormCard(){
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
+  const kes=(id,ph)=>`<input id="${id}" type="number" oninput="oeHesapNet()" placeholder="${ph}" class="sm:col-span-3 ${inpC}" />`;
+  const sec=t=>`<p class="sm:col-span-12 text-[11px] uppercase tracking-wider text-gold mt-3 mb-0.5 flex items-center gap-1.5"><i data-lucide="chevrons-right" class="h-3.5 w-3.5"></i>${t}</p>`;
+  return `<div class="card rounded-2xl p-5">
+    ${sectionTitle('receipt-text','Ödeme Emri Kartı','Ödeme Emri Belgesi · Belge No otomatik · ÖEB-2026-XXXX')}
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+      <div class="sm:col-span-4"><label class="block text-[10px] text-slate-500 mb-0.5">Ödeme Emri Belge No (otomatik)</label><input value="${nextOeNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
+      ${sec('1 · Kurum ve Belge Kimlik')}
+      <input id="oeKurum" placeholder="Kurum / Birim Adı" class="sm:col-span-5 ${inpC}" />
+      <input id="oeKurumKod" placeholder="Kurumsal / Muhasebe Birimi Kodu" class="sm:col-span-3 ${inpC}" />
+      <input id="oeTarih" placeholder="Belge Tarihi (gg.aa.yyyy)" class="sm:col-span-2 ${inpC}" />
+      <input id="oeButceYili" value="2026" placeholder="Bütçe Yılı" class="sm:col-span-2 ${inpC}" />
+      ${sec('2 · Hak Sahibi (Alacaklı)')}
+      <input id="oeHakSahibi" placeholder="Adı-Soyadı / Şirket Unvanı" class="sm:col-span-5 ${inpC}" />
+      <input id="oeTcVergi" placeholder="T.C. Kimlik / Vergi No" class="sm:col-span-3 ${inpC}" />
+      <input id="oeIban" placeholder="IBAN" class="sm:col-span-2 ${inpC}" />
+      <input id="oeBanka" placeholder="Banka Adı" class="sm:col-span-2 ${inpC}" />
+      ${sec('3 · Harcama ve Bütçe')}
+      <input id="oeAciklama" placeholder="Harcamanın Çeşidi / Açıklama (ör. 1. Hakediş Ödemesi)" class="sm:col-span-6 ${inpC}" />
+      <input id="oeButceTertibi" placeholder="Bütçe Tertibi / Ekonomik Kod" class="sm:col-span-3 ${inpC}" />
+      <input id="oeDayanak" placeholder="Dayanak Belge (fatura/sözleşme no-tarih)" class="sm:col-span-3 ${inpC}" />
+      ${sec('4 · Mali Hesaplama ve Kesinti')}
+      <input id="oeBrut" type="number" oninput="oeHesapNet()" placeholder="Brüt Tutar ₺" class="sm:col-span-4 ${inpC}" />
+      ${kes('oeStopaj','Gelir/Kurumlar Stopajı ₺')}
+      ${kes('oeDamga','Damga Vergisi ₺')}
+      ${kes('oeKdvTevkifat','KDV Tevkifatı ₺')}
+      ${kes('oeDigerKesinti','Diğer Kesinti ₺')}
+      <div class="sm:col-span-5"><label class="block text-[10px] text-slate-500 mb-0.5">Net Ödenecek Tutar (otomatik)</label><input id="oeNet" value="₺0" disabled class="w-full font-mono bg-navy-800/60 border border-emer/30 rounded-lg px-3 py-2 text-sm text-emer-light font-bold outline-none" /></div>
+      <div class="sm:col-span-12"><p class="text-[11px] text-slate-500">Yazı ile: <span id="oeNetYazi" class="text-slate-300">Sıfır TL</span></p></div>
+      ${sec('5 · Onay ve İmza Silsilesi')}
+      <input id="oeDuzenleyen" placeholder="Düzenleyen (Gerçekleştirme Görevlisi)" class="sm:col-span-4 ${inpC}" />
+      <input id="oeHarcamaYetkili" placeholder="Harcama Yetkilisi (Onaylayan)" class="sm:col-span-4 ${inpC}" />
+      <input id="oeMuhasebeYetkili" placeholder="Muhasebe Yetkilisi (Ödeyen)" class="sm:col-span-4 ${inpC}" />
+      <select id="oeDurum" class="sm:col-span-4 ${selC}">${['Hazırlandı','Harcama Yetkilisi Onayında','Muhasebe İncelemesinde','Ödendi','İade / Red'].map(o=>`<option>${o}</option>`).join('')}</select>
+    </div>
+    <div class="mt-3 flex justify-end"><button onclick="addOdemeEmri()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Ödeme Emri Oluştur</button></div>
+  </div>`;
+}
 function tblForm(kod){
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
   const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
@@ -5586,6 +5644,13 @@ function viewAdminTable(kod){
     <div class="card rounded-2xl p-5 mt-4">${sectionTitle('clipboard-list','Satın Alma Talepleri',satinAlmaTalepKartlari.length+' talep')}
       <div class="overflow-x-auto"><table class="w-full text-sm min-w-[860px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Talep No</th><th class="text-left font-medium">Ürün / Hizmet</th><th class="text-left font-medium">Talep Eden</th><th class="text-left font-medium">Departman</th><th class="text-right font-medium">Miktar</th><th class="text-right font-medium">Tahmini</th><th class="text-left font-medium">Durum</th>${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
       <tbody>${satinAlmaTalepKartlari.length?satinAlmaTalepKartlari.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.urun)}</td><td class="text-slate-300">${esc(r.adSoyad||'—')}</td><td class="text-slate-400">${esc(r.departman||'—')}</td><td class="text-right text-slate-300">${r.miktar||0} ${esc(r.birim||'')}</td><td class="text-right text-slate-300">${money(r.tahmini||0)}</td><td>${badge(r.durum||'Beklemede',durumTone(r.durum))}</td>${canDel?`<td class="text-right"><button onclick="delRow('TBL-0010',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${canDel?8:7}" class="text-center text-slate-500 py-6">Talep kartı yok.</td></tr>`}</tbody></table></div>
+    </div>`; }
+  if(kod==='TBL-0012'){
+    const dt=d=>d==='Ödendi'?'emer':d==='İade / Red'?'red':'amber';
+    return `${back}${odemeEmriFormCard()}
+    <div class="card rounded-2xl p-5 mt-4">${sectionTitle('receipt-text','Ödeme Emirleri',odemeEmriKartlari.length+' belge')}
+      <div class="overflow-x-auto"><table class="w-full text-sm min-w-[860px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Belge No</th><th class="text-left font-medium">Hak Sahibi</th><th class="text-left font-medium">Açıklama</th><th class="text-right font-medium">Brüt</th><th class="text-right font-medium">Net</th><th class="text-left font-medium">Durum</th>${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
+      <tbody>${odemeEmriKartlari.length?odemeEmriKartlari.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.hakSahibi)}</td><td class="text-slate-400 text-[12px]">${esc(r.aciklama||'—')}</td><td class="text-right text-slate-300">${money(r.brut||0)}</td><td class="text-right text-emer-light font-medium">${money(r.net||0)}</td><td>${badge(r.durum||'Hazırlandı',dt(r.durum))}</td>${canDel?`<td class="text-right"><button onclick="delRow('TBL-0012',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${canDel?7:6}" class="text-center text-slate-500 py-6">Ödeme emri yok.</td></tr>`}</tbody></table></div>
     </div>`; }
   if(kod==='TBL-0009'){ return `${back}<div class="card rounded-2xl p-5">${sectionTitle('hash','Cari Tür Kodları Tanımlama','Her cari türü için muhasebe kod öneki · iç cari kodu bu önekle üretilir')}
     <div class="space-y-2">${CARI_TURU.map(t=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
