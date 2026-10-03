@@ -2559,11 +2559,22 @@ function addOdemeSozu(){ const g=i=>document.getElementById(i)||{}; const hak=(g
   logAction('handshake','gold', `Ödeme sözü · ${no} · ${hak} · ${money(sozTutar)} (vade ${g('osVade').value||'—'})`);
   logAction('git-pull-request','gold', `${no} ödeme sözü İş Onay Akışına düştü`, 'İş Onay Akışı');
   render(); toast(no+' oluşturuldu · onay akışına düştü'); }
+const CIKIS_TIPI = ['Gider','Yatırım','Vergi','Finansman','Diğer'];
+const GIDER_TURU = ['Kira Gideri','Personel Maaşları','Yönetim Kurulu Ödemeleri','Mali Müşavir Ödemeleri','SGK Primleri','Vergi Ödemeleri','Elektrik / Su / Doğalgaz','Sigorta','Araç / Filo','Diğer'];
+const TEKRAR_TIPI = ['Tek Seferlik','Her Ay','Belirli Tekrar'];
+function tekrarOzet(r){ if(!r||r.tekrar==='Tek Seferlik'||!r.tekrar) return 'Tek Seferlik'; const gun=r.ayGun?('her ayın '+r.ayGun+'. günü'):'her ay'; return r.tekrar==='Belirli Tekrar'?(gun+' · '+(r.kez||0)+' kez'):(gun); }
 let butceCikisKartlari = [];
 function nextTbcNo(){ const max=butceCikisKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'TBÇ-2026-'+String(max+1).padStart(4,'0'); }
 function addButceCikis(){ const g=i=>document.getElementById(i)||{}; const kalem=(g('bcKalem').value||'').trim(); if(!kalem){toast('Kalem/açıklama girin');return;} const no=nextTbcNo();
-  butceCikisKartlari.unshift({ no, kalem, butceKodu:(g('bcKod').value||'').trim(), donem:(g('bcDonem').value||'').trim(), tutar:parseInt(g('bcTutar').value||'0',10)||0, kesinlik:g('bcKesinlik').value||'Orta', proje:(g('bcProje').value||'').trim(), aciklama:(g('bcAciklama').value||'').trim() });
-  logAction('trending-down','amber', `Tahmini bütçe çıkışı · ${no} · ${kalem} · ${money(parseInt(g('bcTutar').value||'0',10)||0)} (${g('bcDonem').value||'—'})`); render(); toast(no+' oluşturuldu'); }
+  butceCikisKartlari.unshift({ no, kalem, cikisTipi:g('bcCikisTipi').value||'Gider', cikisTuru:g('bcCikisTuru').value||'Diğer', butceKodu:(g('bcKod').value||'').trim(), donem:(g('bcDonem').value||'').trim(), tutar:parseInt(g('bcTutar').value||'0',10)||0, kesinlik:g('bcKesinlik').value||'Orta', proje:(g('bcProje').value||'').trim(), aciklama:(g('bcAciklama').value||'').trim(),
+    tekrar:g('bcTekrar').value||'Tek Seferlik', ayGun:parseInt(g('bcAyGun').value||'0',10)||0, kez:parseInt(g('bcKez').value||'0',10)||0 });
+  logAction('trending-down','amber', `Tahmini bütçe çıkışı · ${no} · ${kalem} · ${money(parseInt(g('bcTutar').value||'0',10)||0)} (${tekrarOzet(butceCikisKartlari[0])})`); render(); toast(no+' oluşturuldu'); }
+let giderKartlari = [];
+function nextGdrNo(){ const max=giderKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'GDR-2026-'+String(max+1).padStart(4,'0'); }
+function addGiderKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g('gdAd').value||'').trim(); if(!ad){toast('Gider adı girin');return;} const no=nextGdrNo();
+  giderKartlari.unshift({ no, ad, cikisTipi:g('gdCikisTipi').value||'Gider', cikisTuru:g('gdCikisTuru').value||'Kira Gideri', alacakli:(g('gdAlacakli').value||'').trim(), tutar:parseInt(g('gdTutar').value||'0',10)||0, butceKodu:(g('gdKod').value||'').trim(),
+    tekrar:g('gdTekrar').value||'Her Ay', ayGun:parseInt(g('gdAyGun').value||'0',10)||0, kez:parseInt(g('gdKez').value||'0',10)||0, baslangic:(g('gdBaslangic').value||'').trim(), aciklama:(g('gdAciklama').value||'').trim() });
+  logAction('repeat','amber', `Gider kartı · ${no} · ${ad} (${g('gdCikisTuru').value}) · ${money(parseInt(g('gdTutar').value||'0',10)||0)} · ${tekrarOzet(giderKartlari[0])}`); render(); toast(no+' gider kartı oluşturuldu'); }
 function sayiYazi(n){ n=Math.round(Math.abs(n||0)); if(n===0) return 'Sıfır'; const b=['','Bir','İki','Üç','Dört','Beş','Altı','Yedi','Sekiz','Dokuz']; const o=['','On','Yirmi','Otuz','Kırk','Elli','Altmış','Yetmiş','Seksen','Doksan']; const gr=['','Bin','Milyon','Milyar','Trilyon'];
   const uc=x=>{let s='';const y=Math.floor(x/100),k=Math.floor((x%100)/10),t=x%10;if(y)s+=(y>1?b[y]:'')+'Yüz';if(k)s+=o[k];if(t)s+=b[t];return s;};
   let parts=[],i=0; while(n>0){let g3=n%1000; if(g3){let p=uc(g3); if(i===1&&g3===1)p=''; parts.unshift(p+gr[i]);} n=Math.floor(n/1000); i++;} return parts.join(''); }
@@ -5490,7 +5501,8 @@ function sysTables(){
     { kod:'TBL-0011', ad:'Personel Tanıtım Kartı',   aciklama:'Personel · bölüm (şirket/proje/yap-sat/al-sat) · ünvan · iletişim', sayi:personelKartlari.length,                 git:"state.adminTable='TBL-0011';render()" },
     { kod:'TBL-0012', ad:'Ödeme Emri Kartı',         aciklama:'Ödeme emri belgesi · hak sahibi · bütçe · kesinti · onay silsilesi', sayi:odemeEmriKartlari.length,                git:"state.adminTable='TBL-0012';render()" },
     { kod:'TBL-0013', ad:'Ödeme Sözü Kartı',         aciklama:'Ödeme taahhüdü · tutar · vade · durum',             sayi:odemeSozuKartlari.length,                        git:"state.adminTable='TBL-0013';render()" },
-    { kod:'TBL-0014', ad:'Tahminlenen Bütçe Çıkış Kartı', aciklama:'Öngörülen harcama · dönem · tahmini tutar · kesinlik', sayi:butceCikisKartlari.length,                   git:"state.adminTable='TBL-0014';render()" }
+    { kod:'TBL-0014', ad:'Tahminlenen Bütçe Çıkış Kartı', aciklama:'Öngörülen harcama · çıkış tipi/türü · tekrar · tahmini tutar', sayi:butceCikisKartlari.length,          git:"state.adminTable='TBL-0014';render()" },
+    { kod:'TBL-0015', ad:'Gider Kartı',              aciklama:'Düzenli gider (kira, maaş, YK, mali müşavir…) · tekrarlı çıkış', sayi:giderKartlari.length,                  git:"state.adminTable='TBL-0015';render()" }
   ];
 }
 function viewAdminRecords(){
@@ -5520,7 +5532,7 @@ function delRow(kod,i){
     if(i < vendorAccounts.length){ const r=vendorAccounts.splice(i,1)[0]; logAction('trash-2','red','Cari kart silindi · '+(r&&r.ad||'')); }
     else { const li=i-vendorAccounts.length; const r=lawyers.splice(li,1)[0]; logAction('trash-2','red','Avukat kaydı silindi · '+(r&&r.name||'')); }
   } else {
-    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari,'TBL-0013':odemeSozuKartlari,'TBL-0014':butceCikisKartlari};
+    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari,'TBL-0013':odemeSozuKartlari,'TBL-0014':butceCikisKartlari,'TBL-0015':giderKartlari};
     const arr=map[kod]; if(arr&&i>=0&&i<arr.length){ const r=arr.splice(i,1)[0]; logAction('trash-2','red','Kayıt silindi · '+kod+' · '+((r&&(r.name||r.ad||r.title||r.subject||r.no))||'')); }
   }
   render(); toast('Kayıt silindi ✓');
@@ -5652,15 +5664,44 @@ function butceCikisFormCard(){
     ${sectionTitle('trending-down','Tahminlenen Bütçe Çıkış Kartı','Belge No otomatik · TBÇ-2026-XXXX · öngörülen harcama')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
       <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Belge No (otomatik)</label><input value="${nextTbcNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
-      <input id="bcKalem" placeholder="Harcama Kalemi / Açıklama" class="sm:col-span-5 ${inpC}" />
+      <select id="bcCikisTipi" class="sm:col-span-3 ${selC}" title="Çıkış Tipi">${CIKIS_TIPI.map(o=>`<option>${o}</option>`).join('')}</select>
+      <select id="bcCikisTuru" class="sm:col-span-3 ${selC}" title="Çıkış Türü">${GIDER_TURU.map(o=>`<option>${o}</option>`).join('')}</select>
+      <input id="bcKalem" placeholder="Harcama Kalemi / Açıklama" class="sm:col-span-6 ${inpC}" />
       <input id="bcKod" placeholder="Bütçe Kodu / Masraf Merkezi" class="sm:col-span-4 ${inpC}" />
       <input id="bcDonem" placeholder="Dönem (ör. 2026-Q4 / Ekim)" class="sm:col-span-3 ${inpC}" />
       <input id="bcTutar" type="number" placeholder="Tahmini Tutar ₺" class="sm:col-span-3 ${inpC}" />
-      <select id="bcKesinlik" class="sm:col-span-3 ${selC}" title="Kesinlik">${['Yüksek','Orta','Düşük'].map(o=>`<option ${o==='Orta'?'selected':''}>${o}</option>`).join('')}</select>
-      <input id="bcProje" placeholder="Proje (varsa)" class="sm:col-span-3 ${inpC}" />
-      <input id="bcAciklama" placeholder="Not / açıklama" class="sm:col-span-12 ${inpC}" />
+      <select id="bcKesinlik" class="sm:col-span-2 ${selC}" title="Kesinlik">${['Yüksek','Orta','Düşük'].map(o=>`<option ${o==='Orta'?'selected':''}>${o}</option>`).join('')}</select>
+      <p class="sm:col-span-12 text-[11px] uppercase tracking-wider text-gold mt-2 flex items-center gap-1.5"><i data-lucide="repeat" class="h-3.5 w-3.5"></i>Tekrarlama</p>
+      <select id="bcTekrar" class="sm:col-span-4 ${selC}">${TEKRAR_TIPI.map(o=>`<option>${o}</option>`).join('')}</select>
+      <input id="bcAyGun" type="number" min="1" max="31" placeholder="Ayın günü (1-31)" class="sm:col-span-4 ${inpC}" />
+      <input id="bcKez" type="number" placeholder="Tekrar sayısı (kez)" class="sm:col-span-4 ${inpC}" />
+      <input id="bcProje" placeholder="Proje (varsa)" class="sm:col-span-6 ${inpC}" />
+      <input id="bcAciklama" placeholder="Not / açıklama" class="sm:col-span-6 ${inpC}" />
     </div>
     <div class="mt-3 flex justify-end"><button onclick="addButceCikis()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Bütçe Çıkışı Oluştur</button></div>
+  </div>`;
+}
+function giderFormCard(){
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
+  return `<div class="card rounded-2xl p-5">
+    ${sectionTitle('repeat','Gider Kartı','Belge No otomatik · GDR-2026-XXXX · düzenli/tekrarlı gider tanımı')}
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Belge No (otomatik)</label><input value="${nextGdrNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
+      <select id="gdCikisTipi" class="sm:col-span-3 ${selC}" title="Çıkış Tipi">${CIKIS_TIPI.map(o=>`<option>${o}</option>`).join('')}</select>
+      <select id="gdCikisTuru" class="sm:col-span-3 ${selC}" title="Çıkış Türü / Gider Türü">${GIDER_TURU.map(o=>`<option>${o}</option>`).join('')}</select>
+      <input id="gdTutar" type="number" placeholder="Tutar ₺" class="sm:col-span-3 ${inpC}" />
+      <input id="gdAd" placeholder="Gider adı (ör. Merkez Ofis Kirası)" class="sm:col-span-6 ${inpC}" />
+      <input id="gdAlacakli" placeholder="Alacaklı / Ödenecek Taraf" class="sm:col-span-3 ${inpC}" />
+      <input id="gdKod" placeholder="Bütçe / Masraf Kodu" class="sm:col-span-3 ${inpC}" />
+      <p class="sm:col-span-12 text-[11px] uppercase tracking-wider text-gold mt-2 flex items-center gap-1.5"><i data-lucide="repeat" class="h-3.5 w-3.5"></i>Tekrarlama</p>
+      <select id="gdTekrar" class="sm:col-span-4 ${selC}">${TEKRAR_TIPI.map(o=>`<option ${o==='Her Ay'?'selected':''}>${o}</option>`).join('')}</select>
+      <input id="gdAyGun" type="number" min="1" max="31" placeholder="Her ayın ... günü (1-31)" class="sm:col-span-4 ${inpC}" />
+      <input id="gdKez" type="number" placeholder="Tekrar sayısı (kez)" class="sm:col-span-4 ${inpC}" />
+      <input id="gdBaslangic" placeholder="Başlangıç tarihi (gg.aa.yyyy)" class="sm:col-span-4 ${inpC}" />
+      <input id="gdAciklama" placeholder="Not / açıklama" class="sm:col-span-8 ${inpC}" />
+    </div>
+    <div class="mt-3 flex justify-end"><button onclick="addGiderKart()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Gider Kartı Oluştur</button></div>
   </div>`;
 }
 function tblForm(kod){
@@ -5727,8 +5768,15 @@ function viewAdminTable(kod){
     const toplam=butceCikisKartlari.reduce((a,r)=>a+(r.tutar||0),0);
     return `${back}${butceCikisFormCard()}
     <div class="card rounded-2xl p-5 mt-4">${sectionTitle('trending-down','Tahminlenen Bütçe Çıkışları',butceCikisKartlari.length+' kalem · toplam '+money(toplam))}
-      <div class="overflow-x-auto"><table class="w-full text-sm min-w-[820px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Belge No</th><th class="text-left font-medium">Kalem</th><th class="text-left font-medium">Dönem</th><th class="text-right font-medium">Tahmini</th><th class="text-left font-medium">Kesinlik</th>${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
-      <tbody>${butceCikisKartlari.length?butceCikisKartlari.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.kalem)}</td><td class="text-slate-400">${esc(r.donem||'—')}</td><td class="text-right text-amber-300">${money(r.tutar||0)}</td><td>${badge(r.kesinlik||'Orta',kt(r.kesinlik))}</td>${canDel?`<td class="text-right"><button onclick="delRow('TBL-0014',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${canDel?6:5}" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div>
+      <div class="overflow-x-auto"><table class="w-full text-sm min-w-[920px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Belge No</th><th class="text-left font-medium">Kalem</th><th class="text-left font-medium">Çıkış Türü</th><th class="text-left font-medium">Tekrar</th><th class="text-right font-medium">Tahmini</th><th class="text-left font-medium">Kesinlik</th>${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
+      <tbody>${butceCikisKartlari.length?butceCikisKartlari.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.kalem)}</td><td class="text-slate-300 text-[12px]">${esc(r.cikisTuru||'—')}</td><td class="text-slate-400 text-[12px]">${tekrarOzet(r)}</td><td class="text-right text-amber-300">${money(r.tutar||0)}</td><td>${badge(r.kesinlik||'Orta',kt(r.kesinlik))}</td>${canDel?`<td class="text-right"><button onclick="delRow('TBL-0014',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${canDel?7:6}" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div>
+    </div>`; }
+  if(kod==='TBL-0015'){
+    const toplamAy=giderKartlari.filter(r=>r.tekrar!=='Tek Seferlik').reduce((a,r)=>a+(r.tutar||0),0);
+    return `${back}${giderFormCard()}
+    <div class="card rounded-2xl p-5 mt-4">${sectionTitle('repeat','Gider Kartları',giderKartlari.length+' gider · aylık düzenli toplam '+money(toplamAy))}
+      <div class="overflow-x-auto"><table class="w-full text-sm min-w-[880px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Belge No</th><th class="text-left font-medium">Gider</th><th class="text-left font-medium">Çıkış Türü</th><th class="text-right font-medium">Tutar</th><th class="text-left font-medium">Tekrar</th>${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
+      <tbody>${giderKartlari.length?giderKartlari.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.ad)}</td><td>${badge(r.cikisTuru||'—','gold')}</td><td class="text-right text-amber-300">${money(r.tutar||0)}</td><td class="text-slate-400 text-[12px]">${tekrarOzet(r)}</td>${canDel?`<td class="text-right"><button onclick="delRow('TBL-0015',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${canDel?6:5}" class="text-center text-slate-500 py-6">Gider kartı yok.</td></tr>`}</tbody></table></div>
     </div>`; }
   if(kod==='TBL-0009'){ return `${back}<div class="card rounded-2xl p-5">${sectionTitle('hash','Cari Tür Kodları Tanımlama','Her cari türü için muhasebe kod öneki · iç cari kodu bu önekle üretilir')}
     <div class="space-y-2">${CARI_TURU.map(t=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
@@ -6900,7 +6948,7 @@ function subTabsLeftHtml(){
   const active = currentSub();
   const modName = (MODULES.find(m=>m.id===state.module)||{}).name || (state.module==='admin'?'Sistem Yöneticisi':'');
   const kartMenu = state.module==='admin' ? (()=>{
-    const KARTLAR=[['TBL-0010','Satın Alma Talep Kartı','clipboard-list'],['TBL-0012','Ödeme Emri Kartı','receipt-text'],['TBL-0013','Ödeme Sözü Kartı','handshake'],['TBL-0014','Tahminlenen Bütçe Çıkış Kartı','trending-down']];
+    const KARTLAR=[['TBL-0010','Satın Alma Talep Kartı','clipboard-list'],['TBL-0012','Ödeme Emri Kartı','receipt-text'],['TBL-0013','Ödeme Sözü Kartı','handshake'],['TBL-0014','Tahminlenen Bütçe Çıkış Kartı','trending-down'],['TBL-0015','Gider Kartı','repeat']];
     return `<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">Belge Kartları</div>`
       + KARTLAR.map(([k,l,ic])=>`<button onclick="state.adminUsers=false;state.adminTable='${k}';setModule('admin')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${state.adminTable===k?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${ic}" class="h-[18px] w-[18px] ${state.adminTable===k?'text-[#f0a58a]':''}"></i><span class="truncate">${l}</span></button>`).join('')
       + '<div class="my-2 border-t border-white/5"></div>';
