@@ -3778,13 +3778,7 @@ function viewProfit(){
         <div><span class="block text-[11px] text-slate-500">Net</span><span class="font-bold text-gold">${mn(rp.tin-rp.tout)}</span></div>
       </div>
     </div>
-    <div class="grid grid-cols-3 gap-3 text-center mb-3">
-      <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">Toplam Giriş</p><p class="text-sm font-bold text-emer-light">${mn(tin)}</p></div>
-      <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">Toplam Çıkış</p><p class="text-sm font-bold text-rose-400">${mn(tout)}</p></div>
-      <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">Net</p><p class="text-sm font-bold text-gold">${mn(tin-tout)}</p></div>
-    </div>
-    <div class="overflow-x-auto"><table class="w-full text-sm"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Ay (2026)</th><th class="text-right font-medium">Giriş</th><th class="text-right font-medium">Çıkış</th><th class="text-right font-medium">Net</th></tr></thead>
-    <tbody>${r.map((x,i)=>`<tr class="border-b border-white/5 ${i===rp.mi&&rp.lbl!=='Yıl'?'bg-gold/10':''}"><td class="py-2 ${i===rp.mi&&rp.lbl!=='Yıl'?'text-gold font-semibold':'text-slate-200'}">${AYLAR[i]}${i===rp.mi&&rp.lbl!=='Yıl'?' ◂':''}</td><td class="text-right text-emer-light">₺${x[0]}</td><td class="text-right text-rose-400">₺${x[1]}</td><td class="text-right text-slate-300">₺${x[0]-x[1]}</td></tr>`).join('')}</tbody></table></div>`; })()}
+    `; })()}
   </div>
 
   <!-- NAKİT AKIŞ DETAYI (kalem bazında · rakamlar nereden geliyor) -->
