@@ -459,8 +459,6 @@ const MODULES = [
   { id:'profitability', name:'Finans Yönetimi', sub:'Kâr Marjı · OPEX · Satın Alma · Satıcılar',  icon:'coins',            roles:['ceo','cfo','advisor_fin','auditor','muhasebe','satinalma','satisekip'], group:'category' },
   { id:'finance',       name:'Mali Yönetim',   sub:'Gelir Tablosu · Bilanço · Nakit Pozisyonu',  icon:'banknote',         roles:['ceo','cfo','advisor_fin','auditor','muhasebe'],      group:'category' },
   { id:'legal',         name:'Hukuk & Risk',   sub:'Analiz · Dava · İcra · Önleyici',            icon:'scale',            roles:['ceo','cfo','advisor_legal','advisor_legal2','auditor'], group:'category' },
-  { id:'contracts',     name:'Sözleşmeler',    sub:'İnşaat · İK · Danışmanlık · Tedarik',        icon:'file-signature',   roles:['ceo','cfo','advisor_legal','advisor_legal2','auditor'], group:'category' },
-  { id:'partnership',   name:'Ortaklık',       sub:'Hisse · Temettü · Kurul Kararları',          icon:'handshake',        roles:['ceo','cfo'],                                         group:'category' },
   { id:'hr',            name:'İK Yönetimi',    sub:'Kadro · Bordro · Performans · İşe Alım',     icon:'users-round',      roles:['ceo','cfo'],                                         group:'category' },
   { id:'news',          name:'Duyurular',      sub:'Duyurular · Yatırımcı Talepleri',            icon:'megaphone',        roles:['ceo','cfo','sales','advisor_fin','auditor','vendor','muhasebe','satisekip','satinalma'], group:'category' },
   { id:'access',        name:'Erişim Yönetimi',sub:'Kullanıcılar · Yetki Matrisi',               icon:'shield-check',     roles:['ceo'],                                               group:'category' }
@@ -1918,9 +1916,9 @@ function viewBI(){
           ['hard-hat','Aktif Proje', aktifProje, bitenProje+' tamamlandı','gold',"setModule('projects')"],
           ['home','Konut Satışı', satilan.toLocaleString('tr-TR'), money(satisCiro),'emer',"setModule('sales')"],
           ['gavel','Aktif Dava', aktifDava, lawsuits.length+' toplam dosya','amber',"setModule('legal')"],
-          ['file-signature','Sözleşme', contracts.length, czPend.length+' onayda','gold',"setModule('contracts')"],
+          ['file-signature','Sözleşme', contracts.length, czPend.length+' onayda','gold',"(state.sub=state.sub||{},state.sub.legal='c_tumu',setModule('legal'))"],
           ['shopping-cart','Satın Alma', purchaseRequests.length, poPend.length+' bekliyor','emer',"goPurchase()"],
-          ['phone-incoming','Yatırımcı Talebi', yeniTalep, 'dönüş bekliyor','amber',"setModule('partnership')"]
+          ['phone-incoming','Yatırımcı Talebi', yeniTalep, 'dönüş bekliyor','amber',"(state.sub=state.sub||{},state.sub.company='hisse',setModule('company'))"]
         ].map(([ic,lbl,val,sub,tn,fn])=>`
           <button onclick="${fn}" class="text-left rounded-xl border border-white/8 bg-navy-700/40 hover:border-gold/40 transition p-3.5">
             <div class="flex items-center gap-2"><i data-lucide="${ic}" class="h-4 w-4 ${toneCls(tn)}"></i><span class="text-[11px] text-slate-400">${lbl}</span></div>
@@ -3665,6 +3663,8 @@ function legalAreaPanel(key){
   return '';
 }
 function viewLegal(){
+  // Sözleşmeler artık Hukuk & Risk içinde — ilgili alt-sekmelerde sözleşme görünümünü göster
+  { const _cs=currentSub(); if(_cs && _cs.indexOf('c_')===0) return viewContracts(); }
   // 3x3 heatmap: rows impact (3 top), cols prob (1..3)
   const grid = [3,2,1].map(imp=>[1,2,3].map(prob=>{
     const here = risks.filter(r=>r.impact===imp && r.prob===prob);
@@ -5067,6 +5067,8 @@ function firmCard(name){
   </div>`;
 }
 function viewCompany(){
+  // Ortaklık (Hisse & Temettü / Kurul) artık Firma Bilgileri içinde — ilgili sekmelerde o görünümü göster
+  { const _cs=currentSub(); if(_cs==='hisse' || _cs==='kurul') return viewPartnership(); }
   const sf = scopeFirm();
   const list = sf ? companies.filter(c=>c.name===sf).map(c=>c.name) : companies.map(c=>c.name);
   const dolu = companies.map(c=>c.name).filter(n=>firmInfo[n]).length;
@@ -5500,12 +5502,12 @@ function viewAvukat(){
 function viewContracts(){
   const all = contracts.filter(contractCanSee);
   const canAct = state.role==='ceo'||state.role==='cfo';
-  const subMap = { insaat:'İnşaat', ik:'İK', danismanlik:'Danışmanlık', tedarik:'Tedarik' };
-  const sub = currentSub() || 'insaat';
+  const subMap = { c_insaat:'İnşaat', c_ik:'İK', c_danismanlik:'Danışmanlık', c_tedarik:'Tedarik' };
+  const sub = currentSub() || 'c_tumu';
   const kat = subMap[sub];
   const list = kat ? all.filter(c=>c.kategori===kat) : all;
   let body;
-  if(sub==='insaat'){
+  if(sub==='c_insaat'){
     const alts = ['Proje Sözleşmesi','Yapı Denetim','Taşeronluk','Taahhüt'];
     body = alts.map(a=>{
       const items = list.filter(c=>c.alt===a);
@@ -5903,8 +5905,8 @@ function searchGoCase(i){ closeSearch(); const l=lawsuits[i]; if(!l) return;
   state.sub=state.sub||{}; state.module='legal'; state.katView=null; state.projView=null;
   state.sub.legal=(l.tur==='İcra Takibi'?'icra':'dava'); state.caseView=i; saveState(); toggleSidebar(false); render(); }
 function searchGoContract(i){ closeSearch(); const c=contracts[i]; if(!c) return;
-  const map={'İnşaat':'insaat','İK':'ik','Danışmanlık':'danismanlik','Tedarik':'tedarik'};
-  state.sub=state.sub||{}; state.module='contracts'; state.caseView=null; state.sub.contracts=map[c.kategori]||'tumu'; saveState(); toggleSidebar(false); render(); }
+  const map={'İnşaat':'c_insaat','İK':'c_ik','Danışmanlık':'c_danismanlik','Tedarik':'c_tedarik'};
+  state.sub=state.sub||{}; state.module='legal'; state.caseView=null; state.sub.legal=map[c.kategori]||'c_tumu'; saveState(); toggleSidebar(false); render(); }
 function searchGoProject(i){ closeSearch(); if(!projects[i]) return;
   state.module='projects'; state.sub=state.sub||{}; state.sub.projects='tumu'; state.caseView=null; state.katView=null; state.projView=null; saveState(); render(); openProject(i); }
 function searchGoKat(id){ closeSearch(); state.module='projects'; state.sub=state.sub||{}; state.sub.projects='katkarsiligi'; state.caseView=null; state.projView=null; saveState(); toggleSidebar(false); openKatPage(id); }
@@ -5934,7 +5936,7 @@ function filterSearch(q){
     if(cs.length) groups.push(sectionH('Dava & İcra Dosyaları')+cs.map(({l,i})=>row(l.tur==='İcra Takibi'?'receipt-text':'gavel',l.subject,l.no+' · '+l.avukat,badge(l.hal,l.hal==='Biten'?'slate':'gold'),`searchGoCase(${i})`)).join(''));
   }
   // Sözleşmeler
-  if(canId('contracts')){
+  if(canId('legal')){
     const cc=contracts.map((c,i)=>({c,i})).filter(({c})=>match(c.title)||match(c.id)||match(c.party)||match(c.kategori)||match(c.alt)).slice(0,6);
     if(cc.length) groups.push(sectionH('Sözleşmeler')+cc.map(({c,i})=>row('file-signature',c.title,c.id+' · '+c.party,badge(c.kategori,'slate'),`searchGoContract(${i})`)).join(''));
   }
@@ -6013,8 +6015,9 @@ const SUBTABS = {
   projects:      [{id:'tumu',label:'Tümü',icon:'pie-chart'},{id:'proje',label:'Proje',icon:'pen-tool'},{id:'denetim',label:'Yapı Denetim',icon:'clipboard-check'},{id:'taahhut',label:'İnşaat Taahhüt',icon:'hard-hat'},{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'}],
   profitability: [{id:'marj',label:'Kâr Marjı',icon:'percent'},{id:'segment',label:'Segment & OPEX',icon:'layers'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'maliyet',label:'Maliyet Hesapları',icon:'receipt-text'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'ozkaynak',label:'Özkaynak Durumu',icon:'scale'},{id:'satinalma',label:'Satın Alma',icon:'shopping-cart'},{id:'saticilar',label:'Satıcılar Hesabı',icon:'badge-dollar-sign'}],
   finance:       [{id:'gelir',label:'Gelir Tablosu',icon:'file-spreadsheet'},{id:'vergi',label:'Vergi Planlama',icon:'percent'},{id:'kurumlar',label:'Kurumlar Beyannamesi',icon:'file-text'},{id:'ozkaynak',label:'Özkaynak Hs.',icon:'scale'},{id:'kdv',label:'KDV İadesi',icon:'receipt-text'},{id:'ssk',label:'SSK Hesaplama',icon:'users'}],
-  legal:         [{id:'analiz',label:'Analiz',icon:'bar-chart-3'},{id:'dava',label:'Dava',icon:'gavel'},{id:'icra',label:'İcra',icon:'receipt-text'},{id:'onleyici',label:'Önleyici Hukuk',icon:'shield-check'},{id:'taslak',label:'Sözleşme Taslakları',icon:'file-text'},{id:'kvkk',label:'KVKK / Mevzuat',icon:'book-check'}],
+  legal:         [{id:'analiz',label:'Analiz',icon:'bar-chart-3'},{id:'dava',label:'Dava',icon:'gavel'},{id:'icra',label:'İcra',icon:'receipt-text'},{id:'onleyici',label:'Önleyici Hukuk',icon:'shield-check'},{id:'taslak',label:'Sözleşme Taslakları',icon:'file-text'},{id:'c_tumu',label:'Sözleşmeler · Tümü',icon:'file-signature'},{id:'c_insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat'},{id:'c_ik',label:'İK Sözleşmeleri',icon:'users'},{id:'c_danismanlik',label:'Danışmanlık Söz.',icon:'briefcase'},{id:'c_tedarik',label:'Tedarik Söz.',icon:'truck'},{id:'kvkk',label:'KVKK / Mevzuat',icon:'book-check'}],
   contracts:     [{id:'insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat'},{id:'ik',label:'İK Sözleşmeleri',icon:'users'},{id:'danismanlik',label:'Danışmanlık',icon:'briefcase'},{id:'tedarik',label:'Tedarik',icon:'truck'},{id:'tumu',label:'Tümü',icon:'list'}],
+  company:       [{id:'kunye',label:'Firma Bilgileri',icon:'building-2'},{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}]
 };
