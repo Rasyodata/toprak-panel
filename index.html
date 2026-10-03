@@ -5511,13 +5511,17 @@ function addSatinAlmaKart(){
   const g=i=>document.getElementById(i)||{}; const urun=(g('saUrun').value||'').trim();
   if(!urun){ toast('Ürün / Hizmet adı girin'); return; }
   const no=nextSatNo();
-  satinAlmaTalepKartlari.unshift({ no, adSoyad:(g('saAdSoyad').value||'').trim(), departman:(g('saDepartman').value||'').trim(), tarih:(g('saTarih').value||'').trim(), iletisim:(g('saIletisim').value||'').trim(),
-    urun, teknik:(g('saTeknik').value||'').trim(), miktar:parseInt(g('saMiktar').value||'0',10)||0, birim:g('saBirim').value||'Adet', gerekce:(g('saGerekce').value||'').trim(), teslimTarih:(g('saTeslimTarih').value||'').trim(), teslimat:(g('saTeslimat').value||'').trim(),
-    masraf:(g('saMasraf').value||'').trim(), tahmini:parseInt(g('saTahmini').value||'0',10)||0, proje:(g('saProje').value||'').trim(),
+  const departman=(g('saDepartman').value||'').trim(), miktar=parseInt(g('saMiktar').value||'0',10)||0, birim=g('saBirim').value||'Adet', tahmini=parseInt(g('saTahmini').value||'0',10)||0, proje=(g('saProje').value||'').trim();
+  satinAlmaTalepKartlari.unshift({ no, adSoyad:(g('saAdSoyad').value||'').trim(), departman, tarih:(g('saTarih').value||'').trim(), iletisim:(g('saIletisim').value||'').trim(),
+    urun, teknik:(g('saTeknik').value||'').trim(), miktar, birim, gerekce:(g('saGerekce').value||'').trim(), teslimTarih:(g('saTeslimTarih').value||'').trim(), teslimat:(g('saTeslimat').value||'').trim(),
+    masraf:(g('saMasraf').value||'').trim(), tahmini, proje,
     tedarikci:(g('saTedarikci').value||'').trim(), belgeler:(g('saBelgeler').value||'').trim(),
     depOnay:(g('saDepOnay').value||'').trim(), finansOnay:(g('saFinansOnay').value||'').trim(), durum:g('saDurum').value||'Beklemede' });
-  logAction('clipboard-list','gold', `Satın alma talebi · ${no} · ${urun} (${g('saDepartman').value||'—'})`);
-  render(); toast(`${no} talep kartı oluşturuldu`);
+  // Onay akışına da düşsün (İş Onay Akışı · Satın Alma Talepleri — purchaseRequests)
+  purchaseRequests.unshift({ id:no, firm:proje||'Toprak Grup', item:urun+(miktar?` (${miktar} ${birim})`:''), amount:tahmini, dept:departman||'Satın Alma', urgent:false, status:'pending', satNo:no });
+  logAction('clipboard-list','gold', `Satın alma talebi · ${no} · ${urun} (${departman||'—'})`);
+  logAction('git-pull-request','gold', `${no} satın alma talebi İş Onay Akışına düştü · ${departman||'İlgili Birim'} → Satın Alma → Finans`, 'İş Onay Akışı');
+  render(); toast(`${no} oluşturuldu · onay akışına düştü`);
 }
 function tblForm(kod){
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
