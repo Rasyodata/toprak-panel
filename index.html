@@ -2099,7 +2099,7 @@ function viewPerformance(){
 }
 function nakitRaporData(){
   const r=nakitByYear[2026]; const per=state.nakitPeriod||'ay';
-  let mi=9; try{ const m=new Date().getMonth(); if(m>=0&&m<=11) mi=m; }catch(e){}
+  let mi; if(typeof state.nakitAy==='number' && state.nakitAy>=0 && state.nakitAy<=11){ mi=state.nakitAy; } else { mi=9; try{ const m=new Date().getMonth(); if(m>=0&&m<=11) mi=m; }catch(e){} }
   const yin=r.reduce((a,x)=>a+x[0],0), yout=r.reduce((a,x)=>a+x[1],0);
   let tin,tout,lbl,etiket;
   if(per==='yil'){ tin=yin; tout=yout; lbl='Yıl'; etiket='2026 Yılı'; }
@@ -3784,7 +3784,7 @@ function viewProfit(){
       <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">Net</p><p class="text-sm font-bold text-gold">${mn(tin-tout)}</p></div>
     </div>
     <div class="overflow-x-auto"><table class="w-full text-sm"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Ay (2026)</th><th class="text-right font-medium">Giriş</th><th class="text-right font-medium">Çıkış</th><th class="text-right font-medium">Net</th></tr></thead>
-    <tbody>${r.map((x,i)=>`<tr class="border-b border-white/5"><td class="py-2 text-slate-200">${AYLAR[i]}</td><td class="text-right text-emer-light">₺${x[0]}</td><td class="text-right text-rose-400">₺${x[1]}</td><td class="text-right text-slate-300">₺${x[0]-x[1]}</td></tr>`).join('')}</tbody></table></div>`; })()}
+    <tbody>${r.map((x,i)=>`<tr class="border-b border-white/5 ${i===rp.mi&&rp.lbl!=='Yıl'?'bg-gold/10':''}"><td class="py-2 ${i===rp.mi&&rp.lbl!=='Yıl'?'text-gold font-semibold':'text-slate-200'}">${AYLAR[i]}${i===rp.mi&&rp.lbl!=='Yıl'?' ◂':''}</td><td class="text-right text-emer-light">₺${x[0]}</td><td class="text-right text-rose-400">₺${x[1]}</td><td class="text-right text-slate-300">₺${x[0]-x[1]}</td></tr>`).join('')}</tbody></table></div>`; })()}
   </div>
 
   <!-- NAKİT AKIŞ DETAYI (kalem bazında · rakamlar nereden geliyor) -->
@@ -6990,8 +6990,11 @@ function leftSpecialSubsHtml(){
   if(state.module==='profitability' && active==='nakit'){
     const per=state.nakitPeriod||'ay';
     const pb=(v,l,ic)=>`<button onclick="state.nakitPeriod='${v}';render()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${per===v?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${ic}" class="h-[18px] w-[18px] ${per===v?'text-[#f0a58a]':''}"></i><span class="truncate">${l}</span></button>`;
+    const curMi=(typeof state.nakitAy==='number')?state.nakitAy:(()=>{try{return new Date().getMonth();}catch(e){return 9;}})();
+    const aySecici = per!=='yil' ? `<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Ay seç</label><select onchange="state.nakitAy=+this.value;render()" class="w-full bg-navy-700/70 border border-white/10 rounded-lg px-2 py-1.5 text-[13px] text-slate-200 outline-none">${AYLAR.map((a,i)=>`<option value="${i}" ${i===curMi?'selected':''}>${a} 2026</option>`).join('')}</select></div>` : '';
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Nakit Akış Raporu</div>`
       + pb('gun','Gün','calendar') + pb('hafta','Hafta','calendar-days') + pb('ay','Ay','calendar-range') + pb('yil','Yıl','calendar-check')
+      + aySecici
       + sep;
   }
   // Satıcılar Hesabı → Hesap Aç · Cari Hesaplar · Şüpheli Alacaklar sol barda
