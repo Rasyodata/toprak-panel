@@ -2543,7 +2543,7 @@ function viewCariDetail(id){
   const v = getCariKartlar().find(x=>x.id===id);
   if(!v) return viewAdminRecords();
   const row=(lbl,val)=>`<div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">${lbl}</p><p class="text-sm text-slate-100 font-medium">${val||'—'}</p></div>`;
-  return `<button onclick="state.cariView=null;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Kayıtlara Dön</button>
+  return `<button onclick="state.cariView=null;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Cari Kartlara Dön</button>
   <div class="card card-gold rounded-2xl p-5 mb-4">
     <div class="flex items-start justify-between gap-3 flex-wrap">
       <div>
@@ -2567,7 +2567,7 @@ function viewCariDetail(id){
   </div>
   ${v._src==='vendor'?`<div class="mt-4"><button onclick="toggleVendorSuspect(${v._vi})" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border ${v.suspheli?'border-emer/40 text-emer-light hover:bg-emer/10':'border-rose-400/40 text-rose-300 hover:bg-rose-500/10'} transition"><i data-lucide="${v.suspheli?'shield-check':'alert-triangle'}" class="h-4 w-4"></i>${v.suspheli?'Şüpheliden Çıkar':'Şüpheli Alacağı Çek'}</button></div>`:`<p class="mt-4 text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="scale" class="h-3.5 w-3.5 text-gold"></i>Avukat kaydı · Hukuk & Risk › Avukatlar ekranından yönetilir.</p>`}`;
 }
-function setVendorView(v){ state.vendorView=v; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
+function setVendorView(v){ state.vendorView=v; state.cariView=null; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function toggleVendorSuspect(i){ const v=vendorAccounts[i]; if(!v) return; v.suspheli=!v.suspheli; logAction('alert-triangle', v.suspheli?'amber':'emer', `${v.ad} ${v.suspheli?'şüpheli alacaklara alındı':'şüpheli listesinden çıkarıldı'}`); render(); toast(v.suspheli?'Şüpheli alacaklara eklendi':'Şüpheli listesinden çıkarıldı'); }
 function addVendorAccount(){
   const g=id=>document.getElementById(id)||{};
@@ -3532,6 +3532,7 @@ function viewProjects(){
    ============================================================ */
 function viewProfit(){
   // Satıcılar Hesabı · Hesap Aç / Şüpheli Alacaklar sağ içerik alanında
+  if(currentSub()==='saticilar' && state.cariView) return viewCariDetail(state.cariView);
   if(currentSub()==='saticilar' && state.vendorView==='new') return viewVendorForm();
   if(currentSub()==='saticilar' && state.vendorView==='suspect') return viewVendorSuspect();
   const rows = [
@@ -5350,7 +5351,7 @@ function viewCompany(){
    VIEW: ADMIN (Sistem Yöneticisi — Kullanıcılar & Görüntüle)
    ============================================================ */
 function cariRecordCard(k){
-  return `<div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
+  return `<div onclick="setCariView('${k.id}')" class="rounded-xl border border-white/8 bg-navy-700/40 p-4 cursor-pointer hover:border-gold/40 transition">
     <div class="flex items-start justify-between gap-2 flex-wrap">
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap"><span class="font-mono text-[11px] text-gold">${k.kayitNo}</span>${badge(k.tipi||'—','gold')}${badge(k.turu||'—','slate')}${k.suspheli?badge('Şüpheli','red'):''}${k._src==='lawyer'?badge('Avukat Tanımla','emer'):''}</div>
