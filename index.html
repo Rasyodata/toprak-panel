@@ -25,7 +25,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZWNjZDcyIi8+PHN0b3Agb2Zmc2V0PSIwLjU1IiBzdG9wLWNvbG9yPSIjZDRhZjM3Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYTk4MDFjIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTUiIGZpbGw9InVybCgjZykiLz4KPHJlY3QgeD0iMi45IiB5PSIyLjkiIHdpZHRoPSI1OC4yIiBoZWlnaHQ9IjU4LjIiIHJ4PSIxNC4yIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS1vcGFjaXR5PSIwLjM1IiBzdHJva2Utd2lkdGg9IjEuMSIvPgo8ZyBmaWxsPSIjMTQyMzNmIj4KPHJlY3QgeD0iMTMuNSIgeT0iMTQiIHdpZHRoPSIzNyIgaGVpZ2h0PSI1LjYiIHJ4PSIyLjgiLz4KPHJlY3QgeD0iMTUuNSIgeT0iMzYiIHdpZHRoPSI4LjQiIGhlaWdodD0iMTQiIHJ4PSIxLjYiLz4KPHJlY3QgeD0iMjcuOCIgeT0iMjkiIHdpZHRoPSI4LjQiIGhlaWdodD0iMjEiIHJ4PSIxLjYiLz4KPHJlY3QgeD0iNDAuMSIgeT0iMjMiIHdpZHRoPSI4LjQiIGhlaWdodD0iMjciIHJ4PSIxLjYiLz4KPC9nPgo8ZyBmaWxsPSIjZWNjZDcyIj4KPHJlY3QgeD0iMTgiIHk9IjM5IiB3aWR0aD0iMy40IiBoZWlnaHQ9IjIuNCIgcng9IjAuNSIvPgo8cmVjdCB4PSIzMC4zIiB5PSIzMi41IiB3aWR0aD0iMy40IiBoZWlnaHQ9IjIuNCIgcng9IjAuNSIvPgo8cmVjdCB4PSI0Mi42IiB5PSIyNyIgd2lkdGg9IjMuNCIgaGVpZ2h0PSIyLjQiIHJ4PSIwLjUiLz4KPC9nPgo8L3N2Zz4=" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@1.50.0/dist/umd/lucide.min.js" integrity="sha384-/sIySnlbVLfPSNdgy7yqanP6+Dv4en7FlBure4Rag0mp480bA2f+nTviC6933zkQ" crossorigin="anonymous"></script>
 <script>
@@ -47,8 +47,8 @@
 <style>
   html,body{ -webkit-tap-highlight-color:transparent; }
   body{ background:#181b22; font-family:'Public Sans','Inter',system-ui,sans-serif; }
-  /* Başlıklar: halimproje.com ile aynı — Inter Tight */
-  h1,h2,h3,h4,#brandTitle,.font-display{ font-family:'Inter Tight','Public Sans',system-ui,sans-serif; letter-spacing:-0.01em; }
+  /* Tüm site tek yazı tipi: Public Sans (halimproje.com nav fontu) */
+  h1,h2,h3,h4,h5,h6,#brandTitle,.font-display,button,input,select,textarea{ font-family:'Public Sans','Inter',system-ui,sans-serif; }
   ::-webkit-scrollbar{ width:9px; height:9px; }
   ::-webkit-scrollbar-thumb{ background:#2a3350; border-radius:9px; }
   ::-webkit-scrollbar-track{ background:transparent; }
@@ -87,6 +87,13 @@
   @keyframes pulseDot{ 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.3; transform:scale(.7);} }
   .live-dot{ animation:pulseDot 1.3s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce){ .ticker-track{ animation:none; } .live-dot{ animation:none; } }
+  /* Dashboard canlandırma: grafik çizimi + kart girişi */
+  @keyframes drawLine{ from{ stroke-dashoffset:1400; } to{ stroke-dashoffset:0; } }
+  .draw-line{ stroke-dasharray:1400; animation:drawLine 1.5s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  [data-sub="live"] .card, [data-sub="analytics"] .card, [data-sub="stats"] .card, [data-sub="performance"] .card, [data-sub="bi"] .card{ animation:cardIn .5s ease-out both; }
+  .gauge-ring{ transition:background .2s linear; }
+  @media (prefers-reduced-motion: reduce){ .draw-line{ animation:none; } [data-sub] .card{ animation:none; } }
   .card-gold{ border-color:rgba(212,175,55,.35); box-shadow:0 0 0 1px rgba(212,175,55,.12),0 10px 40px -10px rgba(0,0,0,.6); }
   .fade-in{ animation:fade .35s ease both; }
   @keyframes fade{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
@@ -829,6 +836,31 @@ function render(){
   lucide.createIcons();
   // animate bars after paint
   requestAnimationFrame(()=>document.querySelectorAll('.bar[data-w]').forEach(b=>b.style.width=b.dataset.w+'%'));
+  requestAnimationFrame(runCounters);
+}
+/* Dashboard canlandırma: sayı count-up + gauge dolum animasyonu (yalnız görünür panelde) */
+function _trVal(s){ const money=/₺/.test(s), pct=/%/.test(s); let n=s.replace(/[^\d.,-]/g,''); n=n.replace(/\./g,'').replace(',','.'); const v=parseFloat(n); return {v:isNaN(v)?null:v, fmt: money?'money':pct?'pct':'num', neg:/-/.test(s)}; }
+function _fmtVal(v,fmt){ if(fmt==='money') return money(Math.round(v)); if(fmt==='pct'){ return '%'+ (Math.round(v*10)/10).toLocaleString('tr-TR'); } return Math.round(v).toLocaleString('tr-TR'); }
+function runCounters(){
+  let perf; try{ perf=performance.now(); }catch(e){ perf=0; }
+  document.querySelectorAll('#content .cup-auto').forEach(el=>{
+    if(el.offsetParent===null || el.dataset.cupDone) return;
+    const raw=el.textContent.trim(); if(raw.includes('/')) return; const {v,fmt}=_trVal(raw); if(v===null){ return; }
+    el.dataset.cupDone='1';
+    const dur=950; let t0=null;
+    const step=(t)=>{ if(t0===null)t0=t; const p=Math.min(1,(t-t0)/dur); const e=1-Math.pow(1-p,3); el.textContent=_fmtVal(v*e,fmt); if(p<1) requestAnimationFrame(step); else el.textContent=raw; };
+    requestAnimationFrame(step);
+    setTimeout(()=>{ el.textContent=raw; }, dur+400); // garanti: her koşulda son değer
+  });
+  document.querySelectorAll('#content [data-gpct]').forEach(g=>{
+    if(g.offsetParent===null || g.dataset.gDone) return; g.dataset.gDone='1';
+    const pct=+g.getAttribute('data-gpct'); const col=g.getAttribute('data-gcol')||'#d4af37'; const lbl=g.querySelector('[data-glabel]');
+    const dur=1000; let t0=null; const D=pct*3.6;
+    const setFinal=()=>{ g.style.background=`conic-gradient(${col} 0deg ${D.toFixed(1)}deg, rgba(148,163,184,0.18) ${D.toFixed(1)}deg 360deg)`; if(lbl) lbl.textContent='%'+pct; };
+    const step=(t)=>{ if(t0===null)t0=t; const p=Math.min(1,(t-t0)/dur); const e=1-Math.pow(1-p,3); const d=(D*e).toFixed(1); g.style.background=`conic-gradient(${col} 0deg ${d}deg, rgba(148,163,184,0.18) ${d}deg 360deg)`; if(lbl) lbl.textContent='%'+Math.round(pct*e); if(p<1) requestAnimationFrame(step); else setFinal(); };
+    requestAnimationFrame(step);
+    setTimeout(setFinal, dur+400); // garanti: her koşulda dolu
+  });
 }
 
 function setRole(r){
@@ -1924,8 +1956,9 @@ function viewBI(){
    İŞ ZEKASI EK PANELLERİ — Live / Analytics / Statistics / Performance
    ============================================================ */
 const gauge = (pct,label,sub,col) => { const c=col==='emer'?'#10b981':col==='red'?'#f43f5e':col==='teal'?'#2bb6c4':'#d4af37';
+  const D=(pct*3.6).toFixed(1);
   return `<div class="flex flex-col items-center">
-    <div class="relative h-28 w-28 rounded-full" style="background:conic-gradient(${c} 0 ${pct}%, rgba(148,163,184,.18) ${pct}% 100%)">
+    <div class="gauge-ring relative h-28 w-28 rounded-full" style="background:conic-gradient(${c} 0deg ${D}deg, rgba(148,163,184,0.18) ${D}deg 360deg)">
       <div class="absolute inset-[10px] rounded-full flex flex-col items-center justify-center" style="background:var(--card-bg,#1d212b)">
         <span class="text-2xl font-bold" style="color:${c}">%${pct}</span></div>
     </div>
@@ -1973,7 +2006,7 @@ function viewAnalytics(){
       ${sectionTitle('area-chart','Aylık Ciro Trendi','2026 · nakit girişi (Mn ₺)')}
       <svg viewBox="0 0 600 180" preserveAspectRatio="none" class="w-full h-44">
         <defs><linearGradient id="agrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4af37" stop-opacity="0.5"/><stop offset="1" stop-color="#d4af37" stop-opacity="0"/></linearGradient></defs>
-        ${(()=>{ const pts=rows.map((r,i)=>`${(i/(rows.length-1)*600).toFixed(0)},${(170-r[0]/mx*150).toFixed(0)}`); return `<polygon fill="url(#agrad)" points="0,180 ${pts.join(' ')} 600,180"/><polyline fill="none" stroke="#d4af37" stroke-width="2.5" points="${pts.join(' ')}"/>`+rows.map((r,i)=>`<circle cx="${(i/(rows.length-1)*600).toFixed(0)}" cy="${(170-r[0]/mx*150).toFixed(0)}" r="3" fill="#e7c766"/>`).join(''); })()}
+        ${(()=>{ const pts=rows.map((r,i)=>`${(i/(rows.length-1)*600).toFixed(0)},${(170-r[0]/mx*150).toFixed(0)}`); return `<polygon fill="url(#agrad)" points="0,180 ${pts.join(' ')} 600,180"/><polyline class="draw-line" fill="none" stroke="#d4af37" stroke-width="2.5" points="${pts.join(' ')}"/>`+rows.map((r,i)=>`<circle cx="${(i/(rows.length-1)*600).toFixed(0)}" cy="${(170-r[0]/mx*150).toFixed(0)}" r="3" fill="#e7c766"/>`).join(''); })()}
       </svg>
       <div class="flex justify-between text-[10px] text-slate-500 mt-1">${AYLAR.map(m=>`<span>${m}</span>`).join('')}</div>
     </div>
@@ -2001,7 +2034,7 @@ function viewStats(){
   const totCiro=companies.reduce((a,c)=>a+c.ciro,0), totNet=companies.reduce((a,c)=>a+c.net,0);
   const avgMarj=(companies.reduce((a,c)=>a+c.margin,0)/companies.length).toFixed(1);
   const uSold=unitSales.reduce((a,u)=>a+u.sold,0), uTot=unitSales.reduce((a,u)=>a+u.total,0);
-  const stat=(ic,lbl,val,sub,tone)=>`<div class="card rounded-2xl p-5 relative overflow-hidden"><div class="absolute -right-5 -top-5 h-20 w-20 rounded-full ${tone==='emer'?'bg-emer/15':tone==='red'?'bg-rose-500/15':'bg-gold/15'} blur-2xl"></div><i data-lucide="${ic}" class="h-5 w-5 ${tone==='emer'?'text-emer-light':tone==='red'?'text-rose-400':'text-gold'}"></i><p class="mt-3 text-2xl font-bold text-white tabular-nums">${val}</p><p class="text-xs text-slate-400 mt-0.5">${lbl}</p><p class="text-[11px] text-slate-500">${sub}</p></div>`;
+  const stat=(ic,lbl,val,sub,tone)=>`<div class="card rounded-2xl p-5 relative overflow-hidden"><div class="absolute -right-5 -top-5 h-20 w-20 rounded-full ${tone==='emer'?'bg-emer/15':tone==='red'?'bg-rose-500/15':'bg-gold/15'} blur-2xl"></div><i data-lucide="${ic}" class="h-5 w-5 ${tone==='emer'?'text-emer-light':tone==='red'?'text-rose-400':'text-gold'}"></i><p class="mt-3 text-2xl font-bold text-white tabular-nums cup-auto">${val}</p><p class="text-xs text-slate-400 mt-0.5">${lbl}</p><p class="text-[11px] text-slate-500">${sub}</p></div>`;
   return `
   <div data-sub="stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
     ${stat('landmark','Konsolide Ciro',money(totCiro),companies.length+' şirket','gold')}
