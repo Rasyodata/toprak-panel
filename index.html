@@ -2150,6 +2150,20 @@ function exportNakitPdf(){
   const w=window.open('','_blank'); if(!w){ toast('Açılır pencere engellendi — izin verin'); return; } w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>{try{w.print();}catch(e){}},500);
   logAction('file-text','gold','Nakit akış raporu PDF (yazdır) dışa aktarıldı · '+firm); toast('PDF yazdırma açıldı ✓');
 }
+function nakitHareketlerHtml(){
+  const mv=[];
+  butceCikisKartlari.forEach(r=>mv.push({tarih:r.tarih||'—',no:r.no,ad:r.kalem,yon:'Çıkış',tutar:(r.tutar||0)*(r.tekrar==='Belirli Tekrar'&&r.kez?r.kez:1)}));
+  odemeEmriKartlari.forEach(r=>mv.push({tarih:r.tarih||'—',no:r.no,ad:(r.hakSahibi||'')+' · ödeme emri',yon:'Çıkış',tutar:r.net||0}));
+  odemeSozuKartlari.forEach(r=>mv.push({tarih:r.sozTarih||'—',no:r.no,ad:(r.hakSahibi||'')+' · ödeme sözü',yon:'Çıkış',tutar:r.tutar||0}));
+  giderKartlari.forEach(r=>mv.push({tarih:r.baslangic||'—',no:r.no,ad:(r.ad||'')+' · gider',yon:'Çıkış',tutar:r.tutar||0}));
+  satinAlmaTalepKartlari.forEach(r=>mv.push({tarih:r.tarih||'—',no:r.no,ad:(r.urun||'')+' · satın alma',yon:'Çıkış',tutar:r.tahmini||0}));
+  const toplam=mv.reduce((a,m)=>a+m.tutar,0);
+  return `<div id="nakitHareketler" data-sub="nakit" class="card rounded-2xl p-5 mt-5">
+    ${sectionTitle('arrow-left-right','Nakit Hareketleri',mv.length+' hareket · toplam çıkış '+money(toplam))}
+    <div class="overflow-x-auto"><table class="w-full text-sm min-w-[720px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Tarih</th><th class="text-left font-medium">Belge No</th><th class="text-left font-medium">Açıklama</th><th class="text-left font-medium">Yön</th><th class="text-right font-medium">Tutar</th></tr></thead>
+    <tbody>${mv.length?mv.map(m=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5 text-slate-400 text-[12px]">${esc(m.tarih)}</td><td class="font-mono text-[11px] text-gold">${esc(m.no)}</td><td class="text-slate-100">${esc(m.ad)}</td><td>${badge(m.yon,'red')}</td><td class="text-right text-rose-400">-${money(m.tutar)}</td></tr>`).join(''):`<tr><td colspan="5" class="text-center text-slate-500 py-6">Hareket yok · "Çıkış Oluştur" veya belge kartlarıyla buraya düşer.</td></tr>`}</tbody></table></div>
+  </div>`;
+}
 function konsolideNakitData(){
   const r=nakitByYear[2026]; const tin=r.reduce((a,x)=>a+x[0],0);
   const planTL=butceCikisKartlari.reduce((a,x)=>a+((x.tutar||0)*(x.tekrar==='Belirli Tekrar'&&x.kez?x.kez:1)),0)+odemeEmriKartlari.reduce((a,x)=>a+(x.net||0),0)+odemeSozuKartlari.reduce((a,x)=>a+(x.tutar||0),0)+giderKartlari.reduce((a,x)=>a+(x.tutar||0),0);
@@ -3836,6 +3850,9 @@ function viewProfit(){
     </div>
     `; })()}
   </div>
+
+  ${state.nakitCikis?`<div data-sub="nakit" class="mt-5">${butceCikisFormCard('Çıkış Oluştur · TBL-0014','Nakit çıkış kalemi · Hareketlere ve konsolide nakit akışa düşer')}</div>`:''}
+  ${nakitHareketlerHtml()}
 
 
   <!-- MALİYET HESAPLARI -->
@@ -6970,7 +6987,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; state.cariEdit=null; state.adminUsers=false; state.adminTable=null; state.topluNakit=false; state.bcEdit=null; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; state.cariEdit=null; state.adminUsers=false; state.adminTable=null; state.topluNakit=false; state.bcEdit=null; state.nakitCikis=false; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
@@ -7018,9 +7035,14 @@ function leftSpecialSubsHtml(){
     const aySecici = per!=='yil' ? `<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Ay seç</label><select onchange="state.nakitAy=+this.value;render()" class="${selC}">${AYLAR.map((a,i)=>`<option value="${i}" ${i===curMi?'selected':''}>${a} 2026</option>`).join('')}</select></div>` : '';
     const haftaSecici = per==='hafta' ? `<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Hafta seç (${AYLAR[curMi]})</label><select onchange="state.nakitHafta=+this.value;render()" class="${selC}">${[1,2,3,4,5].map(w=>`<option value="${w}" ${(state.nakitHafta||1)===w?'selected':''}>${w}. Hafta</option>`).join('')}</select></div>` : '';
     const gunSecici = per==='gun' ? `<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Gün seç (${AYLAR[curMi]})</label><select onchange="state.nakitGun=+this.value;render()" class="${selC}">${Array.from({length:31},(_,k)=>k+1).map(d=>`<option value="${d}" ${(state.nakitGun||1)===d?'selected':''}>${d}. Gün</option>`).join('')}</select></div>` : '';
+    const lb=(oc,l,ic,on)=>`<button onclick="${oc}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${ic}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${l}</span></button>`;
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Nakit Akış Raporu</div>`
       + pb('gun','Gün','calendar') + pb('hafta','Hafta','calendar-days') + pb('ay','Ay','calendar-range') + pb('yil','Yıl','calendar-check')
       + aySecici + haftaSecici + gunSecici
+      + sep
+      + `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Nakit İşlemleri</div>`
+      + lb("state.nakitCikis=true;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'Çıkış Oluştur','file-minus',!!state.nakitCikis)
+      + lb("state.nakitCikis=false;render();setTimeout(function(){var e=document.getElementById('nakitHareketler');if(e)e.scrollIntoView({behavior:'smooth'})},60)",'Hareketler','arrow-left-right',!state.nakitCikis)
       + sep;
   }
   // Satıcılar Hesabı → Hesap Aç · Cari Hesaplar · Şüpheli Alacaklar sol barda
