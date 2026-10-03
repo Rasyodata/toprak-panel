@@ -6041,10 +6041,14 @@ function buildSubNav(){
   // Tüm şirketlerde alt-sekmeler üst yatay alt-barda (üst barın hemen altında); yalnızca Konsolide'de sol barda.
   if(state.company!=='all' && subs && subs.length>=2){
     const active = currentSub();
-    const modName = (MODULES.find(m=>m.id===state.module)||{}).name || '';
     bar.style.display='';
-    bar.innerHTML = `<span class="shrink-0 self-center text-[10px] uppercase tracking-[.2em] text-gold pr-1">${modName.replace(/ Yönetimi| Yönetim/,'')}</span>`
-      + subs.map(s=>`
+    // Alt-bar rengi üst bardan farklı — şirketin vurgu renginin hafif tonu (light temadaki !important override'ını da ezer)
+    const comp = COMPANY_TABS.find(x=>x.id===state.company);
+    const ac = ((comp && comp.accent) || '#9a7b1a').replace('#','');
+    const ar=parseInt(ac.slice(0,2),16)||154, ag=parseInt(ac.slice(2,4),16)||123, ab=parseInt(ac.slice(4,6),16)||26;
+    bar.style.setProperty('background-color', `rgba(${ar},${ag},${ab},0.09)`, 'important');
+    bar.style.setProperty('border-bottom', `1px solid rgba(${ar},${ag},${ab},0.22)`, 'important');
+    bar.innerHTML = subs.map(s=>`
       <button onclick="setSub('${s.id}')"
         class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition
                ${s.id===active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}">
@@ -6052,6 +6056,7 @@ function buildSubNav(){
       </button>`).join('');
   } else {
     bar.style.display='none'; bar.innerHTML='';
+    bar.style.removeProperty('background-color'); bar.style.removeProperty('border-bottom');
   }
 }
 function subTabsLeftHtml(){
