@@ -888,7 +888,12 @@ function buildNav(){
       <i data-lucide="${m.icon}" class="h-4 w-4 ${active?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${m.name.replace(/ Yönetimi| Yönetim/,'')}</span>
       ${pend>0?`<span class="min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">${pend}</span>`:''}
     </button>`;
-  }).join('');
+  }).join('')
+  + (isAdminUser() ? (()=>{ const a=state.module==='admin';
+      return `<button onclick="setModule('admin')"
+        class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition
+               ${a?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}">
+        <i data-lucide="shield-check" class="h-4 w-4 ${a?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">Sistem Yöneticisi</span></button>`; })() : '');
 
   // SOL BAR — aktif modülün alt-sekmeleri + Patron Ekranı · Duyurular · Erişim + Şirket Seçimi + Sistem Yöneticisi
   nav.innerHTML = subTabsLeftHtml() + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
@@ -907,13 +912,6 @@ function buildNav(){
       class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gold border border-gold/30 bg-gold/5 hover:bg-gold/10 transition">
       <i data-lucide="replace" class="h-[18px] w-[18px]"></i>
       <span class="truncate">Şirket Seçimine Geç</span>
-      <i data-lucide="chevron-right" class="h-4 w-4 ml-auto"></i>
-    </button>` : '')
-  + (isAdminUser() ? `
-    <button onclick="setModule('admin')"
-      class="mt-1 w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm ${state.module==='admin'?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-300 border border-white/10 bg-navy-700/40 hover:border-gold/40'}">
-      <i data-lucide="shield" class="h-[18px] w-[18px]"></i>
-      <span class="truncate">Sistem Yöneticisi</span>
       <i data-lucide="chevron-right" class="h-4 w-4 ml-auto"></i>
     </button>` : '');
 
