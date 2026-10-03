@@ -5408,9 +5408,21 @@ function viewAdminRecords(){
     <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Her tablo kendi modülünde düzenlenir · "Düzenle" ilgili tabloya gider.</p>
   </div>`;
 }
+function delRow(kod,i){
+  if(!isAdminUser()){ toast('Silme yetkiniz yok'); return; }
+  if(kod==='TBL-0001'){
+    if(i < vendorAccounts.length){ const r=vendorAccounts.splice(i,1)[0]; logAction('trash-2','red','Cari kart silindi · '+(r&&r.ad||'')); }
+    else { const li=i-vendorAccounts.length; const r=lawyers.splice(li,1)[0]; logAction('trash-2','red','Avukat kaydı silindi · '+(r&&r.name||'')); }
+  } else {
+    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks};
+    const arr=map[kod]; if(arr&&i>=0&&i<arr.length){ const r=arr.splice(i,1)[0]; logAction('trash-2','red','Kayıt silindi · '+kod+' · '+((r&&(r.name||r.ad||r.title||r.subject||r.no))||'')); }
+  }
+  render(); toast('Kayıt silindi ✓');
+}
 function viewAdminTable(kod){
   const back=`<button onclick="state.adminTable=null;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Kayıtlara Dön</button>`;
-  const tbl=(title,cols,rows)=>`${back}<div class="card rounded-2xl p-5">${sectionTitle('database',title,rows.length+' kayıt')}<div class="overflow-x-auto"><table class="w-full text-sm min-w-[720px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>${cols.map(c=>`<th class="py-2 font-medium ${c.r?'text-right':'text-left'}">${c.h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">${cols.map(c=>`<td class="py-2.5 ${c.r?'text-right':''} ${c.cls||'text-slate-300'}">${c.f(r)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${cols.length}" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div></div>`;
+  const canDel = isAdminUser();
+  const tbl=(title,cols,rows)=>`${back}<div class="card rounded-2xl p-5">${sectionTitle('database',title,rows.length+' kayıt'+(canDel?' · tam yetki: düzenle & sil':''))}<div class="overflow-x-auto"><table class="w-full text-sm min-w-[720px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>${cols.map(c=>`<th class="py-2 font-medium ${c.r?'text-right':'text-left'}">${c.h}</th>`).join('')}${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead><tbody>${rows.length?rows.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">${cols.map(c=>`<td class="py-2.5 ${c.r?'text-right':''} ${c.cls||'text-slate-300'}">${c.f(r)}</td>`).join('')}${canDel?`<td class="text-right"><button onclick="delRow('${kod}',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${cols.length+(canDel?1:0)}" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div></div>`;
   const kod2=s=>`<span class="font-mono text-[12px] text-gold">${s}</span>`;
   if(kod==='TBL-0001'){ return tbl('Cari Kartlar Tablosu',[{h:'Kod',f:r=>kod2(r.kayitNo)},{h:'Ünvan',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Tipi',f:r=>r.tipi||'—'},{h:'Türü',f:r=>r.turu||'—'},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Bakiye',r:1,f:r=>money(r.bakiye||0)}],getCariKartlar()); }
   if(kod==='TBL-0002'){ return tbl('Dava & İcra Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Konu',cls:'text-slate-100 font-medium',f:r=>esc(r.subject)},{h:'Tür',f:r=>r.tur||'—'},{h:'Taraf',f:r=>r.side||'—'},{h:'Değer',r:1,f:r=>money(r.value||0)},{h:'Hal',r:1,f:r=>r.hal||'—'}],lawsuits); }
