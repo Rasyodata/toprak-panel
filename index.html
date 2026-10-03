@@ -3963,7 +3963,7 @@ function viewLegal(){
         ${(state.role==='ceo'&&!a.approved)?`<button onclick="approveLawyer(${ai})" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emer text-navy-900 font-semibold text-[11px] hover:bg-emer-light transition"><i data-lucide="check" class="h-3.5 w-3.5"></i>Onayla</button>`:''}
       </div>`).join('')}
       ${state.role==='ceo'?`
-      <div class="flex flex-col sm:flex-row gap-2 pt-2">
+      <div id="avukatTanimForm" class="flex flex-col sm:flex-row gap-2 pt-2">
         <input id="avAd" type="text" placeholder="Avukat adı (Av. …)" class="flex-1 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
         <input id="avMail" type="text" placeholder="E-posta" class="flex-1 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
         <button onclick="addLawyer()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="user-plus" class="h-4 w-4"></i> Avukat Tanımla</button>
@@ -6198,6 +6198,13 @@ function leftSpecialSubsHtml(){
       + lbtn("state.assignView='avukat';state.davaNew=false;state.caseView=null;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'scale','Avukat Atama',state.assignView==='avukat')
       + lbtn("state.assignView='personel';state.davaNew=false;state.caseView=null;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'user','Personel Atama',state.assignView==='personel')
       + lbtn("state.caseView=null;state.davaNew=false;state.assignView=null;render();setTimeout(function(){var e=document.getElementById('"+listId+"');if(e)e.scrollIntoView({behavior:'smooth'})},60)",'folder','Dosyalar',!state.caseView&&!state.davaNew&&!state.assignView)
+      + sep;
+  }
+  // Avukatlar sekmesi → sol barda Avukat İşlemleri
+  if(state.module==='legal' && active==='avukatlar'){
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Avukat İşlemleri</div>`
+      + lbtn("var e=document.getElementById('avukatTanimForm')||document.getElementById('avukatlarBolum');if(e){e.scrollIntoView({behavior:'smooth'});var i=document.getElementById('avAd');if(i)setTimeout(function(){i.focus()},300);}",'user-plus','Avukat Tanımla',false)
+      + lbtn("document.getElementById('avukatlarBolum')?.scrollIntoView({behavior:'smooth'})",'users','Avukat Listesi',false)
       + sep;
   }
   // Sözleşmeler alanı → sözleşme türleri sol barda
