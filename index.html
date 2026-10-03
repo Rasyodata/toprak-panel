@@ -935,7 +935,8 @@ function buildNav(){
       return `<button onclick="setModule('admin')"
         class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition
                ${a?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}">
-        <i data-lucide="shield-check" class="h-4 w-4 ${a?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">Sistem Yöneticisi</span></button>`; })() : '');
+        <i data-lucide="shield-check" class="h-4 w-4 ${a?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">Sistem Yöneticisi</span></button>`; })() : '')
+  + (isAdminUser() ? `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>` : '');
 
   // SOL BAR — aktif modülün alt-sekmeleri + Patron Ekranı · Duyurular · Erişim + Şirket Seçimi + Sistem Yöneticisi
   nav.innerHTML = (state.company!=='all' ? leftSpecialSubsHtml() : subTabsLeftHtml()) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
