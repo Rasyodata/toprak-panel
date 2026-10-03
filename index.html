@@ -938,7 +938,7 @@ function buildNav(){
         <i data-lucide="shield-check" class="h-4 w-4 ${a?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">Sistem Yöneticisi</span></button>`; })() : '');
 
   // SOL BAR — aktif modülün alt-sekmeleri + Patron Ekranı · Duyurular · Erişim + Şirket Seçimi + Sistem Yöneticisi
-  nav.innerHTML = (state.company!=='all' ? leftSpecialSubsHtml() : subTabsLeftHtml()) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
+  nav.innerHTML = (state.module==='admin' ? '' : (state.company!=='all' ? leftSpecialSubsHtml() : subTabsLeftHtml())) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
     const active = m.id===state.module;
     return `
     <button onclick="setModule('${m.id}')"
@@ -6487,7 +6487,7 @@ function buildSubNav(){
   // `left:true` olan alt-sekmeler sol barda gösterilir (ör. sözleşme türleri); kalanlar üst yatay alt-barda.
   const subs = allSubs ? allSubs.filter(s=>!s.left) : null;
   // Tüm şirketlerde alt-sekmeler üst yatay alt-barda (üst barın hemen altında); yalnızca Konsolide'de sol barda.
-  if(state.company!=='all' && subs && subs.length>=2){
+  if((state.company!=='all' || state.module==='admin') && subs && subs.length>=2){
     const active = currentSub();
     bar.style.display='';
     // Alt-bar rengi üst bardan farklı — şirketin vurgu renginin hafif tonu (light temadaki !important override'ını da ezer)
