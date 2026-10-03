@@ -23,6 +23,9 @@
 <meta name="twitter:description" content="Konsolide finans, satış, proje, hukuk ve onay akışları tek kurumsal panelde." />
 <meta name="twitter:image" content="https://toprak-panel.onrender.com/og.svg" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZWNjZDcyIi8+PHN0b3Agb2Zmc2V0PSIwLjU1IiBzdG9wLWNvbG9yPSIjZDRhZjM3Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYTk4MDFjIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTUiIGZpbGw9InVybCgjZykiLz4KPHJlY3QgeD0iMi45IiB5PSIyLjkiIHdpZHRoPSI1OC4yIiBoZWlnaHQ9IjU4LjIiIHJ4PSIxNC4yIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS1vcGFjaXR5PSIwLjM1IiBzdHJva2Utd2lkdGg9IjEuMSIvPgo8ZyBmaWxsPSIjMTQyMzNmIj4KPHJlY3QgeD0iMTMuNSIgeT0iMTQiIHdpZHRoPSIzNyIgaGVpZ2h0PSI1LjYiIHJ4PSIyLjgiLz4KPHJlY3QgeD0iMTUuNSIgeT0iMzYiIHdpZHRoPSI4LjQiIGhlaWdodD0iMTQiIHJ4PSIxLjYiLz4KPHJlY3QgeD0iMjcuOCIgeT0iMjkiIHdpZHRoPSI4LjQiIGhlaWdodD0iMjEiIHJ4PSIxLjYiLz4KPHJlY3QgeD0iNDAuMSIgeT0iMjMiIHdpZHRoPSI4LjQiIGhlaWdodD0iMjciIHJ4PSIxLjYiLz4KPC9nPgo8ZyBmaWxsPSIjZWNjZDcyIj4KPHJlY3QgeD0iMTgiIHk9IjM5IiB3aWR0aD0iMy40IiBoZWlnaHQ9IjIuNCIgcng9IjAuNSIvPgo8cmVjdCB4PSIzMC4zIiB5PSIzMi41IiB3aWR0aD0iMy40IiBoZWlnaHQ9IjIuNCIgcng9IjAuNSIvPgo8cmVjdCB4PSI0Mi42IiB5PSIyNyIgd2lkdGg9IjMuNCIgaGVpZ2h0PSIyLjQiIHJ4PSIwLjUiLz4KPC9nPgo8L3N2Zz4=" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@1.50.0/dist/umd/lucide.min.js" integrity="sha384-/sIySnlbVLfPSNdgy7yqanP6+Dv4en7FlBure4Rag0mp480bA2f+nTviC6933zkQ" crossorigin="anonymous"></script>
 <script>
@@ -35,7 +38,7 @@
           gold:   { DEFAULT:'#d4af37', light:'#e7c766', dark:'#a8841f' },
           emer:   { DEFAULT:'#10b981', light:'#34d399', dark:'#047857' }
         },
-        fontFamily: { sans:['Inter','system-ui','Segoe UI','sans-serif'] },
+        fontFamily: { sans:['Public Sans','Inter','system-ui','Segoe UI','sans-serif'], display:['Inter Tight','Public Sans','system-ui','sans-serif'] },
         boxShadow: { 'exec':'0 10px 40px -10px rgba(0,0,0,.6)', 'glow':'0 0 0 1px rgba(212,175,55,.25)' }
       }
     }
@@ -43,7 +46,9 @@
 </script>
 <style>
   html,body{ -webkit-tap-highlight-color:transparent; }
-  body{ background:#181b22; }
+  body{ background:#181b22; font-family:'Public Sans','Inter',system-ui,sans-serif; }
+  /* Başlıklar: halimproje.com ile aynı — Inter Tight */
+  h1,h2,h3,h4,#brandTitle,.font-display{ font-family:'Inter Tight','Public Sans',system-ui,sans-serif; letter-spacing:-0.01em; }
   ::-webkit-scrollbar{ width:9px; height:9px; }
   ::-webkit-scrollbar-thumb{ background:#2a3350; border-radius:9px; }
   ::-webkit-scrollbar-track{ background:transparent; }
