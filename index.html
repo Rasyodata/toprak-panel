@@ -949,7 +949,7 @@ function buildNav(){
       ${active?'<span class="ml-auto h-1.5 w-1.5 rounded-full bg-[#f0a58a]"></span>':''}
     </button>`;
   }).join('')
-  + (needsCompanyChoice(state.role) ? `<div class="my-2 border-t border-white/5"></div>
+  + ((needsCompanyChoice(state.role) || ROLES[state.role].sysadmin) ? `<div class="my-2 border-t border-white/5"></div>
     <button onclick="openCompanyPicker()"
       class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gold border border-gold/30 bg-gold/5 hover:bg-gold/10 transition">
       <i data-lucide="replace" class="h-[18px] w-[18px]"></i>
