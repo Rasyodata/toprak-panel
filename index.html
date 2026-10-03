@@ -2103,8 +2103,8 @@ function nakitRaporData(){
   const yin=r.reduce((a,x)=>a+x[0],0), yout=r.reduce((a,x)=>a+x[1],0);
   let tin,tout,lbl,etiket;
   if(per==='yil'){ tin=yin; tout=yout; lbl='Yıl'; etiket='2026 Yılı'; }
-  else if(per==='hafta'){ tin=r[mi][0]/4.3; tout=r[mi][1]/4.3; lbl='Hafta'; etiket=AYLAR[mi]+' · o hafta'; }
-  else if(per==='gun'){ tin=r[mi][0]/30; tout=r[mi][1]/30; lbl='Gün'; etiket=AYLAR[mi]+' · o gün'; }
+  else if(per==='hafta'){ tin=r[mi][0]/4.3; tout=r[mi][1]/4.3; lbl='Hafta'; etiket=AYLAR[mi]+' · '+(state.nakitHafta||1)+'. Hafta'; }
+  else if(per==='gun'){ tin=r[mi][0]/30; tout=r[mi][1]/30; lbl='Gün'; etiket=AYLAR[mi]+' · '+(state.nakitGun||1)+'. Gün'; }
   else { tin=r[mi][0]; tout=r[mi][1]; lbl='Ay'; etiket=AYLAR[mi]+' 2026'; }
   return {r,tin,tout,lbl,etiket,mi,yin,yout}; }
 function exportNakitExcel(){
@@ -6991,10 +6991,13 @@ function leftSpecialSubsHtml(){
     const per=state.nakitPeriod||'ay';
     const pb=(v,l,ic)=>`<button onclick="state.nakitPeriod='${v}';render()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${per===v?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${ic}" class="h-[18px] w-[18px] ${per===v?'text-[#f0a58a]':''}"></i><span class="truncate">${l}</span></button>`;
     const curMi=(typeof state.nakitAy==='number')?state.nakitAy:(()=>{try{return new Date().getMonth();}catch(e){return 9;}})();
-    const aySecici = per!=='yil' ? `<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Ay seç</label><select onchange="state.nakitAy=+this.value;render()" class="w-full bg-navy-700/70 border border-white/10 rounded-lg px-2 py-1.5 text-[13px] text-slate-200 outline-none">${AYLAR.map((a,i)=>`<option value="${i}" ${i===curMi?'selected':''}>${a} 2026</option>`).join('')}</select></div>` : '';
+    const selC='w-full bg-navy-700/70 border border-white/10 rounded-lg px-2 py-1.5 text-[13px] text-slate-200 outline-none';
+    const aySecici = per!=='yil' ? `<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Ay seç</label><select onchange="state.nakitAy=+this.value;render()" class="${selC}">${AYLAR.map((a,i)=>`<option value="${i}" ${i===curMi?'selected':''}>${a} 2026</option>`).join('')}</select></div>` : '';
+    const haftaSecici = per==='hafta' ? `<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Hafta seç (${AYLAR[curMi]})</label><select onchange="state.nakitHafta=+this.value;render()" class="${selC}">${[1,2,3,4,5].map(w=>`<option value="${w}" ${(state.nakitHafta||1)===w?'selected':''}>${w}. Hafta</option>`).join('')}</select></div>` : '';
+    const gunSecici = per==='gun' ? `<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Gün seç (${AYLAR[curMi]})</label><select onchange="state.nakitGun=+this.value;render()" class="${selC}">${Array.from({length:31},(_,k)=>k+1).map(d=>`<option value="${d}" ${(state.nakitGun||1)===d?'selected':''}>${d}. Gün</option>`).join('')}</select></div>` : '';
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Nakit Akış Raporu</div>`
       + pb('gun','Gün','calendar') + pb('hafta','Hafta','calendar-days') + pb('ay','Ay','calendar-range') + pb('yil','Yıl','calendar-check')
-      + aySecici
+      + aySecici + haftaSecici + gunSecici
       + sep;
   }
   // Satıcılar Hesabı → Hesap Aç · Cari Hesaplar · Şüpheli Alacaklar sol barda
