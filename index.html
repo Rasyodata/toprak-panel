@@ -3757,11 +3757,33 @@ function viewDavaForm(){
   return `<button onclick="state.davaNew=false;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Davalara Dön</button>
   <div class="card rounded-2xl p-5">${davaFormInner()}</div>`;
 }
+function viewAvukatForm(){
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  return `<button onclick="state.avukatNew=false;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Avukatlara Dön</button>
+  <div class="card rounded-2xl p-5">
+    ${sectionTitle('user-plus','Avukat Tanımla','Ayrıntılı avukat / büro kaydı · yönetici onayına düşer')}
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+      <input id="avAd" type="text" placeholder="Avukat adı (Av. …)" class="sm:col-span-6 ${inpC}" />
+      <input id="avMail" type="text" placeholder="E-posta" class="sm:col-span-6 ${inpC}" />
+      <input id="avTel" type="text" placeholder="Telefon" class="sm:col-span-4 ${inpC}" />
+      <input id="avBuro" type="text" placeholder="Büro / Şirket" class="sm:col-span-8 ${inpC}" />
+      <input id="avBaro" type="text" placeholder="Baro / Sicil No" class="sm:col-span-6 ${inpC}" />
+      <input id="avAdres" type="text" placeholder="Adres" class="sm:col-span-6 ${inpC}" />
+      <input id="avUzmanlik" type="text" placeholder="Uzmanlık alanları (virgülle: Ticaret Hukuku, Gayrimenkul, İcra…)" class="sm:col-span-12 ${inpC}" />
+    </div>
+    <div class="mt-3 flex items-center justify-between gap-2 flex-wrap">
+      <p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Kayıt yönetici onayına düşer; onaylanınca dava atamalarında seçilebilir.</p>
+      <button onclick="addLawyer()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Avukat Tanımla</button>
+    </div>
+  </div>`;
+}
 function viewLegal(){
   // Dava Aç → formu sağdaki içerik alanında ayrı sayfa olarak aç
   if(state.module==='legal' && state.davaNew && (state.role==='ceo'||state.role==='cfo')) return viewDavaForm();
   // Avukat / Personel Atama → sağdaki içerik alanında yetki yönetim sayfası
   if(state.module==='legal' && state.assignView) return viewAtama(state.assignView);
+  // Avukat Tanımla → ayrıntılı kayıt formu sağdaki içerik alanında
+  if(state.module==='legal' && state.avukatNew && state.role==='ceo') return viewAvukatForm();
   // Sözleşmeler artık Hukuk & Risk içinde — ilgili alt-sekmelerde sözleşme görünümünü göster
   { const _cs=currentSub(); if(_cs && _cs.indexOf('c_')===0) return viewContracts(); }
   // Dava numarasına tıklandıysa ayrıntıyı sağdaki içerik alanında göster
@@ -3958,7 +3980,12 @@ function viewLegal(){
       ${lawyers.map((a,ai)=>`
       <div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
         <span class="h-9 w-9 rounded-lg bg-navy-600 border border-white/10 flex items-center justify-center text-slate-200 font-bold text-xs">${a.name.split(' ').slice(-1)[0].slice(0,2).toUpperCase()}</span>
-        <div class="min-w-0 flex-1"><p class="text-sm text-slate-100">${a.name}</p><p class="text-[11px] text-slate-500">${a.email} · ${lawsuits.filter(l=>l.avukat===a.name).length} dosya</p></div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm text-slate-100">${a.name}</p>
+          <p class="text-[11px] text-slate-500">${a.email} · ${lawsuits.filter(l=>l.avukat===a.name).length} dosya${a.tel?' · '+esc(a.tel):''}</p>
+          ${(a.buro||a.baro)?`<p class="text-[11px] text-slate-500 truncate">${[a.buro,a.baro].filter(Boolean).map(esc).join(' · ')}</p>`:''}
+          ${(a.uzmanlik&&a.uzmanlik.length)?`<div class="flex flex-wrap gap-1 mt-1">${a.uzmanlik.map(u=>badge(esc(u),'gold')).join('')}</div>`:''}
+        </div>
         ${a.approved?badge('Yetkili','emer'):badge('Onay Bekliyor','amber')}
         ${(state.role==='ceo'&&!a.approved)?`<button onclick="approveLawyer(${ai})" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emer text-navy-900 font-semibold text-[11px] hover:bg-emer-light transition"><i data-lucide="check" class="h-3.5 w-3.5"></i>Onayla</button>`:''}
       </div>`).join('')}
@@ -5986,10 +6013,15 @@ function approveLawsuit(i){
 function addLawyer(){
   const ad=((document.getElementById('avAd')||{}).value||'').trim();
   const mail=((document.getElementById('avMail')||{}).value||'').trim();
+  const tel=((document.getElementById('avTel')||{}).value||'').trim();
+  const buro=((document.getElementById('avBuro')||{}).value||'').trim();
+  const baro=((document.getElementById('avBaro')||{}).value||'').trim();
+  const adres=((document.getElementById('avAdres')||{}).value||'').trim();
+  const uzmanlik=((document.getElementById('avUzmanlik')||{}).value||'').split(',').map(s=>s.trim()).filter(Boolean);
   if(!ad){ toast('Avukat adı girin'); return; }
-  lawyers.push({ name:ad, email:mail||'-', approved:false });
-  logAction('user-plus','amber', `Yeni avukat tanımlandı · ${ad} (yönetici onayı bekliyor)`);
-  render(); toast(`${ad} tanımlandı · onay bekliyor`);
+  lawyers.push({ name:ad, email:mail||'-', tel, buro, baro, adres, uzmanlik, approved:false });
+  logAction('user-plus','amber', `Yeni avukat tanımlandı · ${ad}${buro?' · '+buro:''} (yönetici onayı bekliyor)`);
+  state.avukatNew=false; render(); toast(`${ad} tanımlandı · onay bekliyor`);
 }
 function approveLawyer(ai){
   const a=lawyers[ai]; if(!a) return; a.approved=true;
@@ -6147,7 +6179,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.davaNew=false; state.assignView=null; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.davaNew=false; state.assignView=null; state.avukatNew=false; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
@@ -6203,8 +6235,8 @@ function leftSpecialSubsHtml(){
   // Avukatlar sekmesi → sol barda Avukat İşlemleri
   if(state.module==='legal' && active==='avukatlar'){
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Avukat İşlemleri</div>`
-      + lbtn("var e=document.getElementById('avukatTanimForm')||document.getElementById('avukatlarBolum');if(e){e.scrollIntoView({behavior:'smooth'});var i=document.getElementById('avAd');if(i)setTimeout(function(){i.focus()},300);}",'user-plus','Avukat Tanımla',false)
-      + lbtn("document.getElementById('avukatlarBolum')?.scrollIntoView({behavior:'smooth'})",'users','Avukat Listesi',false)
+      + lbtn("state.avukatNew=true;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'user-plus','Avukat Tanımla',!!state.avukatNew)
+      + lbtn("state.avukatNew=false;render();setTimeout(function(){var e=document.getElementById('avukatlarBolum');if(e)e.scrollIntoView({behavior:'smooth'})},60)",'users','Avukat Listesi',!state.avukatNew)
       + sep;
   }
   // Sözleşmeler alanı → sözleşme türleri sol barda
