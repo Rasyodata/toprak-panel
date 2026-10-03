@@ -3662,7 +3662,28 @@ function legalAreaPanel(key){
   }
   return '';
 }
+function davaFormInner(){
+  return `
+    ${sectionTitle('folder-plus','Dava Girişi & Avukat Atama','Yeni dosya · yönetici onayına düşer')}
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+      <input id="dvKonu" type="text" placeholder="Dava konusu…" class="sm:col-span-4 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
+      <select id="dvTaraf" class="sm:col-span-2 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Lehine</option><option>Aleyhine</option></select>
+      <select id="dvAvukat" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none">${lawyers.filter(a=>a.approved).map(a=>`<option>${a.name}</option>`).join('')}</select>
+      <input id="dvTutar" type="number" placeholder="Anlaşma/Bütçe ₺" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
+      <input id="dvGider" type="number" placeholder="Dava gideri ₺" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
+      <input id="dvOdemeTarih" type="text" placeholder="Ödeme tarihi (gg.aa.yyyy)" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
+      <input id="dvPoa" type="text" placeholder="Vekaletname dosyası" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
+      <button onclick="addLawsuit()" class="sm:col-span-3 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Dava Ekle</button>
+    </div>
+    <p class="mt-2 text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Ödeme tarihi & giderler otomatik olarak Mali Yönetim nakit akışına yazılır.</p>`;
+}
+function viewDavaForm(){
+  return `<button onclick="state.davaNew=false;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Davalara Dön</button>
+  <div class="card rounded-2xl p-5">${davaFormInner()}</div>`;
+}
 function viewLegal(){
+  // Dava Aç → formu sağdaki içerik alanında ayrı sayfa olarak aç
+  if(state.module==='legal' && state.davaNew && (state.role==='ceo'||state.role==='cfo')) return viewDavaForm();
   // Sözleşmeler artık Hukuk & Risk içinde — ilgili alt-sekmelerde sözleşme görünümünü göster
   { const _cs=currentSub(); if(_cs && _cs.indexOf('c_')===0) return viewContracts(); }
   // Dava numarasına tıklandıysa ayrıntıyı sağdaki içerik alanında göster
@@ -3851,20 +3872,7 @@ function viewLegal(){
   </div>
 
   ${(state.role==='ceo'||state.role==='cfo') ? `
-  <div id="davaGirisForm" data-sub="dava" class="card rounded-2xl p-5 mt-5">
-    ${sectionTitle('folder-plus','Dava Girişi & Avukat Atama','Yeni dosya · yönetici onayına düşer')}
-    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <input id="dvKonu" type="text" placeholder="Dava konusu…" class="sm:col-span-4 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <select id="dvTaraf" class="sm:col-span-2 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Lehine</option><option>Aleyhine</option></select>
-      <select id="dvAvukat" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none">${lawyers.filter(a=>a.approved).map(a=>`<option>${a.name}</option>`).join('')}</select>
-      <input id="dvTutar" type="number" placeholder="Anlaşma/Bütçe ₺" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <input id="dvGider" type="number" placeholder="Dava gideri ₺" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <input id="dvOdemeTarih" type="text" placeholder="Ödeme tarihi (gg.aa.yyyy)" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <input id="dvPoa" type="text" placeholder="Vekaletname dosyası" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
-      <button onclick="addLawsuit()" class="sm:col-span-3 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Dava Ekle</button>
-    </div>
-    <p class="mt-2 text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Ödeme tarihi & giderler otomatik olarak Mali Yönetim nakit akışına yazılır.</p>
-  </div>
+  <div id="davaGirisForm" data-sub="dava" class="card rounded-2xl p-5 mt-5">${davaFormInner()}</div>
 
   <div id="avukatlarBolum" data-sub="avukatlar" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('scale','Avukat Tanımları & Yetkiler', state.role==='ceo'?'Yönetici onayı':'Görüntüleme')}
@@ -6017,7 +6025,7 @@ const SUBTABS = {
   projects:      [{id:'tumu',label:'Tümü',icon:'pie-chart'},{id:'proje',label:'Proje',icon:'pen-tool'},{id:'denetim',label:'Yapı Denetim',icon:'clipboard-check'},{id:'taahhut',label:'İnşaat Taahhüt',icon:'hard-hat'},{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'}],
   profitability: [{id:'marj',label:'Kâr Marjı',icon:'percent'},{id:'segment',label:'Segment & OPEX',icon:'layers'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'maliyet',label:'Maliyet Hesapları',icon:'receipt-text'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'ozkaynak',label:'Özkaynak Durumu',icon:'scale'},{id:'satinalma',label:'Satın Alma',icon:'shopping-cart'},{id:'saticilar',label:'Satıcılar Hesabı',icon:'badge-dollar-sign'}],
   finance:       [{id:'gelir',label:'Gelir Tablosu',icon:'file-spreadsheet'},{id:'vergi',label:'Vergi Planlama',icon:'percent'},{id:'kurumlar',label:'Kurumlar Beyannamesi',icon:'file-text'},{id:'ozkaynak',label:'Özkaynak Hs.',icon:'scale'},{id:'kdv',label:'KDV İadesi',icon:'receipt-text'},{id:'ssk',label:'SSK Hesaplama',icon:'users'}],
-  legal:         [{id:'analiz',label:'Analiz',icon:'bar-chart-3'},{id:'dava',label:'Dava',icon:'gavel'},{id:'icra',label:'İcra',icon:'receipt-text'},{id:'avukatlar',label:'Avukatlar',icon:'scale'},{id:'onleyici',label:'Önleyici Hukuk',icon:'shield-check'},{id:'taslak',label:'Sözleşme Taslakları',icon:'file-text'},{id:'c_tumu',label:'Sözleşmeler · Tümü',icon:'file-signature'},{id:'c_insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat',left:true},{id:'c_ik',label:'İK Sözleşmeleri',icon:'users',left:true},{id:'c_danismanlik',label:'Danışmanlık Söz.',icon:'briefcase',left:true},{id:'c_tedarik',label:'Tedarik Söz.',icon:'truck',left:true},{id:'kvkk',label:'KVKK / Mevzuat',icon:'book-check'}],
+  legal:         [{id:'analiz',label:'Analiz',icon:'bar-chart-3'},{id:'dava',label:'Dava',icon:'gavel'},{id:'icra',label:'İcra',icon:'receipt-text'},{id:'avukatlar',label:'Avukatlar',icon:'scale'},{id:'onleyici',label:'Önleyici Hukuk',icon:'shield-check'},{id:'taslak',label:'Sözleşme Taslakları',icon:'file-text',left:true},{id:'c_tumu',label:'Sözleşmeler · Tümü',icon:'file-signature'},{id:'c_insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat',left:true},{id:'c_ik',label:'İK Sözleşmeleri',icon:'users',left:true},{id:'c_danismanlik',label:'Danışmanlık Söz.',icon:'briefcase',left:true},{id:'c_tedarik',label:'Tedarik Söz.',icon:'truck',left:true},{id:'kvkk',label:'KVKK / Mevzuat',icon:'book-check'}],
   contracts:     [{id:'insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat'},{id:'ik',label:'İK Sözleşmeleri',icon:'users'},{id:'danismanlik',label:'Danışmanlık',icon:'briefcase'},{id:'tedarik',label:'Tedarik',icon:'truck'},{id:'tumu',label:'Tümü',icon:'list'}],
   company:       [{id:'kunye',label:'Firma Bilgileri',icon:'building-2'},{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
@@ -6038,7 +6046,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.davaNew=false; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
@@ -6078,22 +6086,28 @@ function leftSpecialSubsHtml(){
         <i data-lucide="${icon}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${label}</span>
       </button>`;
   // Hukuk & Risk · Dava sekmesi → Dava işlemleri sol barda (İcra üst barda kalır)
-  if(state.module==='legal' && active==='dava'){
-    const cases = lawsuits.map((l,li)=>({l,li})).filter(x=>legalCanSee(x.l) && x.l.tur!=='İcra Takibi');
-    const open = !!state.davaOpen;
+  if(state.module==='legal' && (active==='dava' || active==='icra')){
+    const isIcra = active==='icra';
+    const cases = lawsuits.map((l,li)=>({l,li})).filter(x=>legalCanSee(x.l) && (isIcra ? x.l.tur==='İcra Takibi' : x.l.tur!=='İcra Takibi'));
+    const open = isIcra ? !!state.icraOpen : !!state.davaOpen;
+    const toggleJs = isIcra ? "state.icraOpen=!state.icraOpen;render()" : "state.davaOpen=!state.davaOpen;render()";
+    const hdr = isIcra ? 'İcra İşlemleri' : 'Dava İşlemleri';
+    const addLbl = isIcra ? 'İcra Aç' : 'Dava Aç';
+    const listLbl = isIcra ? 'İcralar' : 'Davalar';
+    const listIcon = isIcra ? 'receipt-text' : 'gavel';
     const citem = (l,li)=>{ const on=state.caseView===li; return `
       <button onclick="openCaseDetail(${li})" class="w-full flex items-center gap-2 pl-7 pr-3 py-2 rounded-xl text-[13px] transition ${on?'bg-[#8a2a1a]/80 text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
         <span class="font-mono text-[11px] ${on?'text-[#f0a58a]':'text-gold'} shrink-0">${l.no}</span><span class="truncate flex-1 text-left">${l.subject}</span>
       </button>`;};
-    const davalarBtn = `
-      <button onclick="state.davaOpen=!state.davaOpen;render()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 border border-transparent transition">
-        <i data-lucide="gavel" class="h-[18px] w-[18px]"></i><span class="truncate flex-1 text-left">Davalar</span>
+    const listBtn = `
+      <button onclick="${toggleJs}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 border border-transparent transition">
+        <i data-lucide="${listIcon}" class="h-[18px] w-[18px]"></i><span class="truncate flex-1 text-left">${listLbl}</span>
         <span class="text-[10px] text-slate-500">${cases.length}</span><i data-lucide="chevron-${open?'down':'right'}" class="h-4 w-4 text-slate-500"></i>
       </button>`;
-    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Dava İşlemleri</div>`
-      + lbtn("document.getElementById('davaGirisForm')?.scrollIntoView({behavior:'smooth'})",'folder-plus','Dava Aç',false)
-      + davalarBtn
-      + (open ? (cases.length ? cases.map(x=>citem(x.l,x.li)).join('') : '<p class="pl-7 pr-3 py-2 text-[12px] text-slate-500">Dava yok</p>') : '')
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${hdr}</div>`
+      + lbtn("state.davaNew=true;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'folder-plus',addLbl,false)
+      + listBtn
+      + (open ? (cases.length ? cases.map(x=>citem(x.l,x.li)).join('') : '<p class="pl-7 pr-3 py-2 text-[12px] text-slate-500">Kayıt yok</p>') : '')
       + sep;
   }
   // Sözleşmeler alanı → sözleşme türleri sol barda
