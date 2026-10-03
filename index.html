@@ -3744,12 +3744,12 @@ function viewProfit(){
     ['Pazarlama & Satış',14,'amber'],['Genel Yönetim',13,'gold'],['Finansman Giderleri',11,'red']
   ];
   return `
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+  ${currentSub()==='nakit'?'':`<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
     ${kpi('trending-up','Konsolide Brüt Marj', '%28,1', '%2,3','true','emer')}
     ${kpi('badge-percent','Konsolide Net Marj', '%17,6', '%1,1','true','emer')}
     ${kpi('receipt-text','Toplam OPEX', money(374000000), '%3,4','false','red')}
     ${kpi('scale','Gider / Ciro', '%7,3', '%0,6','true','gold')}
-  </div>
+  </div>`}
 
   <div data-sub="marj" class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-5">
     <div class="xl:col-span-2 card rounded-2xl p-5">
