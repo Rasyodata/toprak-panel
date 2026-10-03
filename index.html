@@ -1912,6 +1912,22 @@ function viewBI(){
     ${kpi('shield-alert','Kritik Risk / Dava', kritikRisk+' risk', aktifDava+' aktif dava','true', kritikRisk>0?'red':'emer')}
   </div>
 
+  <div data-sub="bi" class="card rounded-2xl p-5 mb-5">
+    ${(()=>{ const nr=nakitByYear[2026]; const tin=nr.reduce((a,x)=>a+x[0],0);
+      const planTL=butceCikisKartlari.reduce((a,r)=>a+((r.tutar||0)*(r.tekrar==='Belirli Tekrar'&&r.kez?r.kez:1)),0)+odemeEmriKartlari.reduce((a,r)=>a+(r.net||0),0)+odemeSozuKartlari.reduce((a,r)=>a+(r.tutar||0),0)+giderKartlari.reduce((a,r)=>a+(r.tutar||0),0);
+      const tout=nr.reduce((a,x)=>a+x[1],0)+planTL/1000000; const net=tin-tout;
+      return `
+      <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+        ${sectionTitle('banknote','Nakit Akış Özeti · Konsolide 2026','Tüm iştirakler · planlı çıkışlar dahil')}
+        <button onclick="setSub('nakit')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gold/30 text-gold text-xs hover:bg-gold/10 transition"><i data-lucide="arrow-right" class="h-4 w-4"></i>Nakit Akışı Aç</button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="rounded-xl border border-emer/25 bg-emer/5 p-3"><p class="text-[11px] text-slate-500">Giriş</p><p class="text-base font-bold text-emer-light">${mn(tin)}</p></div>
+        <div class="rounded-xl border border-rose-400/25 bg-rose-500/5 p-3"><p class="text-[11px] text-slate-500">Çıkış</p><p class="text-base font-bold text-rose-400">${mn(tout)}</p></div>
+        <div class="rounded-xl border border-gold/25 bg-gold/5 p-3"><p class="text-[11px] text-slate-500">Net</p><p class="text-base font-bold ${net>=0?'text-gold':'text-rose-400'}">${mn(net)}</p></div>
+      </div>`; })()}
+  </div>
+
   ${liveMarketHtml()}
 
   <div data-sub="bi" class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
