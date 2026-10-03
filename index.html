@@ -939,7 +939,7 @@ function buildNav(){
   + (isAdminUser() ? `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>` : '');
 
   // SOL BAR — aktif modülün alt-sekmeleri + Patron Ekranı · Duyurular · Erişim + Şirket Seçimi + Sistem Yöneticisi
-  nav.innerHTML = (state.company!=='all' ? leftSpecialSubsHtml() : subTabsLeftHtml()) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
+  nav.innerHTML = (state.module==='admin' ? subTabsLeftHtml() : (state.company!=='all' ? leftSpecialSubsHtml() : subTabsLeftHtml())) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
     const active = m.id===state.module;
     return `
     <button onclick="setModule('${m.id}')"
@@ -2650,9 +2650,16 @@ function tekrarOzet(r){ if(!r||r.tekrar==='Tek Seferlik'||!r.tekrar) return 'Tek
 let butceCikisKartlari = [];
 function nextTbcNo(){ const max=butceCikisKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'TBÇ-2026-'+String(max+1).padStart(4,'0'); }
 function addButceCikis(){ const g=i=>document.getElementById(i)||{}; const kalem=(g('bcKalem').value||'').trim(); if(!kalem){toast('Kalem/açıklama girin');return;} const no=nextTbcNo();
-  butceCikisKartlari.unshift({ no, kalem, cikisTipi:g('bcCikisTipi').value||'Gider', cikisTuru:g('bcCikisTuru').value||'Diğer', butceKodu:(g('bcKod').value||'').trim(), donem:(g('bcDonem').value||'').trim(), tutar:parseInt(g('bcTutar').value||'0',10)||0, kesinlik:g('bcKesinlik').value||'Orta', proje:(g('bcProje').value||'').trim(), aciklama:(g('bcAciklama').value||'').trim(),
+  butceCikisKartlari.unshift({ no, tarih:(g('bcTarih').value||'').trim(), kalem, cikisTipi:g('bcCikisTipi').value||'Gider', cikisTuru:g('bcCikisTuru').value||'Diğer', butceKodu:(g('bcKod').value||'').trim(), donem:(g('bcDonem').value||'').trim(), tutar:parseInt(g('bcTutar').value||'0',10)||0, kesinlik:g('bcKesinlik').value||'Orta', proje:(g('bcProje').value||'').trim(), aciklama:(g('bcAciklama').value||'').trim(), ek:(g('bcEk').value||'').trim(),
     tekrar:g('bcTekrar').value||'Tek Seferlik', ayGun:parseInt(g('bcAyGun').value||'0',10)||0, kez:parseInt(g('bcKez').value||'0',10)||0 });
   logAction('trending-down','amber', `Tahmini bütçe çıkışı · ${no} · ${kalem} · ${money(parseInt(g('bcTutar').value||'0',10)||0)} (${tekrarOzet(butceCikisKartlari[0])})`); render(); toast(no+' oluşturuldu'); }
+function saveButceEdit(i){ const b=butceCikisKartlari[i]; if(!b) return; const g=id=>document.getElementById(id)||{};
+  b.tarih=(g('bcTarih').value||'').trim(); b.cikisTipi=g('bcCikisTipi').value||b.cikisTipi; b.cikisTuru=g('bcCikisTuru').value||b.cikisTuru;
+  b.kalem=(g('bcKalem').value||b.kalem).trim(); b.butceKodu=(g('bcKod').value||'').trim(); b.donem=(g('bcDonem').value||'').trim();
+  b.tutar=parseInt(g('bcTutar').value||'0',10)||0; b.kesinlik=g('bcKesinlik').value||b.kesinlik;
+  b.tekrar=g('bcTekrar').value||b.tekrar; b.ayGun=parseInt(g('bcAyGun').value||'0',10)||0; b.kez=parseInt(g('bcKez').value||'0',10)||0;
+  b.proje=(g('bcProje').value||'').trim(); b.aciklama=(g('bcAciklama').value||'').trim(); b.ek=(g('bcEk').value||'').trim();
+  state.bcEdit=null; logAction('pencil','gold', `${b.no} bütçe çıkışı güncellendi · ${b.kalem}`); render(); toast('Güncellendi ✓'); }
 let giderKartlari = [];
 function nextGdrNo(){ const max=giderKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'GDR-2026-'+String(max+1).padStart(4,'0'); }
 function addGiderKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g('gdAd').value||'').trim(); if(!ad){toast('Gider adı girin');return;} const no=nextGdrNo();
@@ -5756,28 +5763,31 @@ function odemeSozuFormCard(){
     <div class="mt-3 flex justify-end"><button onclick="addOdemeSozu()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Ödeme Sözü Oluştur</button></div>
   </div>`;
 }
-function butceCikisFormCard(title,sub){
+function butceCikisFormCard(title,sub,v){
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
   const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
+  const val=x=>v&&v[x]!=null?esc(v[x]):''; const opt=(o,cur)=>`<option ${cur===o?'selected':''}>${o}</option>`; const edit=!!v;
   return `<div class="card rounded-2xl p-5">
-    ${sectionTitle('trending-down',title||'Tahminlenen Bütçe Çıkış Kartı',sub||'Belge No otomatik · TBÇ-2026-XXXX · öngörülen harcama')}
+    ${sectionTitle('trending-down',edit?('Bütçe Çıkışı Düzelt · '+v.no):(title||'Tahminlenen Bütçe Çıkış Kartı'),sub||'Belge No otomatik · TBÇ-2026-XXXX · öngörülen harcama')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Belge No (otomatik)</label><input value="${nextTbcNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
-      <select id="bcCikisTipi" class="sm:col-span-3 ${selC}" title="Çıkış Tipi">${CIKIS_TIPI.map(o=>`<option>${o}</option>`).join('')}</select>
-      <select id="bcCikisTuru" class="sm:col-span-3 ${selC}" title="Çıkış Türü">${GIDER_TURU.map(o=>`<option>${o}</option>`).join('')}</select>
-      <input id="bcKalem" placeholder="Harcama Kalemi / Açıklama" class="sm:col-span-6 ${inpC}" />
-      <input id="bcKod" placeholder="Bütçe Kodu / Masraf Merkezi" class="sm:col-span-4 ${inpC}" />
-      <input id="bcDonem" placeholder="Dönem (ör. 2026-Q4 / Ekim)" class="sm:col-span-3 ${inpC}" />
-      <input id="bcTutar" type="number" placeholder="Tahmini Tutar ₺" class="sm:col-span-3 ${inpC}" />
-      <select id="bcKesinlik" class="sm:col-span-2 ${selC}" title="Kesinlik">${['Yüksek','Orta','Düşük'].map(o=>`<option ${o==='Orta'?'selected':''}>${o}</option>`).join('')}</select>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Belge No</label><input value="${v?esc(v.no):nextTbcNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
+      <input id="bcTarih" value="${val('tarih')}" placeholder="Tarih (gg.aa.yyyy)" class="sm:col-span-3 ${inpC}" />
+      <select id="bcCikisTipi" class="sm:col-span-3 ${selC}" title="Çıkış Tipi">${CIKIS_TIPI.map(o=>opt(o,v&&v.cikisTipi)).join('')}</select>
+      <select id="bcCikisTuru" class="sm:col-span-3 ${selC}" title="Çıkış Türü">${GIDER_TURU.map(o=>opt(o,v&&v.cikisTuru)).join('')}</select>
+      <input id="bcKalem" value="${val('kalem')}" placeholder="Harcama Kalemi / Açıklama" class="sm:col-span-6 ${inpC}" />
+      <input id="bcKod" value="${val('butceKodu')}" placeholder="Bütçe Kodu / Masraf Merkezi" class="sm:col-span-3 ${inpC}" />
+      <input id="bcDonem" value="${val('donem')}" placeholder="Dönem (ör. 2026-Q4)" class="sm:col-span-3 ${inpC}" />
+      <input id="bcTutar" type="number" value="${v?(v.tutar||0):''}" placeholder="Tahmini Tutar ₺" class="sm:col-span-3 ${inpC}" />
+      <select id="bcKesinlik" class="sm:col-span-3 ${selC}" title="Kesinlik">${['Yüksek','Orta','Düşük'].map(o=>`<option ${((v&&v.kesinlik)||'Orta')===o?'selected':''}>${o}</option>`).join('')}</select>
       <p class="sm:col-span-12 text-[11px] uppercase tracking-wider text-gold mt-2 flex items-center gap-1.5"><i data-lucide="repeat" class="h-3.5 w-3.5"></i>Tekrarlama</p>
-      <select id="bcTekrar" class="sm:col-span-4 ${selC}">${TEKRAR_TIPI.map(o=>`<option>${o}</option>`).join('')}</select>
-      <input id="bcAyGun" type="number" min="1" max="31" placeholder="Ayın günü (1-31)" class="sm:col-span-4 ${inpC}" />
-      <input id="bcKez" type="number" placeholder="Tekrar sayısı (kez)" class="sm:col-span-4 ${inpC}" />
-      <input id="bcProje" placeholder="Proje (varsa)" class="sm:col-span-6 ${inpC}" />
-      <input id="bcAciklama" placeholder="Not / açıklama" class="sm:col-span-6 ${inpC}" />
+      <select id="bcTekrar" class="sm:col-span-4 ${selC}">${TEKRAR_TIPI.map(o=>opt(o,v&&v.tekrar)).join('')}</select>
+      <input id="bcAyGun" type="number" min="1" max="31" value="${v&&v.ayGun?v.ayGun:''}" placeholder="Ayın günü (1-31)" class="sm:col-span-4 ${inpC}" />
+      <input id="bcKez" type="number" value="${v&&v.kez?v.kez:''}" placeholder="Tekrar sayısı (kez)" class="sm:col-span-4 ${inpC}" />
+      <input id="bcProje" value="${val('proje')}" placeholder="Proje (varsa)" class="sm:col-span-4 ${inpC}" />
+      <input id="bcAciklama" value="${val('aciklama')}" placeholder="Not / açıklama" class="sm:col-span-5 ${inpC}" />
+      <input id="bcEk" value="${val('ek')}" placeholder="Ek belge / dosya" class="sm:col-span-3 ${inpC}" />
     </div>
-    <div class="mt-3 flex justify-end"><button onclick="addButceCikis()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Bütçe Çıkışı Oluştur</button></div>
+    <div class="mt-3 flex justify-end gap-2">${edit?`<button onclick="state.bcEdit=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button><button onclick="saveButceEdit(${v._i})" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="save" class="h-4 w-4"></i> Kaydet</button>`:`<button onclick="addButceCikis()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Bütçe Çıkışı Oluştur</button>`}</div>
   </div>`;
 }
 function giderFormCard(){
@@ -5865,10 +5875,11 @@ function viewAdminTable(kod){
   if(kod==='TBL-0014'){
     const kt=k=>k==='Yüksek'?'emer':k==='Düşük'?'red':'amber';
     const toplam=butceCikisKartlari.reduce((a,r)=>a+(r.tutar||0),0);
-    return `${back}${butceCikisFormCard()}
+    const editV=(typeof state.bcEdit==='number'&&butceCikisKartlari[state.bcEdit])?Object.assign({},butceCikisKartlari[state.bcEdit],{_i:state.bcEdit}):null;
+    return `${back}${editV?butceCikisFormCard('','',editV):butceCikisFormCard()}
     <div class="card rounded-2xl p-5 mt-4">${sectionTitle('trending-down','Tahminlenen Bütçe Çıkışları',butceCikisKartlari.length+' kalem · toplam '+money(toplam))}
-      <div class="overflow-x-auto"><table class="w-full text-sm min-w-[920px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Belge No</th><th class="text-left font-medium">Kalem</th><th class="text-left font-medium">Çıkış Türü</th><th class="text-left font-medium">Tekrar</th><th class="text-right font-medium">Tahmini</th><th class="text-left font-medium">Kesinlik</th>${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
-      <tbody>${butceCikisKartlari.length?butceCikisKartlari.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.kalem)}</td><td class="text-slate-300 text-[12px]">${esc(r.cikisTuru||'—')}</td><td class="text-slate-400 text-[12px]">${tekrarOzet(r)}</td><td class="text-right text-amber-300">${money(r.tutar||0)}</td><td>${badge(r.kesinlik||'Orta',kt(r.kesinlik))}</td>${canDel?`<td class="text-right"><button onclick="delRow('TBL-0014',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${canDel?7:6}" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div>
+      <div class="overflow-x-auto"><table class="w-full text-sm min-w-[960px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Belge No</th><th class="text-left font-medium">Tarih</th><th class="text-left font-medium">Kalem</th><th class="text-left font-medium">Çıkış Türü</th><th class="text-left font-medium">Tekrar</th><th class="text-right font-medium">Tahmini</th><th class="text-right font-medium">İşlem</th></tr></thead>
+      <tbody>${butceCikisKartlari.length?butceCikisKartlari.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02] ${state.bcEdit===i?'bg-gold/10':''}"><td class="py-2.5">${kod2(r.no)}</td><td class="text-slate-400 text-[12px]">${esc(r.tarih||'—')}</td><td class="text-slate-100 font-medium">${esc(r.kalem)}</td><td class="text-slate-300 text-[12px]">${esc(r.cikisTuru||'—')}</td><td class="text-slate-400 text-[12px]">${tekrarOzet(r)}</td><td class="text-right text-amber-300">${money(r.tutar||0)}</td><td class="text-right whitespace-nowrap"><button onclick="state.bcEdit=${i};render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button> ${canDel?`<button onclick="delRow('TBL-0014',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button>`:''}</td></tr>`).join(''):`<tr><td colspan="7" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div>
     </div>`; }
   if(kod==='TBL-0015'){
     const toplamAy=giderKartlari.filter(r=>r.tekrar!=='Tek Seferlik').reduce((a,r)=>a+(r.tutar||0),0);
@@ -6959,7 +6970,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; state.cariEdit=null; state.adminUsers=false; state.adminTable=null; state.topluNakit=false; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; state.cariEdit=null; state.adminUsers=false; state.adminTable=null; state.topluNakit=false; state.bcEdit=null; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
@@ -6968,7 +6979,7 @@ function buildSubNav(){
   // `left:true` olan alt-sekmeler sol barda gösterilir (ör. sözleşme türleri); kalanlar üst yatay alt-barda.
   const subs = allSubs ? allSubs.filter(s=>!s.left) : null;
   // Tüm şirketlerde alt-sekmeler üst yatay alt-barda (üst barın hemen altında); yalnızca Konsolide'de sol barda.
-  if(state.company!=='all' && subs && subs.length>=2){
+  if(state.company!=='all' && state.module!=='admin' && subs && subs.length>=2){
     const active = currentSub();
     bar.style.display='';
     // Alt-bar rengi üst bardan farklı — şirketin vurgu renginin hafif tonu (light temadaki !important override'ını da ezer)
