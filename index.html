@@ -3665,6 +3665,8 @@ function legalAreaPanel(key){
 function viewLegal(){
   // Sözleşmeler artık Hukuk & Risk içinde — ilgili alt-sekmelerde sözleşme görünümünü göster
   { const _cs=currentSub(); if(_cs && _cs.indexOf('c_')===0) return viewContracts(); }
+  // Dava numarasına tıklandıysa ayrıntıyı sağdaki içerik alanında göster
+  if(state.caseView!=null && lawsuits[state.caseView] && legalCanSee(lawsuits[state.caseView])) return caseDetailPage(state.caseView);
   // 3x3 heatmap: rows impact (3 top), cols prob (1..3)
   const grid = [3,2,1].map(imp=>[1,2,3].map(prob=>{
     const here = risks.filter(r=>r.impact===imp && r.prob===prob);
@@ -6036,7 +6038,8 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; render(); }
+function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
   if(!bar) return;
@@ -6077,14 +6080,20 @@ function leftSpecialSubsHtml(){
   // Hukuk & Risk · Dava sekmesi → Dava işlemleri sol barda (İcra üst barda kalır)
   if(state.module==='legal' && active==='dava'){
     const cases = lawsuits.map((l,li)=>({l,li})).filter(x=>legalCanSee(x.l) && x.l.tur!=='İcra Takibi');
-    const citem = (l,li)=>`
-      <button onclick="openLawsuit(${li})" class="w-full flex items-center gap-2 pl-7 pr-3 py-2 rounded-xl text-[13px] text-slate-400 hover:text-white hover:bg-white/5 border border-transparent transition">
-        <span class="font-mono text-[11px] text-gold shrink-0">${l.no}</span><span class="truncate flex-1 text-left">${l.subject}</span>
+    const open = !!state.davaOpen;
+    const citem = (l,li)=>{ const on=state.caseView===li; return `
+      <button onclick="openCaseDetail(${li})" class="w-full flex items-center gap-2 pl-7 pr-3 py-2 rounded-xl text-[13px] transition ${on?'bg-[#8a2a1a]/80 text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
+        <span class="font-mono text-[11px] ${on?'text-[#f0a58a]':'text-gold'} shrink-0">${l.no}</span><span class="truncate flex-1 text-left">${l.subject}</span>
+      </button>`;};
+    const davalarBtn = `
+      <button onclick="state.davaOpen=!state.davaOpen;render()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 border border-transparent transition">
+        <i data-lucide="gavel" class="h-[18px] w-[18px]"></i><span class="truncate flex-1 text-left">Davalar</span>
+        <span class="text-[10px] text-slate-500">${cases.length}</span><i data-lucide="chevron-${open?'down':'right'}" class="h-4 w-4 text-slate-500"></i>
       </button>`;
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Dava İşlemleri</div>`
       + lbtn("document.getElementById('davaGirisForm')?.scrollIntoView({behavior:'smooth'})",'folder-plus','Dava Aç',false)
-      + lbtn("document.getElementById('davaListesi')?.scrollIntoView({behavior:'smooth'})",'gavel','Davalar',false)
-      + (cases.length ? cases.map(x=>citem(x.l,x.li)).join('') : '<p class="pl-7 pr-3 py-2 text-[12px] text-slate-500">Dava yok</p>')
+      + davalarBtn
+      + (open ? (cases.length ? cases.map(x=>citem(x.l,x.li)).join('') : '<p class="pl-7 pr-3 py-2 text-[12px] text-slate-500">Dava yok</p>') : '')
       + sep;
   }
   // Sözleşmeler alanı → sözleşme türleri sol barda
