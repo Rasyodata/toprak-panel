@@ -2548,7 +2548,11 @@ let odemeSozuKartlari = [];
 function nextOszNo(){ const max=odemeSozuKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'ÖSZ-2026-'+String(max+1).padStart(4,'0'); }
 function addOdemeSozu(){ const g=i=>document.getElementById(i)||{}; const hak=(g('osHak').value||'').trim(); if(!hak){toast('Hak sahibi girin');return;} const no=nextOszNo();
   odemeSozuKartlari.unshift({ no, hakSahibi:hak, tutar:parseInt(g('osTutar').value||'0',10)||0, sozTarih:(g('osSozTarih').value||'').trim(), vade:(g('osVade').value||'').trim(), dayanak:(g('osDayanak').value||'').trim(), aciklama:(g('osAciklama').value||'').trim(), veren:(g('osVeren').value||'').trim(), durum:g('osDurum').value||'Söz Verildi' });
-  logAction('handshake','gold', `Ödeme sözü · ${no} · ${hak} · ${money(parseInt(g('osTutar').value||'0',10)||0)} (vade ${g('osVade').value||'—'})`); render(); toast(no+' oluşturuldu'); }
+  const sozTutar=parseInt(g('osTutar').value||'0',10)||0;
+  odemeTalepleri.unshift({ id:no, firm:'Toprak Grup', alacakli:hak, aciklama:(g('osAciklama').value||'Ödeme Sözü').trim()+' (vade '+(g('osVade').value||'—')+')', amount:sozTutar, tarih:(g('osSozTarih').value||'').trim(), status:'pending', kaynak:'odeme-sozu' });
+  logAction('handshake','gold', `Ödeme sözü · ${no} · ${hak} · ${money(sozTutar)} (vade ${g('osVade').value||'—'})`);
+  logAction('git-pull-request','gold', `${no} ödeme sözü İş Onay Akışına düştü`, 'İş Onay Akışı');
+  render(); toast(no+' oluşturuldu · onay akışına düştü'); }
 let butceCikisKartlari = [];
 function nextTbcNo(){ const max=butceCikisKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'TBÇ-2026-'+String(max+1).padStart(4,'0'); }
 function addButceCikis(){ const g=i=>document.getElementById(i)||{}; const kalem=(g('bcKalem').value||'').trim(); if(!kalem){toast('Kalem/açıklama girin');return;} const no=nextTbcNo();
@@ -2567,8 +2571,11 @@ function addOdemeEmri(){ const g=i=>document.getElementById(i)||{}; const gv=i=>
     aciklama:(g('oeAciklama').value||'').trim(), butceTertibi:(g('oeButceTertibi').value||'').trim(), dayanak:(g('oeDayanak').value||'').trim(),
     brut, stopaj:st, damga:dm, kdvTevkifat:kd, digerKesinti:dg, net, netYazi:sayiYazi(net)+' TL',
     duzenleyen:(g('oeDuzenleyen').value||'').trim(), harcamaYetkili:(g('oeHarcamaYetkili').value||'').trim(), muhasebeYetkili:(g('oeMuhasebeYetkili').value||'').trim(), durum:g('oeDurum').value||'Hazırlandı' });
+  // Onay akışına düşsün (İş Onay Akışı · Ödeme — odemeTalepleri)
+  odemeTalepleri.unshift({ id:no, firm:(g('oeKurum').value||'Toprak Grup').trim(), alacakli:hak, aciklama:(g('oeAciklama').value||'Ödeme Emri').trim(), amount:net, tarih:(g('oeTarih').value||'').trim(), status:'pending', kaynak:'odeme-emri' });
   logAction('receipt-text','gold', `Ödeme emri · ${no} · ${hak} · net ${money(net)} (${g('oeDurum').value||'Hazırlandı'})`);
-  render(); toast(`${no} ödeme emri oluşturuldu`); }
+  logAction('git-pull-request','gold', `${no} ödeme emri İş Onay Akışına düştü · Finans onayına`, 'İş Onay Akışı');
+  render(); toast(`${no} oluşturuldu · onay akışına düştü`); }
 function addPersonelKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g('psAd').value||'').trim(); if(!ad){toast('Ad soyad girin');return;} const no=nextPrsNo();
   personelKartlari.unshift({ no, ad, bolum:g('psBolum').value||'Diğer', unvan:(g('psUnvan').value||'').trim(), tel:(g('psTel').value||'').trim(), email:(g('psEmail').value||'').trim(), sirket:(g('psSirket').value||'').trim() });
   logAction('id-card','emer', `Personel tanımlandı · ${no} · ${ad} (${g('psBolum').value||'—'})`); render(); toast(no+' · '+ad+' eklendi'); }
