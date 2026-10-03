@@ -938,7 +938,7 @@ function buildNav(){
         <i data-lucide="shield-check" class="h-4 w-4 ${a?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">Sistem Yöneticisi</span></button>`; })() : '');
 
   // SOL BAR — aktif modülün alt-sekmeleri + Patron Ekranı · Duyurular · Erişim + Şirket Seçimi + Sistem Yöneticisi
-  nav.innerHTML = (state.module==='admin' ? '' : (state.company!=='all' ? leftSpecialSubsHtml() : subTabsLeftHtml())) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
+  nav.innerHTML = (state.company!=='all' ? leftSpecialSubsHtml() : subTabsLeftHtml()) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
     const active = m.id===state.module;
     return `
     <button onclick="setModule('${m.id}')"
@@ -5383,7 +5383,8 @@ function sysTables(){
     { kod:'TBL-0004', ad:'Sözleşmeler Tablosu',      aciklama:'İnşaat / İK / danışmanlık / tedarik sözleşmeleri',  sayi:contracts.length,         git:"(state.sub=state.sub||{},state.sub.legal='c_tumu',setModule('legal'))" },
     { kod:'TBL-0005', ad:'Satıcı / Prim Tablosu',    aciklama:'Satıcı cari hesapları ve prim bakiyeleri',          sayi:(typeof salesReps!=='undefined'?salesReps.length:0), git:"(state.sub=state.sub||{},state.sub.profitability='saticilar',setModule('profitability'))" },
     { kod:'TBL-0006', ad:'Projeler Tablosu',         aciklama:'İnşaat ve gayrimenkul proje kayıtları',             sayi:(typeof projects!=='undefined'?projects.length:0),   git:"setModule('projects')" },
-    { kod:'TBL-0007', ad:'Risk Tablosu',             aciklama:'Hukuki ve operasyonel risk maddeleri',              sayi:(typeof risks!=='undefined'?risks.length:0),         git:"(state.sub=state.sub||{},state.sub.legal='analiz',setModule('legal'))" }
+    { kod:'TBL-0007', ad:'Risk Tablosu',             aciklama:'Hukuki ve operasyonel risk maddeleri',              sayi:(typeof risks!=='undefined'?risks.length:0),         git:"(state.sub=state.sub||{},state.sub.legal='analiz',setModule('legal'))" },
+    { kod:'TBL-0008', ad:'Kullanıcılar Tablosu',     aciklama:'Sistem kullanıcıları, roller ve yetkiler',          sayi:Object.keys(ROLES).length,                           git:"state.adminUsers=true;render()" }
   ];
 }
 function viewAdminRecords(){
@@ -5419,7 +5420,7 @@ function cariFilterLeftHtml(){
 }
 function viewAdmin(){
   if(!isAdminUser() && !state.viewAs) return viewUnauthorized({name:'Sistem Yöneticisi'});
-  if(currentSub()==='kayitlar') return viewAdminRecords();
+  if(!state.adminUsers) return viewAdminRecords();
   const card = (k)=>{ const v=ROLES[k]; const mods=MODULES.filter(m=>m.roles.includes(k));
     return `
     <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
@@ -5438,6 +5439,7 @@ function viewAdmin(){
   const internal = Object.keys(ROLES).filter(k=>ROLES[k].kind==='internal');
   const external = Object.keys(ROLES).filter(k=>ROLES[k].kind==='external');
   return `
+  <button onclick="state.adminUsers=false;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Kayıtlara Dön</button>
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     ${kpi('users','Kullanıcılar', Object.keys(ROLES).length+' Hesap', internal.length+' iç · '+external.length+' dış','true','gold')}
     ${kpi('scale','Avukatlar', lawyers.length+' Tanım', lawyers.filter(a=>a.approved).length+' yetkili','true','emer')}
@@ -6461,7 +6463,7 @@ const SUBTABS = {
   company:       [{id:'kunye',label:'Firma Bilgileri',icon:'building-2'},{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}],
-  admin:         [{id:'kullanicilar',label:'Kullanıcılar',icon:'users'},{id:'kayitlar',label:'Kayıtlar',icon:'database'}]
+  admin:         [{id:'kayitlar',label:'Kayıtlar',icon:'database'}]
 };
 function isLawyer(){ return !!ROLES[state.role].lawyer; }
 function getSubs(){
@@ -6478,7 +6480,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; state.adminUsers=false; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
@@ -6487,7 +6489,7 @@ function buildSubNav(){
   // `left:true` olan alt-sekmeler sol barda gösterilir (ör. sözleşme türleri); kalanlar üst yatay alt-barda.
   const subs = allSubs ? allSubs.filter(s=>!s.left) : null;
   // Tüm şirketlerde alt-sekmeler üst yatay alt-barda (üst barın hemen altında); yalnızca Konsolide'de sol barda.
-  if((state.company!=='all' || state.module==='admin') && subs && subs.length>=2){
+  if(state.company!=='all' && subs && subs.length>=2){
     const active = currentSub();
     bar.style.display='';
     // Alt-bar rengi üst bardan farklı — şirketin vurgu renginin hafif tonu (light temadaki !important override'ını da ezer)
@@ -6562,7 +6564,7 @@ function leftSpecialSubsHtml(){
 }
 function subTabsLeftHtml(){
   const subs = getSubs();
-  if(!subs || subs.length<2) return '';
+  if(!subs || (subs.length<2 && state.module!=='admin')) return '';
   const active = currentSub();
   const modName = (MODULES.find(m=>m.id===state.module)||{}).name || (state.module==='admin'?'Sistem Yöneticisi':'');
   return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${modName}</div>`
