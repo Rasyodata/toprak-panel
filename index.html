@@ -6133,10 +6133,15 @@ function leftSpecialSubsHtml(){
         <i data-lucide="${listIcon}" class="h-[18px] w-[18px]"></i><span class="truncate flex-1 text-left">${listLbl}</span>
         <span class="text-[10px] text-slate-500">${cases.length}</span><i data-lucide="chevron-${open?'down':'right'}" class="h-4 w-4 text-slate-500"></i>
       </button>`;
+    // Sığmazsa sayfalama: 8'erli, altında 1,2,… numaraları
+    const PAGE=8, pageKey=isIcra?'icraPage':'davaPage', pages=Math.max(1,Math.ceil(cases.length/PAGE));
+    let pg=state[pageKey]||0; if(pg>=pages) pg=0;
+    const slice=cases.slice(pg*PAGE,(pg+1)*PAGE);
+    const pager = pages>1 ? `<div class="flex flex-wrap items-center gap-1 pl-7 pr-3 py-1.5">${Array.from({length:pages},(_,k)=>`<button onclick="state.${pageKey}=${k};render()" class="h-6 min-w-[24px] px-1.5 rounded-md text-[11px] font-medium transition ${k===pg?'bg-[#8a2a1a] text-white':'text-slate-400 hover:text-white hover:bg-white/5 border border-white/10'}">${k+1}</button>`).join('')}</div>` : '';
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${hdr}</div>`
       + lbtn("state.davaNew=true;if(typeof toggleSidebar==='function')toggleSidebar(false);render()",'folder-plus',addLbl,false)
       + listBtn
-      + (open ? (cases.length ? cases.map(x=>citem(x.l,x.li)).join('') : '<p class="pl-7 pr-3 py-2 text-[12px] text-slate-500">Kayıt yok</p>') : '')
+      + (open ? (cases.length ? (slice.map(x=>citem(x.l,x.li)).join('') + pager) : '<p class="pl-7 pr-3 py-2 text-[12px] text-slate-500">Kayıt yok</p>') : '')
       + sep;
   }
   // Sözleşmeler alanı → sözleşme türleri sol barda
