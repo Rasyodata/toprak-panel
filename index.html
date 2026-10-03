@@ -2118,7 +2118,10 @@ function viewPerformance(){
   </div>`;
 }
 function nakitRaporData(){
-  const r=nakitByYear[2026]; const per=state.nakitPeriod||'ay';
+  const firm=(typeof scopeFirm==='function')?scopeFirm():null;
+  // Belirli şirket seçiliyken demo seed gösterilmez; gerçek değerler girilecek → boş (0)
+  const r = firm ? nakitByYear[2026].map(()=>[0,0]) : nakitByYear[2026];
+  const per=state.nakitPeriod||'ay';
   let mi; if(typeof state.nakitAy==='number' && state.nakitAy>=0 && state.nakitAy<=11){ mi=state.nakitAy; } else { mi=9; try{ const m=new Date().getMonth(); if(m>=0&&m<=11) mi=m; }catch(e){} }
   const yin=r.reduce((a,x)=>a+x[0],0), yout=r.reduce((a,x)=>a+x[1],0);
   let tin,tout,lbl,etiket;
@@ -2126,7 +2129,7 @@ function nakitRaporData(){
   else if(per==='hafta'){ tin=r[mi][0]/4.3; tout=r[mi][1]/4.3; lbl='Hafta'; etiket=AYLAR[mi]+' · '+(state.nakitHafta||1)+'. Hafta'; }
   else if(per==='gun'){ tin=r[mi][0]/30; tout=r[mi][1]/30; lbl='Gün'; etiket=AYLAR[mi]+' · '+(state.nakitGun||1)+'. Gün'; }
   else { tin=r[mi][0]; tout=r[mi][1]; lbl='Ay'; etiket=AYLAR[mi]+' 2026'; }
-  return {r,tin,tout,lbl,etiket,mi,yin,yout}; }
+  return {r,tin,tout,lbl,etiket,mi,yin,yout,bos:!!firm,firm}; }
 function exportNakitExcel(){
   const {r,tin,tout,lbl,etiket}=nakitRaporData(); const firm=(typeof scopeFirm==='function'&&scopeFirm())||'Konsolide';
   const rows=[['Toprak Yatırım · Nakit Akış Raporu'],[firm+' · '+lbl+' · '+etiket],[],['Dönem','Giriş (Mn TL)','Çıkış (Mn TL)','Net (Mn TL)'],[etiket,tin.toFixed(2),tout.toFixed(2),(tin-tout).toFixed(2)],[],['Ay (2026)','Giriş (Mn TL)','Çıkış (Mn TL)','Net (Mn TL)']];
@@ -3822,6 +3825,7 @@ function viewProfit(){
         <div><span class="block text-[11px] text-slate-500">Çıkış</span><span class="font-bold text-rose-400">${mn(rp.tout)}</span></div>
         <div><span class="block text-[11px] text-slate-500">Net</span><span class="font-bold text-gold">${mn(rp.tin-rp.tout)}</span></div>
       </div>
+      ${rp.bos?`<p class="mt-2 text-[11px] text-amber-300/90 flex items-center gap-1.5"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>${esc(rp.firm)} için gerçek nakit verisi girilmedi · değerler siz girince dolacak</p>`:''}
     </div>
     `; })()}
   </div>
