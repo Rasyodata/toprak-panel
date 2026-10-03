@@ -2594,35 +2594,56 @@ function addVendorAccount(){
   logAction('user-plus','emer', `Yeni cari kart · ${rec.ad} (${rec.tipi}/${rec.turu}) · İç kod ${rec.icKod}${rec.suspheli?' · ŞÜPHELİ':''}`);
   state.vendorView=null; render(); toast(`${rec.ad} hesabı açıldı`);
 }
-function vendorFormCard(title,sub){
+function vendorFormCard(title,sub,v){
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
   const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
+  const val=x=>v&&v[x]!=null?esc(v[x]):'';
+  const opt=(o,cur,def)=>`<option ${((cur!=null?cur:def)===o)?'selected':''}>${o}</option>`;
+  const kod = v ? ('CARI-'+String(parseInt(String(v.id).split('-')[1]||'0',10)).padStart(4,'0')) : nextCariKod();
+  const edit=!!v;
   return `<div class="card rounded-2xl p-5">
     ${sectionTitle('user-plus',title||'Cari Kart Tanımla',sub||'Yeni cari kart · merkezi cari kartlar veritabanına eklenir')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Cari Kodu (otomatik)</label><input value="${nextCariKod()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
-      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Cari Tipi</label><select id="vaTipi" class="w-full ${selC}">${CARI_TIPI.map(t=>`<option>${t}</option>`).join('')}</select></div>
-      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Cari Türü</label><select id="vaTuru" class="w-full ${selC}">${CARI_TURU.map(t=>`<option ${t==='Satıcı'?'selected':''}>${t}</option>`).join('')}</select></div>
-      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Şirket Türü</label><select id="vaSirketTuru" class="w-full ${selC}">${['Şahıs','Limited','A.Ş.','Serbest Meslek','Diğer'].map(t=>`<option>${t}</option>`).join('')}</select></div>
-      <input id="vaAd" type="text" placeholder="Ünvan / Firma adı" class="sm:col-span-6 ${inpC}" />
-      <input id="vaYetkili" type="text" placeholder="Yetkili kişi" class="sm:col-span-3 ${inpC}" />
-      <input id="vaTel" type="text" placeholder="Telefon" class="sm:col-span-3 ${inpC}" />
-      <input id="vaVergiNo" type="text" placeholder="Vergi Numarası" class="sm:col-span-3 ${inpC}" />
-      <input id="vaTcNo" type="text" placeholder="TC Kimlik No" class="sm:col-span-3 ${inpC}" />
-      <input id="vaResmiKod" type="text" placeholder="Resmi Muhasebe Kodu (ör. 320.01.001)" class="sm:col-span-3 ${inpC}" />
-      <input id="vaIcKod" type="text" placeholder="İç Muhasebe Cari Kodu" class="sm:col-span-3 ${inpC}" />
-      <input id="vaEmail" type="text" placeholder="E-posta" class="sm:col-span-4 ${inpC}" />
-      <input id="vaAdres" type="text" placeholder="Adres" class="sm:col-span-5 ${inpC}" />
-      <select id="vaRisk" class="sm:col-span-1 ${selC}">${RISK_LVL.map(r=>`<option>${r}</option>`).join('')}</select>
-      <input id="vaBakiye" type="number" placeholder="Açılış ₺" class="sm:col-span-2 ${inpC}" />
-      <textarea id="vaNot" rows="2" placeholder="Not / açıklama…" class="sm:col-span-12 ${inpC} resize-none"></textarea>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Cari Kodu ${edit?'':'(otomatik)'}</label><input value="${kod}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Cari Tipi</label><select id="vaTipi" class="w-full ${selC}">${CARI_TIPI.map(t=>opt(t,v&&v.tipi)).join('')}</select></div>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Cari Türü</label><select id="vaTuru" class="w-full ${selC}">${CARI_TURU.map(t=>opt(t,v&&v.turu,'Satıcı')).join('')}</select></div>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Şirket Türü</label><select id="vaSirketTuru" class="w-full ${selC}">${['Şahıs','Limited','A.Ş.','Serbest Meslek','Diğer'].map(t=>opt(t,v&&v.sirketTuru)).join('')}</select></div>
+      <input id="vaAd" type="text" value="${val('ad')}" placeholder="Ünvan / Firma adı" class="sm:col-span-6 ${inpC}" />
+      <input id="vaYetkili" type="text" value="${val('yetkili')}" placeholder="Yetkili kişi" class="sm:col-span-3 ${inpC}" />
+      <input id="vaTel" type="text" value="${val('tel')}" placeholder="Telefon" class="sm:col-span-3 ${inpC}" />
+      <input id="vaVergiNo" type="text" value="${val('vergiNo')}" placeholder="Vergi Numarası" class="sm:col-span-3 ${inpC}" />
+      <input id="vaTcNo" type="text" value="${val('tcNo')}" placeholder="TC Kimlik No" class="sm:col-span-3 ${inpC}" />
+      <input id="vaResmiKod" type="text" value="${val('resmiKod')}" placeholder="Resmi Muhasebe Kodu (ör. 320.01.001)" class="sm:col-span-3 ${inpC}" />
+      <input id="vaIcKod" type="text" value="${val('icKod')}" placeholder="İç Muhasebe Cari Kodu" class="sm:col-span-3 ${inpC}" />
+      <input id="vaEmail" type="text" value="${val('email')}" placeholder="E-posta" class="sm:col-span-4 ${inpC}" />
+      <input id="vaAdres" type="text" value="${val('adres')}" placeholder="Adres" class="sm:col-span-5 ${inpC}" />
+      <select id="vaRisk" class="sm:col-span-1 ${selC}">${RISK_LVL.map(r=>opt(r,v&&v.risk,'Düşük')).join('')}</select>
+      <input id="vaBakiye" type="number" value="${v?(v.bakiye||0):''}" placeholder="Açılış ₺" class="sm:col-span-2 ${inpC}" />
+      <textarea id="vaNot" rows="2" placeholder="Not / açıklama…" class="sm:col-span-12 ${inpC} resize-none">${val('not')}</textarea>
     </div>
-    <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-200 cursor-pointer"><input type="checkbox" id="vaSuspect" class="accent-gold" />Şüpheli alacak olarak işaretle</label>
+    <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-200 cursor-pointer"><input type="checkbox" id="vaSuspect" ${v&&v.suspheli?'checked':''} class="accent-gold" />Şüpheli alacak olarak işaretle</label>
     <div class="mt-3 flex items-center justify-between gap-2 flex-wrap">
-      <p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Şüpheli işaretlenen hesaplar "Şüpheli Alacaklar / Riskler" listesine otomatik düşer.</p>
-      <button onclick="addVendorAccount()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Cari Kart Tanımla</button>
+      <p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>${edit?'Değişiklik, bu carinin kullanıldığı sözleşme vb. kayıtlara otomatik yansır.':'Şüpheli işaretlenen hesaplar "Şüpheli Alacaklar / Riskler" listesine otomatik düşer.'}</p>
+      ${edit?`<div class="flex gap-2"><button onclick="state.cariEdit=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button><button onclick="saveVendorEdit('${v.id}')" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="save" class="h-4 w-4"></i> Kaydet & Yay</button></div>`
+        :`<button onclick="addVendorAccount()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Cari Kart Tanımla</button>`}
     </div>
   </div>`;
+}
+function saveVendorEdit(id){
+  const v=vendorAccounts.find(x=>x.id===id); if(!v) return; const g=i=>document.getElementById(i)||{};
+  const oldAd=v.ad;
+  v.tipi=g('vaTipi').value||v.tipi; v.turu=g('vaTuru').value||v.turu; v.sirketTuru=g('vaSirketTuru').value||v.sirketTuru;
+  v.ad=(g('vaAd').value||v.ad).trim(); v.yetkili=(g('vaYetkili').value||'').trim(); v.tel=(g('vaTel').value||'').trim();
+  v.vergiNo=(g('vaVergiNo').value||'').trim(); v.tcNo=(g('vaTcNo').value||'').trim();
+  v.resmiKod=(g('vaResmiKod').value||'').trim(); v.icKod=(g('vaIcKod').value||'').trim();
+  v.email=(g('vaEmail').value||'').trim(); v.adres=(g('vaAdres').value||'').trim();
+  v.risk=g('vaRisk').value||v.risk; v.bakiye=parseInt(g('vaBakiye').value||'0',10)||0; v.suspheli=!!g('vaSuspect').checked; v.not=(g('vaNot').value||'').trim();
+  // Bu cari nerede kullanılıyorsa otomatik güncelle
+  let yansi=0;
+  contracts.forEach(c=>{ if(c.vendorId===id || (oldAd && c.party===oldAd)){ c.party=v.ad; c.vendorYetkili=v.yetkili; c.vendorTel=v.tel; c.vendorEmail=v.email; c.vendorId=id; yansi++; } });
+  state.cariEdit=null;
+  logAction('refresh-cw','gold', `${v.icKod||v.ad} cari kartı güncellendi · ${yansi} bağlı kayda yansıtıldı`);
+  render(); toast(`Cari güncellendi${yansi?' · '+yansi+' kayda yansıdı':''} ✓`);
 }
 function viewVendorForm(){
   return `<button onclick="setVendorView(null)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Cari Hesaplara Dön</button>
@@ -5468,10 +5489,14 @@ function viewAdminTable(kod){
   const canDel = isAdminUser();
   const tbl=(title,cols,rows)=>`${back}${tblForm(kod)}<div class="card rounded-2xl p-5">${sectionTitle('database',title,rows.length+' kayıt'+(canDel?' · tam yetki: düzenle & sil':''))}<div class="overflow-x-auto"><table class="w-full text-sm min-w-[720px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>${cols.map(c=>`<th class="py-2 font-medium ${c.r?'text-right':'text-left'}">${c.h}</th>`).join('')}${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead><tbody>${rows.length?rows.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">${cols.map(c=>`<td class="py-2.5 ${c.r?'text-right':''} ${c.cls||'text-slate-300'}">${c.f(r)}</td>`).join('')}${canDel?`<td class="text-right"><button onclick="delRow('${kod}',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${cols.length+(canDel?1:0)}" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div></div>`;
   const kod2=s=>`<span class="font-mono text-[12px] text-gold">${s}</span>`;
-  if(kod==='TBL-0001'){ return `${back}${vendorFormCard('Cari Kart Tanımla','Carilerin tanımlandığı kart tablosu · yeni cari ekle')}
-    <div class="card rounded-2xl p-5 mt-4">${sectionTitle('database','Tanımlı Cari Kartlar',getCariKartlar().length+' kayıt'+(canDel?' · sil yetkisi':''))}
-      <div class="overflow-x-auto"><table class="w-full text-sm min-w-[720px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Kod</th><th class="text-left font-medium">Ünvan</th><th class="text-left font-medium">Tipi</th><th class="text-left font-medium">Türü</th><th class="text-left font-medium">İletişim</th><th class="text-right font-medium">Bakiye</th>${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
-      <tbody>${getCariKartlar().map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.kayitNo)}</td><td class="text-slate-100 font-medium">${esc(r.ad)}</td><td class="text-slate-300">${r.tipi||'—'}</td><td class="text-slate-300">${r.turu||'—'}</td><td class="text-slate-400 text-[12px]">${esc(r.tel||'—')}</td><td class="text-right text-slate-300">${money(r.bakiye||0)}</td>${canDel?`<td class="text-right"><button onclick="delRow('TBL-0001',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join('')}</tbody></table></div>
+  if(kod==='TBL-0001'){
+    const editV = state.cariEdit ? vendorAccounts.find(x=>x.id===state.cariEdit) : null;
+    const hdr = `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap"><span class="font-mono text-sm text-gold">${kod}</span><span class="text-lg font-bold text-white">Cari Kart Tanımlama Tablosu</span><span class="text-[11px] text-slate-400 ml-auto">Cari kartı düzenleyince bağlı kayıtlar (sözleşme vb.) otomatik güncellenir</span></div>`;
+    const form = editV ? vendorFormCard('Cari Kart Düzenle · '+editV.id,'Değişiklik bağlı kayıtlara yansır', editV) : vendorFormCard('Cari Kart Tanımla','Carilerin tanımlandığı kart tablosu · yeni cari ekle');
+    return `${back}${hdr}${form}
+    <div class="card rounded-2xl p-5 mt-4">${sectionTitle('database','Tanımlı Cari Kartlar',getCariKartlar().length+' kayıt')}
+      <div class="overflow-x-auto"><table class="w-full text-sm min-w-[760px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">Kod</th><th class="text-left font-medium">İç Kod</th><th class="text-left font-medium">Ünvan</th><th class="text-left font-medium">Tipi</th><th class="text-left font-medium">Türü</th><th class="text-right font-medium">Bakiye</th><th class="text-right font-medium">İşlem</th></tr></thead>
+      <tbody>${getCariKartlar().map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.kayitNo)}</td><td class="font-mono text-[11px] text-slate-400">${esc(r.icKod||'—')}</td><td class="text-slate-100 font-medium">${esc(r.ad)}</td><td class="text-slate-300">${r.tipi||'—'}</td><td class="text-slate-300">${r.turu||'—'}</td><td class="text-right text-slate-300">${money(r.bakiye||0)}</td><td class="text-right whitespace-nowrap">${r._src==='vendor'?`<button onclick="state.cariEdit='${r.id}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzenle</button> ${canDel?`<button onclick="delRow('TBL-0001',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button>`:''}`:`<span class="text-[11px] text-slate-500">Hukuk modülü</span>`}</td></tr>`).join('')}</tbody></table></div>
     </div>`; }
   if(kod==='TBL-0002'){ return tbl('Dava & İcra Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Konu',cls:'text-slate-100 font-medium',f:r=>esc(r.subject)},{h:'Tür',f:r=>r.tur||'—'},{h:'Taraf',f:r=>r.side||'—'},{h:'Değer',r:1,f:r=>money(r.value||0)},{h:'Hal',r:1,f:r=>r.hal||'—'}],lawsuits); }
   if(kod==='TBL-0003'){ return tbl('Avukat Tanıtım Tablosu',[{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'E-posta',f:r=>esc(r.email||'—')},{h:'Büro',f:r=>esc(r.buro||'—')},{h:'Uzmanlık',f:r=>esc((r.uzmanlik||[]).join(', ')||'—')},{h:'Durum',r:1,f:r=>r.approved?'Yetkili':'Onay Bekliyor'}],lawyers); }
@@ -6561,7 +6586,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; state.adminUsers=false; state.adminTable=null; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; state.cariEdit=null; state.adminUsers=false; state.adminTable=null; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
