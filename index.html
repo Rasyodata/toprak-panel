@@ -5353,40 +5353,51 @@ function viewCompany(){
 /* ============================================================
    VIEW: ADMIN (Sistem Yöneticisi — Kullanıcılar & Görüntüle)
    ============================================================ */
+function cariRecordCard(k){
+  return `<div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
+    <div class="flex items-start justify-between gap-2 flex-wrap">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 flex-wrap"><span class="font-mono text-[11px] text-gold">${k.kayitNo}</span>${badge(k.tipi||'—','gold')}${badge(k.turu||'—','slate')}${k.suspheli?badge('Şüpheli','red'):''}${k._src==='lawyer'?badge('Avukat Tanımla','emer'):''}</div>
+        <p class="mt-1 text-sm font-semibold text-slate-100">${esc(k.ad)}</p>
+        <p class="text-[11px] text-slate-500">${esc(k.yetkili||'—')} · ${esc(k.tel||'—')} · ${esc(k.email||'—')}</p>
+        ${k.adres?`<p class="text-[11px] text-slate-500 truncate">${esc(k.adres)}</p>`:''}
+      </div>
+      <div class="text-right shrink-0"><p class="text-[11px] text-slate-500">Bakiye</p><p class="text-sm font-bold ${k.bakiye>0?'text-amber-300':'text-emer-light'}">${money(k.bakiye||0)}</p></div>
+    </div>
+  </div>`;
+}
 function viewAdminRecords(){
-  const kart=getCariKartlar();
+  const all=getCariKartlar();
+  const fTipi=state.cariFilterTipi, fTuru=state.cariFilterTuru;
+  const list=all.filter(k=>(!fTipi||k.tipi===fTipi)&&(!fTuru||k.turu===fTuru));
+  const turler=CARI_TURU.filter(t=>list.some(k=>k.turu===t)).concat([...new Set(list.map(k=>k.turu))].filter(t=>!CARI_TURU.includes(t)));
   return `
   <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-5">
-    ${kpi('database','Toplam Cari Kart', kart.length+' Kayıt','Merkezi veritabanı','true','gold')}
-    ${kpi('scale','Avukat', kart.filter(k=>k.turu==='Avukat').length+' Kayıt','Otomatik','true','emer')}
-    ${kpi('users','Satıcı / Taşeron / Müteahhit', kart.filter(k=>['Satıcı','Taşeron','Müteahhit'].includes(k.turu)).length+' Kayıt','Tedarik','true','gold')}
-    ${kpi('alert-triangle','Şüpheli', kart.filter(k=>k.suspheli).length+' Kayıt','Riskli','true','red')}
+    ${kpi('database','Toplam Cari Kart', all.length+' Kayıt','Merkezi veritabanı','true','gold')}
+    ${kpi('scale','Avukat', all.filter(k=>k.turu==='Avukat').length+' Kayıt','Otomatik','true','emer')}
+    ${kpi('users','Satıcı / Taşeron / Müteahhit', all.filter(k=>['Satıcı','Taşeron','Müteahhit'].includes(k.turu)).length+' Kayıt','Tedarik','true','gold')}
+    ${kpi('alert-triangle','Şüpheli', all.filter(k=>k.suspheli).length+' Kayıt','Riskli','true','red')}
   </div>
-  <div class="card rounded-2xl p-5">
-    ${sectionTitle('database','Cari Kayıtlar','Kodlu cari kart veritabanı · personel hariç tüm cariler')}
-    <div class="overflow-x-auto"><table class="w-full text-sm min-w-[860px]">
-      <thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>
-        <th class="text-left py-2 font-medium">Kayıt No</th><th class="text-left font-medium">Ünvan</th>
-        <th class="text-left font-medium">Cari Tipi</th><th class="text-left font-medium">Cari Türü</th>
-        <th class="text-left font-medium">Yetkili / İletişim</th><th class="text-right font-medium">Bakiye</th>
-        <th class="text-right font-medium">Durum</th><th></th></tr></thead>
-      <tbody>${kart.map(k=>`<tr onclick="setCariView('${k.id}')" class="border-b border-white/5 hover:bg-white/[.03] cursor-pointer">
-        <td class="py-2.5 font-mono text-[12px] text-gold">${k.kayitNo}</td>
-        <td class="text-slate-100 font-medium">${esc(k.ad)}</td>
-        <td class="text-slate-300">${k.tipi||'—'}</td>
-        <td>${badge(k.turu||'—','slate')}</td>
-        <td class="text-slate-400 text-[12px]">${esc(k.yetkili||'—')}${k.tel?' · '+esc(k.tel):''}</td>
-        <td class="text-right ${k.bakiye>0?'text-amber-300':'text-slate-400'}">${money(k.bakiye||0)}</td>
-        <td class="text-right">${k.suspheli?badge('Şüpheli','red'):badge('Aktif','emer')}</td>
-        <td class="text-right"><i data-lucide="chevron-right" class="h-4 w-4 text-slate-500"></i></td>
-      </tr>`).join('')}</tbody>
-    </table></div>
-    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Her cari kart benzersiz kodla listelenir (CRI-… elle açılan · AV-… Avukat Tanımla'dan). Yeni kayıt: Finans › Satıcılar Hesabı › Hesap Aç.</p>
-  </div>`;
+  ${(fTipi||fTuru)?`<div class="mb-3"><button onclick="state.cariFilterTipi=null;state.cariFilterTuru=null;render()" class="text-[11px] text-slate-400 hover:text-white inline-flex items-center gap-1"><i data-lucide="x" class="h-3.5 w-3.5"></i>Filtre: ${[fTipi,fTuru].filter(Boolean).join(' · ')} · temizle</button></div>`:''}
+  ${turler.length?turler.map(t=>`
+    <div class="card rounded-2xl p-5 mb-4">
+      ${sectionTitle('folder', t+' ('+list.filter(k=>k.turu===t).length+')','Cari türü · kodlu kartlar')}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">${list.filter(k=>k.turu===t).map(cariRecordCard).join('')}</div>
+    </div>`).join(''):'<div class="card rounded-2xl p-6 text-center text-sm text-slate-500">Bu filtrede cari kayıt yok.</div>'}`;
+}
+function cariFilterLeftHtml(){
+  const kart=getCariKartlar();
+  const b=(lbl,on,onclick,ind)=>`<button onclick="${onclick}" class="w-full flex items-center gap-2 ${ind?'pl-7':'px-3'} pr-3 py-2 rounded-xl text-[13px] transition ${on?'bg-[#8a2a1a]/80 text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><span class="truncate flex-1 text-left">${lbl}</span></button>`;
+  let h=`<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Cari Tipi</div>`;
+  h+=b('Tümü', !state.cariFilterTipi&&!state.cariFilterTuru, "state.cariFilterTipi=null;state.cariFilterTuru=null;render()");
+  CARI_TIPI.forEach(t=>{ const n=kart.filter(k=>k.tipi===t).length; h+=b(t+' ('+n+')', state.cariFilterTipi===t, `state.cariFilterTipi=state.cariFilterTipi==='${t}'?null:'${t}';render()`); });
+  h+=`<div class="my-2 border-t border-white/5"></div><div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Cari Türü</div>`;
+  CARI_TURU.forEach(t=>{ const n=kart.filter(k=>k.turu===t).length; if(!n) return; h+=b(t+' ('+n+')', state.cariFilterTuru===t, `state.cariFilterTuru=state.cariFilterTuru==='${t}'?null:'${t}';render()`); });
+  return h+'<div class="my-2 border-t border-white/5"></div>';
 }
 function viewAdmin(){
   if(!isAdminUser() && !state.viewAs) return viewUnauthorized({name:'Sistem Yöneticisi'});
-  if(currentSub()==='kayitlar') return state.cariView ? viewCariDetail(state.cariView) : viewAdminRecords();
+  if(currentSub()==='kayitlar') return viewAdminRecords();
   const card = (k)=>{ const v=ROLES[k]; const mods=MODULES.filter(m=>m.roles.includes(k));
     return `
     <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
@@ -6530,13 +6541,14 @@ function subTabsLeftHtml(){
   const subs = getSubs();
   if(!subs || subs.length<2) return '';
   const active = currentSub();
-  const modName = (MODULES.find(m=>m.id===state.module)||{}).name || '';
+  const modName = (MODULES.find(m=>m.id===state.module)||{}).name || (state.module==='admin'?'Sistem Yöneticisi':'');
   return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${modName}</div>`
     + subs.map(s=>`
       <button onclick="setSub('${s.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${s.id===active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
         <i data-lucide="${s.icon}" class="h-[18px] w-[18px] ${s.id===active?'text-[#f0a58a]':''}"></i><span class="truncate">${s.label}</span>
       </button>`).join('')
-    + '<div class="my-2 border-t border-white/5"></div>';
+    + '<div class="my-2 border-t border-white/5"></div>'
+    + ((state.module==='admin' && active==='kayitlar') ? cariFilterLeftHtml() : '');
 }
 function applySub(){
   const subs = getSubs(); if(!subs) return;
