@@ -2517,6 +2517,87 @@ const salesReps = [
   { ad:'Derya Şahin',   ekip:'Konut Satış',   firma:'Toprak İnşaat',      satis:296000000, tahsilat:271000000, oran:1.3, odenen:2600000 },
   { ad:'Okan Arslan',   ekip:'Proje Satış',   firma:'Toprak Turizm',      satis:188000000, tahsilat:142000000, oran:1.5, odenen:1400000 }
 ];
+/* ---------- Cari Hesaplar (Satıcılar Hesabı · satıcı/taşeron/müteahhit/danışman) ---------- */
+let vendorAccounts = [
+  { id:'CRI-01', ad:'Öz-Ka İnşaat',          tip:'Taşeron',   yetkili:'Kadir Öz',      tel:'0352 •• •• 11', email:'info@ozka.com',        adres:'Kayseri OSB 12. Cad.',     risk:'Orta',   bakiye:23500000, suspheli:false, not:'' },
+  { id:'CRI-02', ad:'Delta Yapı Malz.',       tip:'Satıcı',    yetkili:'Derya Al',      tel:'0312 •• •• 22', email:'satis@deltayapi.com',  adres:'Ankara Ostim',             risk:'Düşük',  bakiye:14500000, suspheli:false, not:'' },
+  { id:'CRI-03', ad:'Anadolu Konsorsiyum',    tip:'Müteahhit', yetkili:'Mehmet Anadolu',tel:'0216 •• •• 33', email:'proje@anadolu.com',    adres:'İstanbul Ataşehir',        risk:'Yüksek', bakiye:68000000, suspheli:true,  not:'Hakediş ödemelerinde gecikme' },
+  { id:'CRI-04', ad:'Ak Hukuk & Danışmanlık', tip:'Danışman',  yetkili:'Av. Deniz Ak',  tel:'0312 •• •• 45', email:'hukuk@danisman.com',   adres:'Çankaya · Ankara',         risk:'Düşük',  bakiye:1800000,  suspheli:false, not:'' }
+];
+const VENDOR_TIPS = ['Satıcı','Taşeron','Müteahhit','Danışman','Tedarikçi','Diğer'];
+const RISK_LVL = ['Düşük','Orta','Yüksek'];
+const riskTone = r => r==='Yüksek'?'red':r==='Orta'?'amber':'emer';
+function setVendorView(v){ state.vendorView=v; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
+function toggleVendorSuspect(i){ const v=vendorAccounts[i]; if(!v) return; v.suspheli=!v.suspheli; logAction('alert-triangle', v.suspheli?'amber':'emer', `${v.ad} ${v.suspheli?'şüpheli alacaklara alındı':'şüpheli listesinden çıkarıldı'}`); render(); toast(v.suspheli?'Şüpheli alacaklara eklendi':'Şüpheli listesinden çıkarıldı'); }
+function addVendorAccount(){
+  const g=id=>document.getElementById(id)||{};
+  const ad=(g('vaAd').value||'').trim();
+  if(!ad){ toast('Ünvan / ad girin'); return; }
+  const rec={ id:'CRI-'+String(vendorAccounts.length+1).padStart(2,'0'), ad, tip:g('vaTip').value||'Satıcı',
+    yetkili:(g('vaYetkili').value||'').trim(), tel:(g('vaTel').value||'').trim(), email:(g('vaEmail').value||'').trim(),
+    adres:(g('vaAdres').value||'').trim(), risk:g('vaRisk').value||'Düşük', bakiye:parseInt(g('vaBakiye').value||'0',10)||0,
+    suspheli:!!g('vaSuspect').checked, not:(g('vaNot').value||'').trim() };
+  vendorAccounts.unshift(rec);
+  logAction('user-plus','emer', `Yeni cari hesap · ${rec.ad} (${rec.tip})${rec.suspheli?' · ŞÜPHELİ':''}`);
+  state.vendorView=null; render(); toast(`${rec.ad} hesabı açıldı`);
+}
+function viewVendorForm(){
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
+  return `<button onclick="setVendorView(null)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Cari Hesaplara Dön</button>
+  <div class="card rounded-2xl p-5">
+    ${sectionTitle('user-plus','Hesap Aç','Yeni cari hesap · satıcı / taşeron / müteahhit / danışman')}
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+      <select id="vaTip" class="sm:col-span-4 ${selC}">${VENDOR_TIPS.map(t=>`<option>${t}</option>`).join('')}</select>
+      <input id="vaAd" type="text" placeholder="Ünvan / Firma adı" class="sm:col-span-8 ${inpC}" />
+      <input id="vaYetkili" type="text" placeholder="Yetkili kişi" class="sm:col-span-4 ${inpC}" />
+      <input id="vaTel" type="text" placeholder="Telefon" class="sm:col-span-4 ${inpC}" />
+      <input id="vaEmail" type="text" placeholder="E-posta" class="sm:col-span-4 ${inpC}" />
+      <input id="vaAdres" type="text" placeholder="Adres" class="sm:col-span-8 ${inpC}" />
+      <select id="vaRisk" class="sm:col-span-2 ${selC}">${RISK_LVL.map(r=>`<option>${r}</option>`).join('')}</select>
+      <input id="vaBakiye" type="number" placeholder="Açılış bakiyesi ₺" class="sm:col-span-2 ${inpC}" />
+      <textarea id="vaNot" rows="2" placeholder="Not / açıklama…" class="sm:col-span-12 ${inpC} resize-none"></textarea>
+    </div>
+    <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-200 cursor-pointer"><input type="checkbox" id="vaSuspect" class="accent-gold" />Şüpheli alacak olarak işaretle</label>
+    <div class="mt-3 flex items-center justify-between gap-2 flex-wrap">
+      <p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="info" class="h-3.5 w-3.5"></i>Şüpheli işaretlenen hesaplar "Şüpheli Alacaklar / Riskler" listesine otomatik düşer.</p>
+      <button onclick="addVendorAccount()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Hesap Aç</button>
+    </div>
+  </div>`;
+}
+function vendorCardHtml(v,vi){
+  return `<div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
+    <div class="flex items-start justify-between gap-2 flex-wrap">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 flex-wrap"><span class="font-mono text-[11px] text-gold">${v.id}</span>${badge(v.tip,'slate')}${badge('Risk: '+v.risk, riskTone(v.risk))}${v.suspheli?badge('Şüpheli Alacak','red'):''}</div>
+        <p class="mt-1 text-sm font-semibold text-slate-100">${esc(v.ad)}</p>
+        <p class="text-[11px] text-slate-500">${esc(v.yetkili||'—')} · ${esc(v.tel||'—')} · ${esc(v.email||'—')}</p>
+        ${v.adres?`<p class="text-[11px] text-slate-500">${esc(v.adres)}</p>`:''}
+      </div>
+      <div class="text-right shrink-0"><p class="text-[11px] text-slate-500">Bakiye</p><p class="text-sm font-bold ${v.bakiye>0?'text-amber-300':'text-emer-light'}">${money(v.bakiye)}</p></div>
+    </div>
+    <div class="mt-3 flex justify-end">
+      <button onclick="toggleVendorSuspect(${vi})" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] border ${v.suspheli?'border-emer/40 text-emer-light hover:bg-emer/10':'border-rose-400/40 text-rose-300 hover:bg-rose-500/10'} transition"><i data-lucide="${v.suspheli?'shield-check':'alert-triangle'}" class="h-3.5 w-3.5"></i>${v.suspheli?'Şüpheliden Çıkar':'Şüpheli Alacağı Çek'}</button>
+    </div>
+  </div>`;
+}
+function viewVendorSuspect(){
+  const list = vendorAccounts.map((v,vi)=>({v,vi})).filter(x=>x.v.suspheli);
+  const tot = list.reduce((a,x)=>a+x.v.bakiye,0);
+  const yuksek = list.filter(x=>x.v.risk==='Yüksek').length;
+  return `<button onclick="setVendorView(null)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Cari Hesaplara Dön</button>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+    ${kpi('alert-triangle','Şüpheli Hesap', list.length+' Adet','Takipte','true','red')}
+    ${kpi('coins','Toplam Risk Tutarı', money(tot),'Şüpheli bakiye','true','amber')}
+    ${kpi('shield-alert','Yüksek Riskli', yuksek+' Hesap','Öncelikli','true','red')}
+  </div>
+  <div class="card rounded-2xl p-5">
+    ${sectionTitle('alert-triangle','Şüpheli Alacaklar / Riskler Hesabı','Şüpheli işaretli cari hesaplar')}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      ${list.length?list.map(x=>vendorCardHtml(x.v,x.vi)).join(''):'<p class="text-sm text-slate-500 py-6 text-center">Şüpheli alacak yok.</p>'}
+    </div>
+  </div>`;
+}
 function salesAccountHtml(){
   const sf = scopeFirm();
   const list = sf ? salesReps.filter(r=>r.firma===sf) : salesReps;
@@ -2560,6 +2641,13 @@ function salesAccountHtml(){
         <td class="text-right text-amber-300">${money(tBakiye)}</td></tr>`:''}
       </tbody></table></div>
     <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Prim yalnızca tahsil edilen tutar üzerinden hak edilir · bakiye sonraki bordroda ödenir.</p>
+  </div>
+  <div data-sub="saticilar" class="card rounded-2xl p-5 mt-5">
+    ${sectionTitle('users','Cari Hesaplar','Satıcı · taşeron · müteahhit · danışman · '+vendorAccounts.length+' hesap')}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      ${vendorAccounts.map((v,vi)=>vendorCardHtml(v,vi)).join('')}
+    </div>
+    <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Yeni hesap için sol bardan "Hesap Aç" · şüpheli işaretlenenler "Şüpheli Alacaklar / Riskler"e düşer.</p>
   </div>
   <div data-sub="saticilar" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('bar-chart-3','Satıcı Performansı','Satış hacmi · tahsilat oranı')}
@@ -3401,6 +3489,9 @@ function viewProjects(){
    VIEW: PROFITABILITY (Karlılık)
    ============================================================ */
 function viewProfit(){
+  // Satıcılar Hesabı · Hesap Aç / Şüpheli Alacaklar sağ içerik alanında
+  if(currentSub()==='saticilar' && state.vendorView==='new') return viewVendorForm();
+  if(currentSub()==='saticilar' && state.vendorView==='suspect') return viewVendorSuspect();
   const rows = [
     { name:'Toprak Gayrimenkul',  gross:34.2, net:21.6, opex:118000000 },
     { name:'Toprak İnşaat',  gross:26.8, net:15.5, opex:164000000 },
@@ -4234,7 +4325,8 @@ function contractCard(c){
         ${(state.role==='ceo'||state.role==='cfo')?`<div class="mt-2 flex items-center gap-1.5"><span class="text-[10px] text-slate-500">Avukat ata:</span><select onchange="assignContractLawyer('${c.id}', this.value)" class="bg-navy-700/70 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-slate-200 outline-none focus:border-gold/50"><option value="">—</option>${lawyers.filter(a=>a.approved).map(a=>`<option ${a.name===c.avukat?'selected':''}>${a.name}</option>`).join('')}</select></div>`:''}
       </div>
       <p class="text-lg font-bold text-white md:text-right">${money(c.value)}</p>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        ${canAct?`<button onclick="setContractEdit('${c.id}')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border ${state.contractEdit===c.id?'border-gold/60 bg-gold/10 text-gold':'border-white/15 text-slate-200 hover:border-gold/40'} text-xs transition"><i data-lucide="pencil" class="h-4 w-4"></i>Düzenle</button>`:''}
         ${szActions(c,isCeo,isCfo,canAct)}
       </div>
     </div>
@@ -5713,7 +5805,26 @@ function viewContracts(){
   } else {
     body = `<div class="space-y-3">${list.length?list.map(c=>contractCard(c)).join(''):'<p class="text-sm text-slate-500 py-6 text-center">Bu kategoride sözleşme yok.</p>'}</div>`;
   }
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
+  const editC = (canAct && state.contractEdit && all.find(c=>c.id===state.contractEdit)) ? (()=>{ const c=all.find(x=>x.id===state.contractEdit); return `
+  <div class="card card-gold rounded-2xl p-5 mb-5">
+    ${sectionTitle('pencil','Sözleşme Düzenle · '+c.id,'İlgili cari hesap kartından bilgi çekilebilir')}
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+      <input id="ceTitle" value="${esc(c.title||'')}" placeholder="Sözleşme başlığı" class="sm:col-span-8 ${inpC}" />
+      <input id="ceValue" type="number" value="${c.value||0}" placeholder="Değer ₺" class="sm:col-span-4 ${inpC}" />
+      <input id="ceParty" value="${esc(c.party||'')}" placeholder="Karşı taraf" class="sm:col-span-5 ${inpC}" />
+      <select id="ceRisk" class="sm:col-span-3 ${selC}">${RISK_LVL.map(r=>`<option ${c.risk===r?'selected':''}>${r}</option>`).join('')}</select>
+      <select onchange="fillContractFromVendor('${c.id}',this.value)" class="sm:col-span-4 ${selC}"><option value="">Cari hesaptan çek…</option>${vendorAccounts.map(v=>`<option value="${v.id}">${esc(v.ad)} (${v.tip})</option>`).join('')}</select>
+    </div>
+    <p id="ceVendorInfo" class="mt-2 text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="link" class="h-3.5 w-3.5"></i>${c.vendorYetkili?`${esc(c.vendorYetkili)} · ${esc(c.vendorTel||'')} · ${esc(c.vendorEmail||'')}`:'Cari hesap seçilince yetkili/iletişim bilgileri karttan buraya gelir.'}</p>
+    <div class="mt-3 flex justify-end gap-2">
+      <button onclick="setContractEdit(null)" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button>
+      <button onclick="saveContractEdit('${c.id}')" class="px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition inline-flex items-center gap-1.5"><i data-lucide="save" class="h-4 w-4"></i>Kaydet</button>
+    </div>
+  </div>`;})() : '';
   return `
+  ${editC}
   <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
     ${kpi('file-signature','Toplam Sözleşme', all.length+' Adet', 'Portföy','true','gold')}
     ${kpi('hard-hat','İnşaat', all.filter(c=>c.kategori==='İnşaat').length+' Adet', 'Proje · taşeron · taahhüt','true','gold')}
@@ -5724,6 +5835,24 @@ function viewContracts(){
     ${sectionTitle('file-signature', (kat||'Tüm')+' Sözleşmeleri', canAct?'Onay yetkiniz var':'Görüntüleme')}
     ${body}
   </div>`;
+}
+function setContractEdit(id){ state.contractEdit = state.contractEdit===id?null:id; state._ceVendor=null; render(); }
+function fillContractFromVendor(id, vid){
+  const v=vendorAccounts.find(x=>x.id===vid); if(!v) return;
+  const p=document.getElementById('ceParty'); if(p) p.value=v.ad;
+  const inf=document.getElementById('ceVendorInfo'); if(inf) inf.textContent = v.tip+' · '+(v.yetkili||'—')+' · '+(v.tel||'—')+' · '+(v.email||'—');
+  state._ceVendor = vid;
+}
+function saveContractEdit(id){
+  const c=contracts.find(x=>x.id===id); if(!c) return; const g=i=>document.getElementById(i)||{};
+  c.title=(g('ceTitle').value||c.title).trim();
+  c.party=(g('ceParty').value||c.party).trim();
+  c.value=parseInt(g('ceValue').value||'0',10)||c.value;
+  c.risk=g('ceRisk').value||c.risk;
+  const vid=state._ceVendor; if(vid){ const v=vendorAccounts.find(x=>x.id===vid); if(v){ c.vendorId=vid; c.vendorTel=v.tel; c.vendorEmail=v.email; c.vendorYetkili=v.yetkili; } }
+  state.contractEdit=null; state._ceVendor=null;
+  logAction('pencil','gold', `${c.id} sözleşmesi düzenlendi${c.party?' · '+c.party:''}`);
+  render(); toast('Sözleşme güncellendi ✓');
 }
 
 /* ============================================================
@@ -6237,7 +6366,7 @@ function getSubs(){
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
-function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; render(); }
+function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
@@ -6276,6 +6405,17 @@ function leftSpecialSubsHtml(){
       <button onclick="${onclick}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
         <i data-lucide="${icon}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${label}</span>
       </button>`;
+  // Satıcılar Hesabı → Hesap Aç · Cari Hesaplar · Şüpheli Alacaklar sol barda
+  if(state.module==='profitability' && active==='saticilar'){
+    const supCount = vendorAccounts.filter(v=>v.suspheli).length;
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Satıcılar Hesabı</div>`
+      + lbtn("setVendorView('new')",'user-plus','Hesap Aç',state.vendorView==='new')
+      + lbtn("setVendorView(null)",'users','Cari Hesaplar',!state.vendorView)
+      + `<button onclick="setVendorView('suspect')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${state.vendorView==='suspect'?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
+          <i data-lucide="alert-triangle" class="h-[18px] w-[18px] ${state.vendorView==='suspect'?'text-[#f0a58a]':'text-rose-300'}"></i><span class="truncate flex-1 text-left">Şüpheli Alacaklar / Riskler</span>${supCount?`<span class="text-[10px] px-1.5 h-4 rounded-full bg-rose-500 text-white font-bold flex items-center">${supCount}</span>`:''}
+        </button>`
+      + sep;
+  }
   // Hukuk & Risk · Dava sekmesi → Dava işlemleri sol barda (İcra üst barda kalır)
   if(state.module==='legal' && (active==='dava' || active==='icra')){
     const isIcra = active==='icra';
