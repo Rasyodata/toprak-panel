@@ -2867,9 +2867,12 @@ const TAKVIM_PERIYOT = ['Günlük','Haftalık','Aylık','Yıllık'];
 const TAKVIM_DURUM = ['Planlandı','Devam Ediyor','Tamamlandı'];
 function addIsTakvim(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
   const personel=gv('itPersonel'); const is=gv('itIs'); if(!personel){toast('Personel seçin');return;} if(!is){toast('İş/görev girin');return;}
+  const ex = state.itEdit ? isTakvimi.find(r=>r.no===state.itEdit) : null;
+  if(ex){ Object.assign(ex, { personel, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') }); state.itEdit=null; logAction('pencil','gold', `${ex.no} iş takvimi güncellendi`); render(); toast(ex.no+' güncellendi ✓'); return; }
   const no=nextKayitNo('0026',isTakvimi);
   isTakvimi.unshift({ no, personel, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') });
   logAction('calendar-clock','gold', `İş takvimi · ${no} · ${personel} · ${gv('itPeriyot')||'Günlük'} · ${is}`); render(); toast(no+' · iş takvimine eklendi'); }
+function delIsTakvim(no){ const i=isTakvimi.findIndex(r=>r.no===no); if(i>-1){ isTakvimi.splice(i,1); logAction('trash-2','red', `İş takvimi kaydı silindi · ${no}`); render(); toast('Silindi ✓'); } }
 function addIsTakvimToplu(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
   const personel=gv('itPersonel'); const is=gv('itIs'); if(!personel){toast('Personel seçin');return;} if(!is){toast('İş/görev girin');return;}
   const tekrar=gv('itTekrar')||'Günlük'; const kez=Math.max(1,Math.min(200,parseInt(gv('itKez')||'1',10)||1));
@@ -2906,6 +2909,7 @@ function viewIsTakvimi(){
         <span class="h-9 w-9 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center text-gold"><i data-lucide="calendar-check" class="h-4 w-4"></i></span>
         <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${esc(r.is)}</p><p class="text-[11px] text-slate-500">${esc(r.personel||'—')} · ${esc(r.tarih||'—')}${r.aciklama?' · '+esc(r.aciklama):''}</p></div>
         ${badge(r.durum||'Planlandı',dt(r.durum))}
+        ${isAdminUser()?`<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';state.itEdit='${r.no}';setModule('admin')" class="shrink-0 h-7 w-7 rounded-lg border border-white/15 text-slate-300 hover:border-gold/40 flex items-center justify-center" title="Düzelt"><i data-lucide="pencil" class="h-3.5 w-3.5"></i></button><button onclick="delIsTakvim('${r.no}')" class="shrink-0 h-7 w-7 rounded-lg border border-rose-400/40 text-rose-300 hover:bg-rose-500/10 flex items-center justify-center" title="Sil"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>`:''}
       </div>`).join(''):`<p class="text-sm text-slate-500 py-6 text-center">Bu dönemde (${pl.toLowerCase()}) görev yok. "İş Ekle" ile ekleyin.</p>`}
     </div></div>`;
 }
@@ -6025,17 +6029,17 @@ function tblForm(kod){
       btn('addGirisCikis()','Hareket Ekle'));
   if(kod==='TBL-0024') return yapSatFormCard();
   if(kod==='TBL-0025') return gorevFormCard();
-  if(kod==='TBL-0026') return `<div class="card rounded-2xl p-5 mb-4">
-    ${sectionTitle('calendar-clock','İş Takvimi Kaydı','Tekil veya toplu (saatlik/günlük/haftalık/aylık/yıllık · her saat başı) görev oluştur')}
+  if(kod==='TBL-0026'){ const itv=state.itEdit?isTakvimi.find(r=>r.no===state.itEdit):null; return `<div class="card rounded-2xl p-5 mb-4">
+    ${sectionTitle('calendar-clock', itv?('İş Takvimi Düzelt · '+itv.no):'İş Takvimi Kaydı', itv?'Kaydı düzenleyip güncelle':'Tekil veya toplu (saatlik/günlük/haftalık/aylık/yıllık · her saat başı) görev oluştur')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <select id="itPersonel" class="sm:col-span-4 ${selC}"><option value="">Personel seç…</option>${personelKartlari.map(p=>`<option>${esc(p.ad)}</option>`).join('')}</select>
-      <input id="itTarih" type="date" value="${(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}"/>
-      <select id="itPeriyot" class="sm:col-span-2 ${selC}" title="Periyot (tekil)">${TAKVIM_PERIYOT.map(p=>`<option>${p}</option>`).join('')}</select>
-      <select id="itDurum" class="sm:col-span-3 ${selC}">${TAKVIM_DURUM.map(d=>`<option>${d}</option>`).join('')}</select>
-      <input id="itIs" placeholder="İş / görev (ör. Büro durumu kontrolü)" class="sm:col-span-8 ${inpC}"/>
-      <input id="itAciklama" placeholder="Açıklama" class="sm:col-span-4 ${inpC}"/>
+      <select id="itPersonel" class="sm:col-span-4 ${selC}"><option value="">Personel seç…</option>${personelKartlari.map(p=>`<option ${itv&&itv.personel===p.ad?'selected':''}>${esc(p.ad)}</option>`).join('')}</select>
+      <input id="itTarih" type="date" value="${itv?esc(itv.tarih||''):(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}"/>
+      <select id="itPeriyot" class="sm:col-span-2 ${selC}" title="Periyot (tekil)">${TAKVIM_PERIYOT.map(p=>`<option ${itv&&itv.periyot===p?'selected':''}>${p}</option>`).join('')}</select>
+      <select id="itDurum" class="sm:col-span-3 ${selC}">${TAKVIM_DURUM.map(d=>`<option ${itv&&itv.durum===d?'selected':''}>${d}</option>`).join('')}</select>
+      <input id="itIs" value="${itv?esc(itv.is||''):''}" placeholder="İş / görev (ör. Büro durumu kontrolü)" class="sm:col-span-8 ${inpC}"/>
+      <input id="itAciklama" value="${itv?esc(itv.aciklama||''):''}" placeholder="Açıklama" class="sm:col-span-4 ${inpC}"/>
     </div>
-    <div class="mt-2 flex justify-end"><button onclick="addIsTakvim()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Tekil Ekle</button></div>
+    <div class="mt-2 flex justify-end gap-2">${itv?`<button onclick="state.itEdit=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button>`:''}<button onclick="addIsTakvim()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="${itv?'save':'plus'}" class="h-4 w-4"></i> ${itv?'Güncelle':'Tekil Ekle'}</button></div>
     <div class="mt-3 rounded-xl border border-gold/25 bg-gold/5 p-4">
       <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="layers" class="h-3.5 w-3.5"></i>Toplu Kayıt Oluştur</p>
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
@@ -6046,7 +6050,7 @@ function tblForm(kod){
       </div>
       <p class="text-[10px] text-slate-500 mt-1">Örn: Tekrar=Saatlik · Her saat başı · Kez=8 → 09:00–16:00 her saat için görev. Günlük/Haftalık/Aylık/Yıllık seçilince başlangıç tarihinden itibaren o periyotla üretilir. (Personel ve İş/görev alanları ortak)</p>
       <div class="mt-2 flex justify-end"><button onclick="addIsTakvimToplu()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gold/45 text-gold bg-gold/5 font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="calendar-plus" class="h-4 w-4"></i> Toplu Oluştur</button></div>
-    </div></div>`;
+    </div></div>`; }
   return '';
 }
 function viewAdminTable(kod){
@@ -6074,7 +6078,7 @@ function viewAdminTable(kod){
   if(kod==='TBL-0022'){ return tbl('Satış Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Varlık',f:r=>badge(r.varlik||'—','emer')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Müşteri',f:r=>esc(r.musteri||'—')},{h:'Tutar',r:1,cls:'text-emer-light font-medium',f:r=>money(r.tutar||0)}],satisIslemleri); }
   if(kod==='TBL-0023'){ return tbl('Giriş / Çıkış Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Hareket',f:r=>badge(r.hareket||'—',r.hareket==='Çıkış'?'red':'emer')},{h:'Giriş Tipi',f:r=>esc(r.girisTipi||'—')},{h:'Varlık',f:r=>esc(r.varlik||'—')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Adet/m²',r:1,f:r=>r.adet||'—'},{h:'Tutar',r:1,f:r=>money(r.tutar||0)}],girisCikislar); }
   if(kod==='TBL-0025'){ return tbl('Personel Görev Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Personel',cls:'text-slate-100 font-medium',f:r=>esc(r.personel||'—')},{h:'Departman / Görev',f:r=>badge(r.rol||'—','gold')},{h:'Görev Sayısı',r:1,f:r=>gorevSayi(r)},{h:'Eklenen İş',f:r=>esc(((r.ekstra||[]).join(' · '))||'—')}],personelGorevleri); }
-  if(kod==='TBL-0026'){ return tbl('İş Takvimi Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Personel',cls:'text-slate-100 font-medium',f:r=>esc(r.personel)},{h:'Periyot',f:r=>badge(r.periyot||'Günlük', r.periyot==='Aylık'?'emer':r.periyot==='Haftalık'?'amber':'gold')},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'İş / Görev',f:r=>esc(r.is||'—')},{h:'Durum',f:r=>badge(r.durum||'Planlandı', r.durum==='Tamamlandı'?'emer':r.durum==='Devam Ediyor'?'amber':'slate')}],isTakvimi); }
+  if(kod==='TBL-0026'){ return tbl('İş Takvimi Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Personel',cls:'text-slate-100 font-medium',f:r=>esc(r.personel)},{h:'Periyot',f:r=>badge(r.periyot||'Günlük', r.periyot==='Aylık'?'emer':r.periyot==='Haftalık'?'amber':'gold')},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'İş / Görev',f:r=>esc(r.is||'—')},{h:'Durum',f:r=>badge(r.durum||'Planlandı', r.durum==='Tamamlandı'?'emer':r.durum==='Devam Ediyor'?'amber':'slate')},{h:'Düzenle',f:r=>`<button onclick="state.itEdit='${r.no}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button>`}],isTakvimi); }
   if(kod==='TBL-0024'){ return tbl('Proje Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Tipi',f:r=>badge(r.projeTipi||'Yap-Sat', r.projeTipi==='Kat Karşılığı'?'emer':'gold')},{h:'İl / İlçe',f:r=>esc((r.il||'—')+(r.ilce?' / '+r.ilce:''))},{h:'Arsa Alanı',r:1,f:r=>fmtM2(r.arsaM2)},{h:'KAKS',r:1,f:r=>r.kaks||'—'},{h:'İnşaat (Brüt)',r:1,f:r=>fmtM2(r.insaatM2)},{h:'Satılabilir',r:1,f:r=>fmtM2(r.satilabilirM2)},{h:'Daire/Dükkan',f:r=>`${r.daire||0} / ${r.dukkan||0}`},{h:'Hedef Maliyet',r:1,cls:'text-gold font-bold',f:r=>money(r.hedefMaliyet||yapSatHedefMaliyet(r))},{h:'Paylaşım',f:r=>esc(r.paylasim||'—')},{h:'Arsa Bedeli',r:1,cls:'text-amber-300',f:r=>money(r.arsaBedel||0)},{h:'Alınan Arsalar',r:1,f:r=>{const o=arsaGirisOzet(r.ad);return o.adet?`${o.adet} arsa · ${fmtM2(o.m2)}`:'—';}},{h:'Düzenle',f:r=>`<button onclick="state.yspEdit='${r.no}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button>`}],yapSatProjeleri); }
   if(kod==='TBL-0020'){ return tbl('İnşaat Maliyet Hesaplama Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'İş / Açıklama',cls:'text-slate-100 font-medium',f:r=>esc(r.ad||'—')},{h:'Yapı Sınıfı',f:r=>esc(r.grup)+(r.sinif?' ('+esc(r.sinif)+')':'')},{h:'Yıl',f:r=>badge(r.yil||'2026','gold')},{h:'Birim (TL/m²)',r:1,f:r=>fmtTL(r.birim)},{h:'m²',r:1,f:r=>new Intl.NumberFormat('tr-TR').format(r.m2||0)},{h:'Maliyet',r:1,cls:'text-gold font-bold',f:r=>fmtTL(r.maliyet)}],insaatMaliyetleri); }
   if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Departman',f:r=>badge(r.bolum||'—','gold')+(r.projeTuru?' '+badge(r.projeTuru,'emer'):'')},{h:'Görev Yeri',f:r=>esc(r.gorevYeri||'—')},{h:'Görevi',f:r=>esc(r.gorev||'—')},{h:'Mesleği',f:r=>esc(r.meslek||'—')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Resmi Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.resmiKod||'—')},{h:'İç Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.icKod||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')},{h:'Yetki Sınıfı',f:r=>r.yetkiSinifiAd?`<span class="text-slate-100">${esc(r.yetkiSinifiAd)}</span>${Array.isArray(r.yetkiler)&&r.yetkiler.length?`<span class="block text-[10px] text-slate-500">${esc(r.yetkiler.join(' · '))}</span>`:''}`:'—'}],personelKartlari); }
