@@ -206,7 +206,7 @@
 
       <!-- ŞİRKET EKRANI (yalnızca şirket görünümünde · yazıcının sağında, canlı renkle) -->
       <button id="ekranBtn" onclick="setModule('dashboard')" title="Şirket Ekranı" style="display:none"
-        class="h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm transition bg-gradient-to-r from-amber-400 to-gold text-navy-900 border border-amber-300 hover:brightness-110 shadow-[0_4px_16px_-4px_rgba(240,180,40,.85)]">
+        class="h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm text-white border border-transparent transition hover:brightness-110">
         <i data-lucide="layout-dashboard" class="h-4 w-4"></i><span id="ekranBtnLbl" class="whitespace-nowrap">Ekranı</span>
       </button>
 
@@ -217,7 +217,7 @@
       </button>
 
       <!-- USER SWITCHER -->
-      <div class="relative">
+      <div class="relative ml-auto">
         <button onclick="toggleUserMenu()" id="userBtn"
           class="flex items-center gap-2.5 pl-2 pr-2 sm:pr-3 py-1.5 rounded-xl border border-white/10 bg-navy-700/70 hover:border-gold/40 transition">
           <span id="userAvatar" class="h-8 w-8 rounded-lg bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 font-bold flex items-center justify-center text-sm"></span>
@@ -893,7 +893,7 @@ function buildNav(){
   // ÜST YATAY BAR — operasyonel modüller
   // Şirket görünümünde Patron Ekranı üst bardan kalkar → yazıcının yanındaki canlı "Ekranı" butonuna taşınır
   const ekBtn=document.getElementById('ekranBtn');
-  if(ekBtn){ if(state.company!=='all'){ ekBtn.style.display=''; const dm=MODULES.find(m=>m.id==='dashboard'); const lbl=ekBtn.querySelector('#ekranBtnLbl'); if(lbl) lbl.textContent=modDisplayName(dm); const on=state.module==='dashboard'; ekBtn.classList.toggle('ring-2',on); ekBtn.classList.toggle('ring-amber-200',on); } else { ekBtn.style.display='none'; ekBtn.classList.remove('ring-2','ring-amber-200'); } }
+  if(ekBtn){ if(state.company!=='all'){ ekBtn.style.display=''; const dm=MODULES.find(m=>m.id==='dashboard'); const lbl=ekBtn.querySelector('#ekranBtnLbl'); if(lbl) lbl.textContent=modDisplayName(dm); const acc=((COMPANY_TABS.find(x=>x.id===state.company)||{}).accent)||'#b06a12'; ekBtn.style.backgroundColor=acc; ekBtn.style.borderColor=acc; const on=state.module==='dashboard'; ekBtn.classList.toggle('ring-2',on); ekBtn.classList.toggle('ring-white/50',on); ekBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; } else { ekBtn.style.display='none'; ekBtn.classList.remove('ring-2','ring-white/50'); } }
   // Ayarlar (Sistem Yöneticisi) — şirket görünümünde Ekranı'nın sağında, şirketin vurgu (alt) renginde
   const ayBtn=document.getElementById('ayarlarBtn');
   if(ayBtn){ if(state.company!=='all' && isAdminUser()){ ayBtn.style.display=''; const acc=((COMPANY_TABS.find(x=>x.id===state.company)||{}).accent)||'#b06a12'; ayBtn.style.backgroundColor=acc; ayBtn.style.borderColor=acc; const on=state.module==='admin'; ayBtn.classList.toggle('ring-2',on); ayBtn.classList.toggle('ring-white/50',on); ayBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; } else { ayBtn.style.display='none'; ayBtn.classList.remove('ring-2','ring-white/50'); } }
