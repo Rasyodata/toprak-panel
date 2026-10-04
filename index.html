@@ -2859,19 +2859,19 @@ function addIsTakvim(){ const g=i=>document.getElementById(i); const gv=i=>((g(i
   logAction('calendar-clock','gold', `İş takvimi · ${no} · ${personel} · ${gv('itPeriyot')||'Günlük'} · ${is}`); render(); toast(no+' · iş takvimine eklendi'); }
 function viewIsTakvimi(){
   const per=currentSub()||'gun'; const perMap={gun:'Günlük',ay:'Aylık',yil:'Yıllık'}; const pl=perMap[per]||'Günlük';
-  const sel=state.takvimPersonel;
-  if(!sel) return `<div class="card rounded-2xl p-8 text-center text-slate-400"><i data-lucide="users" class="h-7 w-7 mx-auto mb-3 text-gold"></i><p class="text-sm">Soldan bir personel seçin — o personelin ${pl.toLowerCase()} iş takvimi burada görünecek.</p>${personelKartlari.length?'':'<p class="text-[11px] text-slate-500 mt-2">Önce Kayıtlar · Personel bölümünden personel tanımlayın.</p>'}</div>`;
-  const rows=isTakvimi.filter(r=>r.personel===sel && r.periyot===pl);
+  const sel=state.takvimPersonel; const hepsi = sel==='__hepsi'; const baslik = hepsi?'Tüm Personel':sel;
+  if(!sel) return `<div class="card rounded-2xl p-8 text-center text-slate-400"><i data-lucide="users" class="h-7 w-7 mx-auto mb-3 text-gold"></i><p class="text-sm">Soldan bir personel (veya Hepsi) seçin — ${pl.toLowerCase()} iş takvimi burada görünecek.</p>${personelKartlari.length?'':'<p class="text-[11px] text-slate-500 mt-2">Önce Kayıtlar · Personel bölümünden personel tanımlayın.</p>'}</div>`;
+  const rows=isTakvimi.filter(r=>(hepsi||r.personel===sel) && r.periyot===pl);
   const dt=d=>d==='Tamamlandı'?'emer':d==='Devam Ediyor'?'amber':'slate';
   return `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
-      <span class="h-10 w-10 rounded-xl bg-navy-600 text-slate-100 border border-white/10 font-bold flex items-center justify-center">${esc(sel.slice(0,2).toLocaleUpperCase('tr-TR'))}</span>
-      <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(sel)}</p><p class="text-[11px] text-gold">${pl} İş Takvimi · ${rows.length} görev</p></div>
+      <span class="h-10 w-10 rounded-xl bg-navy-600 text-slate-100 border border-white/10 font-bold flex items-center justify-center">${hepsi?'<i data-lucide=\'users\' class=\'h-5 w-5 text-gold\'></i>':esc(baslik.slice(0,2).toLocaleUpperCase('tr-TR'))}</span>
+      <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(baslik)}</p><p class="text-[11px] text-gold">${pl} İş Takvimi · ${rows.length} görev</p></div>
       <button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';setModule('admin')" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button>
     </div>
     <div class="card rounded-2xl p-5"><div class="space-y-2">
       ${rows.length?rows.map(r=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
         <span class="h-9 w-9 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center text-gold"><i data-lucide="calendar-check" class="h-4 w-4"></i></span>
-        <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${esc(r.is)}</p><p class="text-[11px] text-slate-500">${esc(r.tarih||'—')}${r.aciklama?' · '+esc(r.aciklama):''}</p></div>
+        <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${esc(r.is)}</p><p class="text-[11px] text-slate-500">${hepsi?esc(r.personel)+' · ':''}${esc(r.tarih||'—')}${r.aciklama?' · '+esc(r.aciklama):''}</p></div>
         ${badge(r.durum||'Planlandı',dt(r.durum))}
       </div>`).join(''):`<p class="text-sm text-slate-500 py-6 text-center">Bu dönemde (${pl.toLowerCase()}) görev yok. "İş Ekle" ile ekleyin.</p>`}
     </div></div>`;
@@ -2889,6 +2889,7 @@ function ykDraft(){ if(!state.ykd) state.ykd={sirk:[],mod:[],alt:{},kart:{},ad:'
 function ykToggle(arrName,id){ const d=ykDraft(); const a=d[arrName]; const i=a.indexOf(id); if(i<0)a.push(id); else { a.splice(i,1); if(arrName==='mod') delete d.alt[id]; } render(); }
 function ykToggleAlt(topId,subId){ const d=ykDraft(); d.alt[topId]=d.alt[topId]||[]; const a=d.alt[topId]; const i=a.indexOf(subId); if(i<0)a.push(subId); else a.splice(i,1); render(); }
 function ykToggleKart(k,act){ const d=ykDraft(); d.kart[k]=d.kart[k]||{}; d.kart[k][act]=!d.kart[k][act]; render(); }
+function ykTumGor(v){ const d=ykDraft(); d.grup=d.grup||{}; d.kart=d.kart||{}; YK_GRUPLAR.forEach(g=>{ d.grup[g.k]=v; d.kart[g.k]=d.kart[g.k]||{}; d.kart[g.k].gg=v; }); render(); }
 // Ana gruplar → kartlar → tekil kayıtlar (Görür/Görmez tıkları)
 const YK_GRUPLAR = [
   {k:'cari',     l:'Cari Grubu',       kart:'Cari Kartları',       data:()=>(typeof getCariKartlar==='function'?getCariKartlar():[]), nameOf:r=>r.ad||r.unvan||r.id||r.no},
@@ -2941,12 +2942,12 @@ function yetkiKartFormCard(){
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 mb-3">
       <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Belge No (otomatik)</label><input value="${nextYtkNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
       <input id="ykAd" value="${esc(d.ad||'')}" oninput="ykDraft().ad=this.value" placeholder="Yetki kartı adı / başlık" class="sm:col-span-5 ${inpC}"/>
-      <select onchange="ykDraft().kisi=this.value" class="sm:col-span-4 ${selC}"><option value="">Kişi (personel)…</option>${personelKartlari.map(p=>`<option ${d.kisi===p.ad?'selected':''}>${esc(p.ad)}${p.unvan?' · '+esc(p.unvan):''}</option>`).join('')}</select>
+      <select onchange="ykDraft().kisi=this.value" class="sm:col-span-4 ${selC}"><option value="">Kişi (personel)…</option><option ${d.kisi==='Hepsi (Tüm Personel)'?'selected':''}>Hepsi (Tüm Personel)</option>${personelKartlari.map(p=>`<option ${d.kisi===p.ad?'selected':''}>${esc(p.ad)}${p.unvan?' · '+esc(p.unvan):''}</option>`).join('')}</select>
     </div>
     ${box('1','Hangi Şirket(ler)e yetki', `<div class="flex flex-wrap gap-2">${step1}</div>`)}
     ${d.sirk.length?box('2','Hangi Modül(ler)', `<div class="flex flex-wrap gap-2">${step2}</div>`):''}
     ${d.mod.length?box('3','Hangi Alt Modül(ler)', step3||'<p class="text-[11px] text-slate-500">Bu modülde alt modül yok.</p>'):''}
-    ${d.mod.length?box('4','Grup / Kart / Kayıt Yetkileri', `<p class="text-[10px] text-slate-500 mb-2">Ana grubu <b>Görür</b> seçince kart yetkileri açılır · kartı <b>Görür</b> seçince gruptaki kayıtlar tek tek görür/görmez olarak açılır · Detay=açıp okur · Ekler/Düzenler/Siler=işlem</p>${step4}`):''}
+    ${d.mod.length?box('4','Grup / Kart / Kayıt Yetkileri', `<p class="text-[10px] text-slate-500 mb-2">Ana grubu <b>Görür</b> seçince kart yetkileri açılır · kartı <b>Görür</b> seçince gruptaki kayıtlar tek tek görür/görmez olarak açılır · Detay=açıp okur · Ekler/Düzenler/Siler=işlem</p><div class="flex gap-2 mb-3"><button type="button" onclick="ykTumGor('gor')" class="px-2.5 py-1 rounded-lg border border-emer/40 text-emer-light text-[11px] hover:bg-emer/10 inline-flex items-center gap-1"><i data-lucide="eye" class="h-3 w-3"></i>Tümünü Görür</button><button type="button" onclick="ykTumGor('gormez')" class="px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 inline-flex items-center gap-1"><i data-lucide="eye-off" class="h-3 w-3"></i>Tümünü Görmez</button></div>${step4}`):''}
     <div class="mt-4 flex justify-end gap-2"><button onclick="state.ykd=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">Temizle</button><button onclick="addYetkiKart()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Yetki Kartı Oluştur</button></div>
   </div>`;
 }
@@ -7246,6 +7247,7 @@ function leftSpecialSubsHtml(){
   // İş Takvimi → sol barda personel listesi (seçilince o personelin takvimi sağda)
   if(state.module==='istakvim'){
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Personel</div>`
+      + lbtn("state.takvimPersonel='__hepsi';render()", 'users', 'Hepsi (Tüm Personel)', state.takvimPersonel==='__hepsi')
       + (personelKartlari.length ? personelKartlari.map((p,i)=>lbtn(`state.takvimPersonel=(personelKartlari[${i}]||{}).ad;render()`, 'user', esc(p.ad), state.takvimPersonel===p.ad)).join('') : '<p class="px-3 py-1 text-[11px] text-slate-500">Personel tanımlayın (Kayıtlar · Personel)</p>')
       + sep;
   }
