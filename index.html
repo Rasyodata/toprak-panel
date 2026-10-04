@@ -6741,9 +6741,10 @@ function buildSubNav(){
                ${s.id===active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}">
         <i data-lucide="${s.icon}" class="h-4 w-4 ${s.id===active?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${s.label}</span>
       </button>`).join('') : '';
-    const talepBtn = showTalep ? `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 ml-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>` : '';
+    const onaylarBtn = showTalep ? `<button onclick="state.sub=state.sub||{};state.sub.yetkiler='onaylar';setModule('yetkiler')" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border border-white/10 bg-navy-700/40 text-slate-200 hover:border-gold/40 transition"><i data-lucide="stamp" class="h-4 w-4"></i><span class="whitespace-nowrap">Onaylar</span></button>` : '';
     const kayitBtn = showTalep ? `<button onclick="state.adminTable=null;state.adminUsers=false;setModule('admin')" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border border-gold/45 text-gold bg-gold/5 hover:bg-gold/10 font-semibold transition"><i data-lucide="database" class="h-4 w-4"></i><span class="whitespace-nowrap">Kayıt Oluştur</span></button>` : '';
-    bar.innerHTML = subBtns + talepBtn + kayitBtn;
+    const talepBtn = showTalep ? `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 ml-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>` : '';
+    bar.innerHTML = subBtns + onaylarBtn + kayitBtn + talepBtn;
   } else {
     bar.style.display='none'; bar.innerHTML='';
     bar.style.removeProperty('background-color'); bar.style.removeProperty('border-bottom');
