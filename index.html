@@ -1259,7 +1259,7 @@ function openOnayDetay(kind,id){
   const n=onayNorm(kind,id);
   const host=document.getElementById('onayModalBody');
   if(!n){ closeOnay(); return; }
-  const canAct = state.role==='ceo'||state.role==='cfo';
+  const canAct = (isAdminUser()||state.role==='ceo')||state.role==='cfo';
   const docs=onayBelgeler[id]||[];
   const sorular=onaySorular[id]||[];
   const bitti = /approved|Onaylandı|onaylı|rejected|Reddedildi/.test(n.st);
@@ -1402,7 +1402,7 @@ function akisRed(kind,id){
 }
 function akisZinciriHtml(kind,id){
   const a=getAkis(kind,id);
-  const canAct=state.role==='ceo'||state.role==='cfo';
+  const canAct=(isAdminUser()||state.role==='ceo')||state.role==='cfo';
   const talep=(talepEdenOf(id).split('·')[0]||'').trim();
   const pill=(label,sub,cls,extra='')=>`<div class="shrink-0 rounded-lg border px-2.5 py-1.5 ${cls}"><p class="text-[11px] font-semibold leading-tight whitespace-nowrap">${label}</p>${sub?`<p class="text-[10px] opacity-90 leading-tight whitespace-nowrap">${sub}</p>`:''}${extra}</div>`;
   const arr='<i data-lucide="chevron-right" class="h-4 w-4 text-slate-500 shrink-0"></i>';
@@ -1422,7 +1422,7 @@ function akisZinciriHtml(kind,id){
   return h;
 }
 function viewYetkiler(){
-  const canAct = state.role==='ceo' || state.role==='cfo';
+  const canAct = (isAdminUser()||state.role==='ceo') || state.role==='cfo';
   const now = new Date();
   const tarih = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric',weekday:'long'});
   const stBadge = s => s==='approved'?badge('Onaylandı','emer'):s==='patron'?badge('Patron Onayında','gold'):badge('Bekliyor','amber');
@@ -1845,7 +1845,7 @@ function viewBI(){
   if(!butceAsan.length && !dusukKazanma.length && !yuksekRiskSoz.length) g.push({icon:'check-circle-2',tone:'emer',t:'Operasyonel göstergeler normal aralıkta — kritik sapma yok.'});
 
   const toneCls = t => t==='emer'?'text-emer-light':t==='red'?'text-rose-400':t==='amber'?'text-amber-300':'text-gold';
-  const canApprove = state.role==='ceo'||state.role==='cfo';
+  const canApprove = (isAdminUser()||state.role==='ceo')||state.role==='cfo';
 
   // ---- Borsa tarzı akan şerit (ticker) ----
   const sym = n => ({'Toprak İnşaat':'TPİ','Toprak Gayrimenkul':'TPG','Toprak Turizm':'TPT'})[n] || n;
@@ -2273,7 +2273,7 @@ function viewDashboard(){
       { icon:'search', label:'Hızlı Arama', fn:'openSearch()', tone:'gold' },
       { icon:'printer', label:'Rapor Al', fn:'window.print()', tone:'emer' }
     ];
-    if(state.role==='ceo'||state.role==='cfo') acts.push({ icon:'stamp', label:'Onay Merkezi', fn:'togglePatron()', tone:'gold' });
+    if((isAdminUser()||state.role==='ceo')||state.role==='cfo') acts.push({ icon:'stamp', label:'Onay Merkezi', fn:'togglePatron()', tone:'gold' });
     if(MODULES.find(m=>m.id==='profitability').roles.includes(state.role)) acts.push({ icon:'shopping-cart', label:'Satın Alma', fn:"goPurchase()", tone:'emer' });
     if(MODULES.find(m=>m.id==='news').roles.includes(state.role)) acts.push({ icon:'megaphone', label:'Duyurular', fn:"setModule('news')", tone:'gold' });
     if(MODULES.find(m=>m.id==='legal').roles.includes(state.role)) acts.push({ icon:'scale', label:'Hukuk & Risk', fn:"setModule('legal')", tone:'emer' });
@@ -2976,7 +2976,7 @@ function viewSales(){
   const invList = sf ? invoices.filter(i=>i.firm===sf) : invoices;
   const pendingSales = units.filter(u=>u.durum==='Onayda');
   const pendingAppts = appointments.filter(a=>a.durum==='Onay Bekliyor');
-  const emlakOnay = (state.role==='ceo'||state.role==='sales'||state.role==='cfo') ? `
+  const emlakOnay = ((isAdminUser()||state.role==='ceo')||state.role==='sales'||state.role==='cfo') ? `
   <div data-sub="satis" class="card rounded-2xl p-5 mb-5 ${(pendingSales.length+pendingAppts.length)?'card-gold':''}">
     ${sectionTitle('home','Emlak Satış & Randevu Onayları', (pendingSales.length+pendingAppts.length)+' bekleyen')}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -3142,7 +3142,7 @@ function viewSales(){
    VIEW: PURCHASE (Satın Alma) — interactive approve/reject
    ============================================================ */
 function viewPurchase(){
-  const canAct = state.role==='ceo' || state.role==='cfo';
+  const canAct = (isAdminUser()||state.role==='ceo') || state.role==='cfo';
   const sf = scopeFirm();
   const list = sf ? purchaseRequests.filter(p=>p.firm===sf) : purchaseRequests;
   const pending = list.filter(p=>p.status==='pending');
@@ -3172,7 +3172,7 @@ function viewPurchase(){
   </div>` : ''}
 
   <div data-sub="satinalma" class="card rounded-2xl p-5 mt-5">
-    ${sectionTitle('inbox','Satın Alma Onay Akışı', canAct?(state.role==='ceo'?'Patron yetkisi':'CFO · patrona yükseltir'):'Yalnızca görüntüleme')}
+    ${sectionTitle('inbox','Satın Alma Onay Akışı', canAct?((isAdminUser()||state.role==='ceo')?'Patron yetkisi':'CFO · patrona yükseltir'):'Yalnızca görüntüleme')}
     <div class="space-y-3" id="poList">
       ${list.length ? list.map(p=>poCard(p,canAct)).join('') : '<p class="text-sm text-slate-500 py-6 text-center">Bu şirket için talep yok.</p>'}
     </div>
@@ -3199,7 +3199,7 @@ function poCard(p,canAct){
     :p.status==='rejected'?badge('Reddedildi','red')
     :p.status==='patron'?badge('Patron Onayında','gold')
     :(p.urgent?badge('Acil','red'):badge('Birim Onayı Bekliyor','amber'));
-  const isCeo = state.role==='ceo', isCfo = state.role==='cfo';
+  const isCeo = (isAdminUser()||state.role==='ceo'), isCfo = state.role==='cfo';
   return `
   <div id="po-${p.id}" class="rounded-xl border ${p.status==='approved'?'border-emer/40 bg-emer/5':p.status==='rejected'?'border-rose-500/30 bg-rose-500/5':p.status==='patron'?'border-gold/40 bg-gold/5':'border-white/8 bg-navy-700/40'} p-4 transition">
     <div class="flex flex-col md:flex-row md:items-center gap-3">
@@ -3310,7 +3310,7 @@ function saveHisseContact(kat,idx){
 }
 function hissedarDetailPage(kat,idx){
   const k=katProjeler.find(x=>x.id===kat); if(!k) return ''; const h=k.hissedarlar[idx]; if(!h) return '';
-  const edit = state.role==='ceo'||state.role==='sales';
+  const edit = (isAdminUser()||state.role==='ceo')||state.role==='sales';
   return `
   <button onclick="backHissedar()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>${k.ad} · Hissedarlara Dön</button>
   <div class="card card-gold rounded-2xl p-5 mb-5 flex items-center gap-4">
@@ -3375,7 +3375,7 @@ function katDetailPage(id){
   const k=katProjeler.find(x=>x.id===id); if(!k) return '';
   const satilabilir=k.toplamDaire-k.mustahkak;
   const musait=satilabilir-(k.satildi||0)-(k.rezerve||0);
-  const ata=(alan,ph,val)=>`<div class="flex items-center gap-2 mt-1.5"><span class="text-[10px] text-slate-500 w-20 shrink-0">${ph}</span>${val?`<span class="text-xs text-slate-200 flex-1">${val}</span>`:`<input id="kk_${alan}_${k.id}" type="text" placeholder="İsim…" class="flex-1 min-w-0 bg-navy-700/70 border border-white/10 rounded-lg px-2.5 py-1.5 text-[12px] text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />`}${(!val&&(state.role==='ceo'||state.role==='sales'))?`<button onclick="assignKat('${k.id}','${alan}')" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gold text-navy-900 font-semibold text-[11px] hover:bg-gold-light transition">Ata</button>`:(val?'<i data-lucide="check" class="h-4 w-4 text-emer-light shrink-0"></i>':'')}</div>`;
+  const ata=(alan,ph,val)=>`<div class="flex items-center gap-2 mt-1.5"><span class="text-[10px] text-slate-500 w-20 shrink-0">${ph}</span>${val?`<span class="text-xs text-slate-200 flex-1">${val}</span>`:`<input id="kk_${alan}_${k.id}" type="text" placeholder="İsim…" class="flex-1 min-w-0 bg-navy-700/70 border border-white/10 rounded-lg px-2.5 py-1.5 text-[12px] text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />`}${(!val&&((isAdminUser()||state.role==='ceo')||state.role==='sales'))?`<button onclick="assignKat('${k.id}','${alan}')" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gold text-navy-900 font-semibold text-[11px] hover:bg-gold-light transition">Ata</button>`:(val?'<i data-lucide="check" class="h-4 w-4 text-emer-light shrink-0"></i>':'')}</div>`;
   return `
   <button onclick="backKat()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Kat Karşılığı Listesine Dön</button>
   <div class="card card-gold rounded-2xl p-5 mb-5">
@@ -3415,7 +3415,7 @@ function katDetailPage(id){
     </div>
     <div class="mt-3 flex items-center gap-2">
       <div class="flex-1 rounded-lg border border-white/8 bg-navy-700/40 p-2.5 text-xs text-slate-300 flex items-center gap-2"><i data-lucide="file-text" class="h-4 w-4 text-gold"></i>${k.tapu.belge||'Tapu belgesi yüklenmedi'}</div>
-      ${(state.role==='ceo'||state.role==='sales')?`<input id="tapu_${k.id}" type="text" placeholder="tapu.pdf" class="w-32 bg-navy-700/70 border border-white/10 rounded-lg px-2.5 py-2 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" /><button onclick="uploadTapu('${k.id}')" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-xs hover:bg-gold-light transition"><i data-lucide="upload" class="h-3.5 w-3.5"></i>Yükle</button>`:''}
+      ${((isAdminUser()||state.role==='ceo')||state.role==='sales')?`<input id="tapu_${k.id}" type="text" placeholder="tapu.pdf" class="w-32 bg-navy-700/70 border border-white/10 rounded-lg px-2.5 py-2 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" /><button onclick="uploadTapu('${k.id}')" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-xs hover:bg-gold-light transition"><i data-lucide="upload" class="h-3.5 w-3.5"></i>Yükle</button>`:''}
     </div>
   </div>
   <div class="card rounded-2xl p-5 mt-4">
@@ -3546,7 +3546,7 @@ function projectDetailPage(idx){
         <div class="space-y-2 mb-3">
           ${(p.asamalar||[]).map(([ad,dr])=>`<div class="flex items-center gap-3 rounded-lg border border-white/8 bg-navy-700/40 p-3"><i data-lucide="${dr==='Tamamlandı'?'check-circle-2':dr==='Devam Eden'?'loader':'circle'}" class="h-4 w-4 ${dr==='Tamamlandı'?'text-emer-light':dr==='Devam Eden'?'text-gold':'text-slate-500'}"></i><span class="text-sm text-slate-100 flex-1">${ad}</span>${badge(dr, dr==='Tamamlandı'?'emer':dr==='Devam Eden'?'gold':'slate')}</div>`).join('')||'<p class="text-xs text-slate-500">Aşama yok</p>'}
         </div>
-        ${(state.role==='ceo'||state.role==='sales')?`<div class="flex gap-2"><input id="psAd" type="text" placeholder="Yeni aşama…" onkeydown="if(event.key==='Enter')addProjectStage(${idx})" class="flex-1 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" /><button onclick="addProjectStage(${idx})" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-xs hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Ekle</button></div>`:''}
+        ${((isAdminUser()||state.role==='ceo')||state.role==='sales')?`<div class="flex gap-2"><input id="psAd" type="text" placeholder="Yeni aşama…" onkeydown="if(event.key==='Enter')addProjectStage(${idx})" class="flex-1 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" /><button onclick="addProjectStage(${idx})" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-xs hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Ekle</button></div>`:''}
       </div>
     </div>
     <div class="card rounded-2xl p-5">
@@ -3555,7 +3555,7 @@ function projectDetailPage(idx){
         <div class="flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/5 p-3"><i data-lucide="pen-tool" class="h-4 w-4 text-gold"></i><div class="min-w-0"><p class="text-sm text-slate-100">${p.mimar||'Mimar atanmadı'}</p><p class="text-[11px] text-slate-500">Sorumlu Mimar</p></div></div>
         ${(p.ekip||[]).map(e=>`<div class="flex items-center gap-2 rounded-lg border border-white/8 bg-navy-700/40 p-3"><i data-lucide="user" class="h-4 w-4 text-slate-400"></i><span class="text-sm text-slate-200">${e}</span></div>`).join('')}
       </div>
-      ${(state.role==='ceo'||state.role==='sales')?`<div class="space-y-2 pt-2 border-t border-white/5">
+      ${((isAdminUser()||state.role==='ceo')||state.role==='sales')?`<div class="space-y-2 pt-2 border-t border-white/5">
         <input id="paMimar" type="text" placeholder="Sorumlu mimar ata…" class="w-full bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
         <input id="paKisi" type="text" placeholder="Ekip üyesi ekle…" class="w-full bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
         <button onclick="assignArchitect(${idx})" class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="user-plus" class="h-4 w-4"></i>Ata / Kaydet</button>
@@ -3692,7 +3692,7 @@ function viewProjects(){
     ${kpi('gauge','Ort. İlerleme', '%'+avgProg, done+' tamamlandı','true','emer')}
   </div>
   ${portfoyBlok}
-  ${(state.role==='ceo'||state.role==='sales') ? `
+  ${((isAdminUser()||state.role==='ceo')||state.role==='sales') ? `
   <div class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('plus-circle','Yeni Proje Ekle','Portföye proje tanımla')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
@@ -3877,7 +3877,7 @@ function icraKpiMatch(l){ const v=state.icraKpi; if(!v) return true; if(v==='Dev
 function setDavaTur(t){ state.davaTur=t; state.legalArea='dava'; render(); }
 function setDavaHal(h){ state.davaHal=h; state.legalArea='dava'; render(); }
 function legalAreaPanel(key){
-  const canAct = state.role==='ceo'||state.role==='cfo';
+  const canAct = (isAdminUser()||state.role==='ceo')||state.role==='cfo';
   const wrap = (icon,title,hint,body)=>`<div class="rounded-xl border border-gold/25 bg-navy-800/60 p-4">
     <div class="flex items-center gap-2 mb-3"><i data-lucide="${icon}" class="h-4 w-4 text-gold"></i><h3 class="text-sm font-semibold text-slate-100">${title}</h3><span class="ml-auto text-[11px] text-slate-500">${hint}</span></div>${body}</div>`;
   if(key==='dava'){
@@ -4049,11 +4049,11 @@ function viewAvukatForm(){
 }
 function viewLegal(){
   // Dava Aç → formu sağdaki içerik alanında ayrı sayfa olarak aç
-  if(state.module==='legal' && state.davaNew && (state.role==='ceo'||state.role==='cfo')) return viewDavaForm();
+  if(state.module==='legal' && state.davaNew && ((isAdminUser()||state.role==='ceo')||state.role==='cfo')) return viewDavaForm();
   // Avukat / Personel Atama → sağdaki içerik alanında yetki yönetim sayfası
   if(state.module==='legal' && state.assignView) return viewAtama(state.assignView);
   // Avukat Tanımla → ayrıntılı kayıt formu sağdaki içerik alanında
-  if(state.module==='legal' && state.avukatNew && state.role==='ceo') return viewAvukatForm();
+  if(state.module==='legal' && state.avukatNew && (isAdminUser()||state.role==='ceo')) return viewAvukatForm();
   // Sözleşmeler artık Hukuk & Risk içinde — ilgili alt-sekmelerde sözleşme görünümünü göster
   { const _cs=currentSub(); if(_cs && _cs.indexOf('c_')===0) return viewContracts(); }
   // Dava numarasına tıklandıysa ayrıntıyı sağdaki içerik alanında göster
@@ -4263,11 +4263,11 @@ function viewLegal(){
     </div>
   </div>
 
-  ${(state.role==='ceo'||state.role==='cfo') ? `
+  ${((isAdminUser()||state.role==='ceo')||state.role==='cfo') ? `
   <div id="davaGirisForm" data-sub="dava" class="card rounded-2xl p-5 mt-5">${davaFormInner()}</div>
 
   <div id="avukatlarBolum" data-sub="avukatlar" class="card rounded-2xl p-5 mt-5">
-    ${sectionTitle('scale','Avukat Tanımları & Yetkiler', state.role==='ceo'?'Yönetici onayı':'Görüntüleme')}
+    ${sectionTitle('scale','Avukat Tanımları & Yetkiler', (isAdminUser()||state.role==='ceo')?'Yönetici onayı':'Görüntüleme')}
     <div class="space-y-2">
       ${lawyers.map((a,ai)=>`
       <div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
@@ -4279,9 +4279,9 @@ function viewLegal(){
           ${(a.uzmanlik&&a.uzmanlik.length)?`<div class="flex flex-wrap gap-1 mt-1">${a.uzmanlik.map(u=>badge(esc(u),'gold')).join('')}</div>`:''}
         </div>
         ${a.approved?badge('Yetkili','emer'):badge('Onay Bekliyor','amber')}
-        ${(state.role==='ceo'&&!a.approved)?`<button onclick="approveLawyer(${ai})" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emer text-navy-900 font-semibold text-[11px] hover:bg-emer-light transition"><i data-lucide="check" class="h-3.5 w-3.5"></i>Onayla</button>`:''}
+        ${((isAdminUser()||state.role==='ceo')&&!a.approved)?`<button onclick="approveLawyer(${ai})" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emer text-navy-900 font-semibold text-[11px] hover:bg-emer-light transition"><i data-lucide="check" class="h-3.5 w-3.5"></i>Onayla</button>`:''}
       </div>`).join('')}
-      ${state.role==='ceo'?`
+      ${(isAdminUser()||state.role==='ceo')?`
       <div id="avukatTanimForm" class="flex flex-col sm:flex-row gap-2 pt-2">
         <input id="avAd" type="text" placeholder="Avukat adı (Av. …)" class="flex-1 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
         <input id="avMail" type="text" placeholder="E-posta" class="flex-1 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" />
@@ -4345,7 +4345,7 @@ function viewLegal(){
   </div>
 
   <div data-sub="__moved" class="card rounded-2xl p-5 mt-5">
-    ${sectionTitle('file-signature','Sözleşme Onay Havuzu', (state.role==='ceo'||state.role==='cfo')?'Onay yetkiniz var':'Görüntüleme')}
+    ${sectionTitle('file-signature','Sözleşme Onay Havuzu', ((isAdminUser()||state.role==='ceo')||state.role==='cfo')?'Onay yetkiniz var':'Görüntüleme')}
     <div class="space-y-3">
       ${contracts.filter(contractCanSee).map(c=>contractCard(c)).join('') || '<p class="text-sm text-slate-500 py-6 text-center">Size atanmış sözleşme yok.</p>'}
     </div>
@@ -4377,7 +4377,7 @@ function viewLegal(){
         </div>
       </div>`).join('')}
     </div>
-    ${(state.role==='ceo'||state.role==='cfo'||ROLES[state.role].lawyer)?`<div class="mt-3 flex gap-2"><input id="tplName" type="text" placeholder="Yeni şablon adı…" class="flex-1 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" /><button onclick="toast((document.getElementById('tplName').value||'Şablon')+' yüklendi')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="upload" class="h-4 w-4"></i>Şablon Yükle</button></div>`:''}
+    ${((isAdminUser()||state.role==='ceo')||state.role==='cfo'||ROLES[state.role].lawyer)?`<div class="mt-3 flex gap-2"><input id="tplName" type="text" placeholder="Yeni şablon adı…" class="flex-1 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50" /><button onclick="toast((document.getElementById('tplName').value||'Şablon')+' yüklendi')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="upload" class="h-4 w-4"></i>Şablon Yükle</button></div>`:''}
   </div>
 
   <div data-sub="kvkk" class="card rounded-2xl p-5 mt-5">
@@ -4493,8 +4493,8 @@ function viewLegal(){
   </div>`;
 }
 function contractCard(c){
-  const canAct = state.role==='ceo' || state.role==='cfo';
-  const isCeo = state.role==='ceo', isCfo = state.role==='cfo';
+  const canAct = (isAdminUser()||state.role==='ceo') || state.role==='cfo';
+  const isCeo = (isAdminUser()||state.role==='ceo'), isCfo = state.role==='cfo';
   return `
   <div id="sz-${c.id}" class="rounded-xl border ${c.status==='approved'?'border-emer/40 bg-emer/5':c.status==='rejected'?'border-rose-500/30 bg-rose-500/5':c.status==='patron'?'border-gold/40 bg-gold/5':'border-white/8 bg-navy-700/40'} p-4">
     <div class="flex flex-col md:flex-row md:items-center gap-3">
@@ -4509,7 +4509,7 @@ function contractCard(c){
           <span class="inline-flex items-center gap-1"><i data-lucide="users" class="h-3 w-3"></i>${c.party}</span>
           <span class="inline-flex items-center gap-1 text-slate-400"><i data-lucide="scale" class="h-3 w-3 text-gold"></i>${c.avukat||'Avukat atanmadı'}</span>
         </p>
-        ${(state.role==='ceo'||state.role==='cfo')?`<div class="mt-2 flex items-center gap-1.5"><span class="text-[10px] text-slate-500">Avukat ata:</span><select onchange="assignContractLawyer('${c.id}', this.value)" class="bg-navy-700/70 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-slate-200 outline-none focus:border-gold/50"><option value="">—</option>${lawyers.filter(a=>a.approved).map(a=>`<option ${a.name===c.avukat?'selected':''}>${a.name}</option>`).join('')}</select></div>`:''}
+        ${((isAdminUser()||state.role==='ceo')||state.role==='cfo')?`<div class="mt-2 flex items-center gap-1.5"><span class="text-[10px] text-slate-500">Avukat ata:</span><select onchange="assignContractLawyer('${c.id}', this.value)" class="bg-navy-700/70 border border-white/10 rounded-lg px-2 py-1 text-[11px] text-slate-200 outline-none focus:border-gold/50"><option value="">—</option>${lawyers.filter(a=>a.approved).map(a=>`<option ${a.name===c.avukat?'selected':''}>${a.name}</option>`).join('')}</select></div>`:''}
       </div>
       <p class="text-lg font-bold text-white md:text-right">${money(c.value)}</p>
       <div class="flex items-center gap-2 flex-wrap">
@@ -5253,7 +5253,7 @@ function viewNews(){
   <div class="grid grid-cols-1 xl:grid-cols-5 gap-4 mt-5">
     <div class="xl:col-span-3 card rounded-2xl p-5">
       ${sectionTitle('megaphone','Duyurular','Ortaklar · Yatırımcılar · Çalışanlar')}
-      ${(state.role==='ceo'||state.role==='cfo') ? `
+      ${((isAdminUser()||state.role==='ceo')||state.role==='cfo') ? `
       <div class="rounded-xl border border-gold/25 bg-gold/5 p-3 mb-3">
         <p class="text-[11px] text-gold mb-2 flex items-center gap-1.5"><i data-lucide="plus-circle" class="h-3.5 w-3.5"></i>Yeni Duyuru Yayınla</p>
         <div class="flex flex-col sm:flex-row gap-2">
@@ -5397,7 +5397,7 @@ function viewAccess(){
    ============================================================ */
 function firmCard(name){
   const fi = firmInfo[name];
-  const editBtn = state.role==='ceo' ? `<button onclick="openFirmEdit('${name.replace(/'/g,"\\'")}')" class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/10 bg-navy-700/60 hover:border-gold/40 text-[11px] text-slate-300 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>${fi?'Düzenle':'Künye Gir'}</button>` : '';
+  const editBtn = (isAdminUser()||state.role==='ceo') ? `<button onclick="openFirmEdit('${name.replace(/'/g,"\\'")}')" class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/10 bg-navy-700/60 hover:border-gold/40 text-[11px] text-slate-300 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>${fi?'Düzenle':'Künye Gir'}</button>` : '';
   if(!fi){
     return `
     <div class="card rounded-2xl p-5">
@@ -6318,7 +6318,7 @@ function viewAvukat(){
    ============================================================ */
 function viewContracts(){
   const all = contracts.filter(contractCanSee);
-  const canAct = state.role==='ceo'||state.role==='cfo';
+  const canAct = (isAdminUser()||state.role==='ceo')||state.role==='cfo';
   const subMap = { c_insaat:'İnşaat', c_ik:'İK', c_danismanlik:'Danışmanlık', c_tedarik:'Tedarik' };
   const sub = currentSub() || 'c_tumu';
   const kat = subMap[sub];
@@ -6702,7 +6702,7 @@ function openLawsuit(i){
     <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3 text-xs text-slate-400 mb-3">
       <p class="flex items-start gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5 text-gold mt-0.5 shrink-0"></i>${strateji}</p>
     </div>
-    ${(state.role==='ceo'||state.role==='cfo')&&l.onay==='bekliyor'?`<button onclick="approveLawsuit(${i})" class="w-full h-11 rounded-xl bg-emer text-navy-900 font-bold text-sm hover:bg-emer-light transition inline-flex items-center justify-center gap-2"><i data-lucide="check" class="h-4 w-4"></i>Yönetici Onayı Ver</button>`:''}`);
+    ${((isAdminUser()||state.role==='ceo')||state.role==='cfo')&&l.onay==='bekliyor'?`<button onclick="approveLawsuit(${i})" class="w-full h-11 rounded-xl bg-emer text-navy-900 font-bold text-sm hover:bg-emer-light transition inline-flex items-center justify-center gap-2"><i data-lucide="check" class="h-4 w-4"></i>Yönetici Onayı Ver</button>`:''}`);
 }
 function addLawsuit(){
   const konu=((document.getElementById('dvKonu')||{}).value||'').trim();
@@ -6822,7 +6822,7 @@ function filterSearch(q){
 
 /* ---------- NOTIFICATIONS / APPROVAL CENTER ---------- */
 function buildNotif(){
-  const canAct = state.role==='ceo' || state.role==='cfo';
+  const canAct = (isAdminUser()||state.role==='ceo') || state.role==='cfo';
   const badge = document.getElementById('notifBadge');
   const menu  = document.getElementById('notifMenu');
   const items = [];
@@ -7104,8 +7104,8 @@ function buildPatron(){
   const wrap  = document.getElementById('patronWrap');
   const badge = document.getElementById('patronBadge');
   const menu  = document.getElementById('patronMenu');
-  const isBoss = state.role==='ceo';
-  const seesFlow = state.role==='ceo' || state.role==='cfo';
+  const isBoss = (isAdminUser()||state.role==='ceo');
+  const seesFlow = (isAdminUser()||state.role==='ceo') || state.role==='cfo';
 
   // sadece CEO ve CFO patron onay sürecini görür
   wrap.style.display = seesFlow ? '' : 'none';
