@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<!-- auto-deploy-test: AUTODEPLOY2-013544 -->
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Toprak Yatırım · İş Zekası & Patron Ekranı</title>
@@ -2891,7 +2890,7 @@ function addIsTakvimToplu(){ const g=i=>document.getElementById(i); const gv=i=>
   }
   logAction('calendar-plus','gold', `Toplu iş takvimi · ${created} görev · ${personel} · ${tekrar}`); render(); toast(created+' görev toplu oluşturuldu ✓'); }
 function viewIsTakvimi(){
-  const per=currentSub()||'gun'; const perMap={gun:'Günlük',ay:'Aylık',yil:'Yıllık'}; const pl=perMap[per]||'Günlük';
+  const per=currentSub()||'gun'; const perMap={gun:'Günlük',hafta:'Haftalık',ay:'Aylık',yil:'Yıllık'}; const pl=perMap[per]||'Günlük';
   const dept=state.takvimDept; const hepsi = dept==='__hepsi'; const baslik = hepsi?'Tüm Departmanlar':dept;
   if(!dept) return `<div class="card rounded-2xl p-8 text-center text-slate-400"><i data-lucide="briefcase" class="h-7 w-7 mx-auto mb-3 text-gold"></i><p class="text-sm">Soldan bir departman (veya Hepsi) seçin — ${pl.toLowerCase()} görev listesi burada görünecek.</p></div>`;
   const persDept=ad=>{ const p=personelKartlari.find(x=>x.ad===ad); return p?(p.bolum||''):''; };
@@ -7210,7 +7209,7 @@ const SUBTABS = {
   company:       [{id:'kunye',label:'Firma Bilgileri',icon:'building-2'},{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}],
-  istakvim:      [{id:'gun',label:'Gün',icon:'calendar'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
+  istakvim:      [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   admin:         [{id:'kayitlar',label:'Kayıtlar',icon:'database'}]
 };
 function isLawyer(){ return !!ROLES[state.role].lawyer; }
