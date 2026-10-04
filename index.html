@@ -2637,7 +2637,7 @@ function addGiderKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g(
   render(); toast(no+' · onay akışına düştü'); }
 let yetkiKartlari = [];
 // Yetki kartı: kart/kayıt bazında erişim düzeyleri ve kapsam
-const YETKI_DUZEY = ['Görmez','Listede Görür','Detay Görür','Tam Yetki'];
+const YETKI_DUZEY = ['Görmez','Listede Görür','Detay Görür','Ekler','Düzenler','Tam Yetki'];
 const YETKI_KART_TURLERI = [
   {k:'cari',l:'Cari Kartlar'},{k:'personel',l:'Personel Kartları'},{k:'avukat',l:'Avukat Kartları'},
   {k:'dava',l:'Dava Kartları'},{k:'icra',l:'İcra Kartları'},{k:'sozlesme',l:'Sözleşme Kartları'},
@@ -2689,7 +2689,7 @@ function ykKartGG(ck,v){ const d=ykDraft(); d.kart[ck]=d.kart[ck]||{}; d.kart[ck
 function ykKayitGG(ck,rk,v){ const d=ykDraft(); d.kayit=d.kayit||{}; d.kayit[ck]=d.kayit[ck]||{}; d.kayit[ck][rk]= d.kayit[ck][rk]===v?null:v; render(); }
 function addYetkiKart(){ const d=ykDraft(); const ad=(d.ad||'').trim(); if(!ad){toast('Yetki kartı adı girin');return;} if(!d.sirk.length){toast('En az bir şirket seçin');return;}
   const no=nextYtkNo();
-  const kartYetki={}; YK_GRUPLAR.forEach(g=>{ const kv=(d.kart||{})[g.k]||{}; kartYetki[g.k]= kv.gg==='gormez'?'Görmez':((kv.ekle||kv.duzenle||kv.sil)?'Tam Yetki':(kv.detay?'Detay Görür':(kv.gg==='gor'?'Listede Görür':'Görmez'))); });
+  const kartYetki={}; YK_GRUPLAR.forEach(g=>{ const kv=(d.kart||{})[g.k]||{}; kartYetki[g.k]= kv.gg==='gormez'?'Görmez':((kv.tam||kv.sil)?'Tam Yetki':(kv.duzenle?'Düzenler':(kv.ekle?'Ekler':(kv.detay?'Detay Görür':(kv.gg==='gor'?'Listede Görür':'Görmez'))))); });
   yetkiKartlari.unshift({ no, ad, kisi:(d.kisi||'').trim(), sirketler:d.sirk.slice(), moduller:d.mod.slice(), altModuller:JSON.parse(JSON.stringify(d.alt||{})), gruplar:JSON.parse(JSON.stringify(d.grup||{})), kartYetki, kartAksiyon:JSON.parse(JSON.stringify(d.kart||{})), kayitYetki:JSON.parse(JSON.stringify(d.kayit||{})) });
   logAction('shield-check','emer', `Yetki kartı · ${no} · ${ad}`); state.ykd=null; render(); toast(no+' · yetki kartı oluşturuldu'); }
 function yetkiSirketAd(id){ return id==='all'?'Konsolide':(((COMPANY_TABS.find(c=>c.id===id)||{}).firm)||((COMPANY_TABS.find(c=>c.id===id)||{}).label)||id); }
@@ -2703,7 +2703,7 @@ function yetkiKartFormCard(){
   const step1 = COMPANY_TABS.filter(c=>c.id!=='all').map(c=>chk(d.sirk.includes(c.id), `ykToggle('sirk','${c.id}')`, esc(c.firm||c.label), 'building-2')).join('') + chk(d.sirk.includes('all'), "ykToggle('sirk','all')", 'Tümü (Konsolide)', 'layers');
   const step2 = YK_TOP.map(t=>chk(d.mod.includes(t.id), `ykToggle('mod','${t.id}')`, t.label, t.icon)).join('');
   const step3 = d.mod.map(topId=>{ const alts=ykAltModuller(topId); if(!alts.length) return ''; const top=YK_TOP.find(t=>t.id===topId)||{}; return `<div class="mb-2.5"><p class="text-[11px] text-slate-400 mb-1.5">${top.label} alt modülleri</p><div class="flex flex-wrap gap-2">${alts.map(a=>chk((d.alt[topId]||[]).includes(a.id), `ykToggleAlt('${topId}','${a.id}')`, a.label)).join('')}</div></div>`; }).join('');
-  const acts=[['detay','Detay'],['ekle','Ekler'],['duzenle','Düzenler'],['sil','Siler']];
+  const acts=[['detay','Detay'],['ekle','Ekler'],['duzenle','Düzenler'],['sil','Siler'],['tam','Tam Yetki']];
   const gg=(cur,onG,onN)=>chk(cur==='gor',onG,'Görür','eye')+chk(cur==='gormez',onN,'Görmez','eye-off');
   const step4 = YK_GRUPLAR.map(g=>{ const ggv=(d.grup||{})[g.k]; const kv=(d.kart||{})[g.k]||{};
     let inner='';
