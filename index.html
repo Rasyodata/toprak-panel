@@ -3670,8 +3670,10 @@ function projectDetailPage(idx){
   </div>`;
 }
 function viewProjects(){
-  const subMap = { proje:'Proje', denetim:'Yapı Denetim', taahhut:'İnşaat Taahhüt', yapsat:'Yap-Sat', katkarsiligi:'Kat Karşılığı', daire:'Daire ve Dükkanlar', arsa:'Arsalar', diger:'Diğer' };
-  const sub = currentSub() || 'yapsat';
+  const subMap = { proje:'Proje', denetim:'Yapı Denetim', taahhut:'İnşaat Taahhüt', yapsat:'Yap-Sat', katkarsiligi:'Kat Karşılığı', daire:'Daire ve Dükkanlar', arsa:'Arsalar', diger:'Diğer', alsat:'Al-Sat' };
+  let sub = currentSub() || 'yapsat';
+  // Al-Sat → sol bardaki seçime göre Daire ve Dükkanlar / Arsalar
+  if(sub==='alsat') sub = state.alsatView || 'daire';
   // PROJE (mimarlık) → liste + detay sayfası
   if(sub==='proje'){
     if(state.projView!=null && projects[state.projView] && projects[state.projView].isKolu==='Proje') return projectDetailPage(state.projView);
@@ -7001,7 +7003,7 @@ const SUBTABS = {
   dashboard:     [{id:'bi',label:'İş Zekası',icon:'brain-circuit'},{id:'live',label:'Live Dashboard',icon:'radio'},{id:'analytics',label:'Analytics',icon:'line-chart'},{id:'stats',label:'Statistics',icon:'sigma'},{id:'performance',label:'Performance',icon:'gauge'},{id:'konsolide',label:'Bilanço',icon:'scale'},{id:'sirketler',label:'Şirketler',icon:'building-2'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'hukukrisk',label:'Hukuk ve Risk',icon:'shield-alert'}],
   yetkiler:      [{id:'panel',label:'Panel',icon:'layout-dashboard'},{id:'akis',label:'İş Onay Akışı',icon:'git-pull-request'},{id:'onaylar',label:'Onaylar',icon:'stamp'},{id:'odeme',label:'Ödeme Talepleri',icon:'banknote'},{id:'satinalma',label:'Satın Alma Talepleri',icon:'shopping-cart'},{id:'fiyat',label:'Fiyat Talepleri',icon:'tag'},{id:'whatsapp',label:'WhatsApp Yönetimi',icon:'message-circle'},{id:'loglar',label:'İşlem Logları',icon:'history'}],
   sales:         [{id:'satis',label:'Satış',icon:'trending-up'},{id:'crm',label:'CRM & Faturalar',icon:'contact'}],
-  projects:      [{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'},{id:'daire',label:'Daire ve Dükkanlar',icon:'building'},{id:'arsa',label:'Arsalar',icon:'map'},{id:'diger',label:'Diğer',icon:'folder'}],
+  projects:      [{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'},{id:'alsat',label:'Al-Sat',icon:'repeat'},{id:'diger',label:'Diğer',icon:'folder'}],
   profitability: [{id:'marj',label:'Kâr Marjı',icon:'percent'},{id:'segment',label:'Segment & OPEX',icon:'layers'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'maliyet',label:'Maliyet Hesapları',icon:'receipt-text'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'ozkaynak',label:'Özkaynak Durumu',icon:'scale'},{id:'satinalma',label:'Satın Alma',icon:'shopping-cart'},{id:'saticilar',label:'Satıcılar Hesabı',icon:'badge-dollar-sign',left:true}],
   finance:       [{id:'gelir',label:'Gelir Tablosu',icon:'file-spreadsheet'},{id:'vergi',label:'Vergi Planlama',icon:'percent'},{id:'kurumlar',label:'Kurumlar Beyannamesi',icon:'file-text'},{id:'ozkaynak',label:'Özkaynak Hs.',icon:'scale'},{id:'kdv',label:'KDV İadesi',icon:'receipt-text'},{id:'ssk',label:'SSK Hesaplama',icon:'users'}],
   legal:         [{id:'analiz',label:'Analiz',icon:'bar-chart-3'},{id:'dava',label:'Dava',icon:'gavel'},{id:'icra',label:'İcra',icon:'receipt-text'},{id:'avukatlar',label:'Avukatlar',icon:'scale'},{id:'onleyici',label:'Önleyici Hukuk',icon:'shield-check'},{id:'taslak',label:'Sözleşme Taslakları',icon:'file-text',left:true},{id:'c_tumu',label:'Sözleşmeler · Tümü',icon:'file-signature'},{id:'c_insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat',left:true},{id:'c_ik',label:'İK Sözleşmeleri',icon:'users',left:true},{id:'c_danismanlik',label:'Danışmanlık Söz.',icon:'briefcase',left:true},{id:'c_tedarik',label:'Tedarik Söz.',icon:'truck',left:true},{id:'kvkk',label:'KVKK / Mevzuat',icon:'book-check'}],
@@ -7093,6 +7095,14 @@ function leftSpecialSubsHtml(){
   if(state.module==='yetkiler'){
     return ISTEK_GROUPS.map(g=>`<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">${g.label}</div>`
       + g.items.map(it=>lbtn(`setSub('${it.id}')`, it.icon, it.label, it.id===active)).join('')).join('')
+      + sep;
+  }
+  // İşler · Al-Sat → Daire ve Dükkanlar / Arsalar sol barda
+  if(state.module==='projects' && active==='alsat'){
+    const av=state.alsatView||'daire';
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Al-Sat</div>`
+      + lbtn("state.alsatView='daire';render()",'building','Daire ve Dükkanlar',av==='daire')
+      + lbtn("state.alsatView='arsa';render()",'map','Arsalar',av==='arsa')
       + sep;
   }
   // Finans · Nakit Akış → Gün / Hafta / Ay / Yıl rapor dönemi sol barda
