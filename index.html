@@ -7096,7 +7096,7 @@ function subTabsLeftHtml(){
   const subs = getSubs();
   if(!subs || (subs.length<2 && state.module!=='admin')) return '';
   const active = currentSub();
-  const modName = (MODULES.find(m=>m.id===state.module)||{}).name || (state.module==='admin'?'Sistem Yöneticisi':'');
+  const modName = state.module==='projects' ? 'İşler' : ((MODULES.find(m=>m.id===state.module)||{}).name || (state.module==='admin'?'Sistem Yöneticisi':''));
   const kartMenu = state.module==='admin' ? (()=>{
     // Yetki Yönetimi modu → Yetki Kartı Oluştur (üstte) · Yetki Kayıtları (altta)
     if(state.adminMode==='yetki'){
