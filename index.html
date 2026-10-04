@@ -3516,7 +3516,10 @@ function projectCard(p, idx){
         <p class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5"><i data-lucide="map-pin" class="h-3 w-3"></i>${p.loc} · ${p.status==='Tamamlandı'?p.due:'Teslim '+p.due}</p>
         <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">${p.isKolu?badge(p.isKolu,'gold'):''}${p.type?badge(p.type, p.type==='Konut'?'emer':'slate'):''}</div>
       </div>
-      ${badge(p.status, p.status==='Tamamlandı'?'emer':p.status==='Zamanında'?'emer':(p.status==='Temel Aşaması'||p.status==='Ruhsat Aşaması'||p.status==='Mimari Onay'||p.status==='Planlama')?'amber':'red')}
+      <div class="flex items-center gap-2 shrink-0">
+        ${badge(p.status, p.status==='Tamamlandı'?'emer':p.status==='Zamanında'?'emer':(p.status==='Temel Aşaması'||p.status==='Ruhsat Aşaması'||p.status==='Mimari Onay'||p.status==='Planlama')?'amber':'red')}
+        ${isAdminUser()?`<button onclick="event.stopPropagation();delRow('TBL-0006',${idx})" class="h-7 w-7 rounded-lg border border-rose-400/40 text-rose-300 hover:bg-rose-500/10 flex items-center justify-center" title="Sil"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>`:''}
+      </div>
     </div>
     <div class="mt-4 space-y-3">
       <div>
