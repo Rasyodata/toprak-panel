@@ -2857,6 +2857,25 @@ function addIsTakvim(){ const g=i=>document.getElementById(i); const gv=i=>((g(i
   const no=nextKayitNo('0026',isTakvimi);
   isTakvimi.unshift({ no, personel, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') });
   logAction('calendar-clock','gold', `İş takvimi · ${no} · ${personel} · ${gv('itPeriyot')||'Günlük'} · ${is}`); render(); toast(no+' · iş takvimine eklendi'); }
+function addIsTakvimToplu(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
+  const personel=gv('itPersonel'); const is=gv('itIs'); if(!personel){toast('Personel seçin');return;} if(!is){toast('İş/görev girin');return;}
+  const tekrar=gv('itTekrar')||'Günlük'; const kez=Math.max(1,Math.min(200,parseInt(gv('itKez')||'1',10)||1));
+  const herSaat = !!(g('itHerSaat') && g('itHerSaat').checked); const saat=gv('itSaat')||'09:00'; const durum=gv('itDurum')||'Planlandı';
+  let base; try{ base = gv('itTarih') ? new Date(gv('itTarih')) : new Date(); }catch(e){ base=new Date(); }
+  const perMap={Saatlik:'Günlük',Günlük:'Günlük',Haftalık:'Haftalık',Aylık:'Aylık',Yıllık:'Yıllık'}; const periyot=perMap[tekrar]||'Günlük';
+  const pad=n=>String(n).padStart(2,'0'); const fmtD=d=>{try{return d.toISOString().slice(0,10);}catch(e){return gv('itTarih')||'';}};
+  let created=0;
+  for(let i=0;i<kez;i++){
+    let tarih=fmtD(base), st=saat;
+    if(tekrar==='Saatlik'){ st = herSaat ? pad((parseInt(saat.split(':')[0]||'9',10)+i)%24)+':00' : saat; }
+    else if(tekrar==='Günlük'){ const d=new Date(base); d.setDate(d.getDate()+i); tarih=fmtD(d); }
+    else if(tekrar==='Haftalık'){ const d=new Date(base); d.setDate(d.getDate()+i*7); tarih=fmtD(d); }
+    else if(tekrar==='Aylık'){ const d=new Date(base); d.setMonth(d.getMonth()+i); tarih=fmtD(d); }
+    else if(tekrar==='Yıllık'){ const d=new Date(base); d.setFullYear(d.getFullYear()+i); tarih=fmtD(d); }
+    isTakvimi.unshift({ no:nextKayitNo('0026',isTakvimi), personel, periyot, tarih, is:is+' · '+st, saat:st, durum, aciklama:'Toplu kayıt · '+tekrar+(herSaat?' (her saat başı)':''), toplu:true });
+    created++;
+  }
+  logAction('calendar-plus','gold', `Toplu iş takvimi · ${created} görev · ${personel} · ${tekrar}`); render(); toast(created+' görev toplu oluşturuldu ✓'); }
 function viewIsTakvimi(){
   const per=currentSub()||'gun'; const perMap={gun:'Günlük',ay:'Aylık',yil:'Yıllık'}; const pl=perMap[per]||'Günlük';
   const sel=state.takvimPersonel; const hepsi = sel==='__hepsi'; const baslik = hepsi?'Tüm Personel':sel;
@@ -5992,9 +6011,28 @@ function tblForm(kod){
       btn('addGirisCikis()','Hareket Ekle'));
   if(kod==='TBL-0024') return yapSatFormCard();
   if(kod==='TBL-0025') return gorevFormCard();
-  if(kod==='TBL-0026') return wrap('İş Takvimi Kaydı','Personel · periyot (günlük/haftalık/aylık) · iş/görev · durum',
-      `<select id="itPersonel" class="sm:col-span-4 ${selC}"><option value="">Personel seç…</option>${personelKartlari.map(p=>`<option>${esc(p.ad)}</option>`).join('')}</select><select id="itPeriyot" class="sm:col-span-2 ${selC}">${TAKVIM_PERIYOT.map(p=>`<option>${p}</option>`).join('')}</select><input id="itTarih" type="date" value="${(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}"/><select id="itDurum" class="sm:col-span-3 ${selC}">${TAKVIM_DURUM.map(d=>`<option>${d}</option>`).join('')}</select><input id="itIs" placeholder="İş / görev (ör. Kargo teslim alma)" class="sm:col-span-6 ${inpC}"/><input id="itAciklama" placeholder="Açıklama" class="sm:col-span-6 ${inpC}"/>`,
-      btn('addIsTakvim()','İş Takvimine Ekle'));
+  if(kod==='TBL-0026') return `<div class="card rounded-2xl p-5 mb-4">
+    ${sectionTitle('calendar-clock','İş Takvimi Kaydı','Tekil veya toplu (saatlik/günlük/haftalık/aylık/yıllık · her saat başı) görev oluştur')}
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+      <select id="itPersonel" class="sm:col-span-4 ${selC}"><option value="">Personel seç…</option>${personelKartlari.map(p=>`<option>${esc(p.ad)}</option>`).join('')}</select>
+      <input id="itTarih" type="date" value="${(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}"/>
+      <select id="itPeriyot" class="sm:col-span-2 ${selC}" title="Periyot (tekil)">${TAKVIM_PERIYOT.map(p=>`<option>${p}</option>`).join('')}</select>
+      <select id="itDurum" class="sm:col-span-3 ${selC}">${TAKVIM_DURUM.map(d=>`<option>${d}</option>`).join('')}</select>
+      <input id="itIs" placeholder="İş / görev (ör. Büro durumu kontrolü)" class="sm:col-span-8 ${inpC}"/>
+      <input id="itAciklama" placeholder="Açıklama" class="sm:col-span-4 ${inpC}"/>
+    </div>
+    <div class="mt-2 flex justify-end"><button onclick="addIsTakvim()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Tekil Ekle</button></div>
+    <div class="mt-3 rounded-xl border border-gold/25 bg-gold/5 p-4">
+      <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="layers" class="h-3.5 w-3.5"></i>Toplu Kayıt Oluştur</p>
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+        <select id="itTekrar" class="sm:col-span-3 ${selC}" title="Tekrar">${['Saatlik','Günlük','Haftalık','Aylık','Yıllık'].map(t=>`<option>${t}</option>`).join('')}</select>
+        <input id="itSaat" type="time" value="09:00" class="sm:col-span-2 ${inpC}" title="Saat"/>
+        <label class="sm:col-span-4 flex items-center gap-2 text-[13px] text-slate-300 px-1"><input id="itHerSaat" type="checkbox" class="h-4 w-4 accent-[#d4af37]"/> Her saat başı (saatlik)</label>
+        <input id="itKez" type="number" min="1" max="200" value="1" placeholder="Kaç kez" class="sm:col-span-3 ${inpC}"/>
+      </div>
+      <p class="text-[10px] text-slate-500 mt-1">Örn: Tekrar=Saatlik · Her saat başı · Kez=8 → 09:00–16:00 her saat için görev. Günlük/Haftalık/Aylık/Yıllık seçilince başlangıç tarihinden itibaren o periyotla üretilir. (Personel ve İş/görev alanları ortak)</p>
+      <div class="mt-2 flex justify-end"><button onclick="addIsTakvimToplu()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gold/45 text-gold bg-gold/5 font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="calendar-plus" class="h-4 w-4"></i> Toplu Oluştur</button></div>
+    </div></div>`;
   return '';
 }
 function viewAdminTable(kod){
