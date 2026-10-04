@@ -6818,7 +6818,7 @@ function buildSubNav(){
     if(state.module==='admin'){
       bar.style.display=''; tint();
       const ekle = state.adminMode!=='liste';
-      bar.innerHTML = abtn(ekle, "state.adminMode='ekle';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'file-plus', 'Kayıt Ekle')
+      bar.innerHTML = abtn(ekle, "state.adminMode='ekle';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'table', 'Tablolar')
         + abtn(!ekle, "state.adminMode='liste';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'database', 'Kayıtlar');
       return;
     }
