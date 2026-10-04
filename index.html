@@ -1772,7 +1772,7 @@ function liveMarketHtml(){
   <div id="biLive" data-sub="bi" class="card rounded-2xl p-5 mb-5">
     <div class="flex items-center justify-between mb-3">
       ${sectionTitle('activity','Canlı Piyasa Takibi','Grup hisse endeksi · anlık')}
-      <span class="inline-flex items-center gap-1.5 text-xs text-rose-500 font-semibold"><span class="h-2 w-2 rounded-full bg-rose-500 live-dot"></span>CANLI</span>
+      <span class="inline-flex items-center gap-1.5 text-xs text-gold font-semibold"><span class="h-2 w-2 rounded-full bg-gold live-dot"></span>CANLI</span>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
       ${BI_INSTRUMENTS.map(s=>{ const st=biState[s.k]; const chg=(st.price/st.open-1)*100;
@@ -1863,8 +1863,8 @@ function viewBI(){
   return `
   <!-- CANLI BORSA ŞERİDİ -->
   <div data-sub="bi" class="card rounded-xl mb-5 flex items-stretch overflow-hidden">
-    <div class="flex items-center gap-2 px-4 shrink-0 bg-[#8a2a1a] text-white">
-      <span class="h-2 w-2 rounded-full bg-white live-dot"></span>
+    <div class="flex items-center gap-2 px-4 shrink-0 bg-gold text-navy-900">
+      <span class="h-2 w-2 rounded-full bg-navy-900 live-dot"></span>
       <span class="text-xs font-bold tracking-wider">CANLI</span>
     </div>
     <div class="ticker-mask flex-1 py-2.5 text-sm">
