@@ -2874,15 +2874,29 @@ let isTakvimi = [];
 const TAKVIM_PERIYOT = ['Günlük','Haftalık','Aylık','Yıllık'];
 const TAKVIM_DURUM = ['Planlandı','Devam Ediyor','Tamamlandı'];
 function addIsTakvim(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
-  const personel=gv('itPersonel'); const is=gv('itIs'); if(!personel){toast('Personel seçin');return;} if(!is){toast('İş/görev girin');return;}
+  const personel=gv('itPersonel'); const is=gv('itIs'); const tur=gv('itTur')||'Görev'; if(!personel){toast('Personel seçin');return;} if(!is){toast('İş/görev girin');return;}
   const saat=gv('itSaatTek')||'';
+  state.itPre=null;
   const ex = state.itEdit ? isTakvimi.find(r=>r.no===state.itEdit) : null;
-  if(ex){ Object.assign(ex, { personel, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), saat, is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') }); state.itEdit=null; logAction('pencil','gold', `${ex.no} iş takvimi güncellendi`); render(); toast(ex.no+' güncellendi ✓'); return; }
+  if(ex){ Object.assign(ex, { personel, tur, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), saat, is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') }); itYetkiVer(personel); state.itEdit=null; logAction('pencil','gold', `${ex.no} iş takvimi güncellendi`); render(); toast(ex.no+' güncellendi ✓'); return; }
+  itYetkiVer(personel);
   const no=nextKayitNo('0026',isTakvimi);
-  isTakvimi.unshift({ no, personel, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), saat, is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') });
-  logAction('calendar-clock','gold', `İş takvimi · ${no} · ${personel} · ${gv('itPeriyot')||'Günlük'} · ${is}`); render(); toast(no+' · iş takvimine eklendi'); }
+  isTakvimi.unshift({ no, personel, tur, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), saat, is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') });
+  logAction('calendar-clock','gold', `İş takvimi · ${no} · ${personel} · ${tur} · ${is}`); render(); toast(no+' · iş takvimine eklendi');
+  captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); } }); }
+const TAKVIM_TUR=['Görev','Gelen Kişi','Kargo','Ziyaretçi','Toplantı','Telefon','İzin','Diğer'];
+function itYetkiVer(personel){ if(!personel) return; const p=personelKartlari.find(x=>x.ad===personel); const dep=p?(p.bolum||''):'';
+  let yk=yetkiKartlari.find(r=>r.oto==='istakvim' && r.kisi===personel);
+  if(yk){ yk.moduller=yk.moduller||[]; if(yk.moduller.indexOf('istakvim')<0) yk.moduller.push('istakvim'); yk.altModuller=yk.altModuller||{}; yk.altModuller.istakvim=yk.altModuller.istakvim||[]; if(dep&&yk.altModuller.istakvim.indexOf(dep)<0) yk.altModuller.istakvim.push(dep); }
+  else { const no=nextYtkNo(); yetkiKartlari.unshift({ no, ad:'İş Takvimi Yetkisi · '+personel, kisi:personel, oto:'istakvim', sirketler:['all'], moduller:['istakvim'], altModuller: dep?{istakvim:[dep]}:{istakvim:[]}, gruplar:{}, kartYetki:{}, kartAksiyon:{}, kayitYetki:{} }); logAction('shield-check','emer', `Oto yetki · ${no} · ${personel} · İş Takvimi${dep?' / '+dep:''}`); toast('🛡 '+personel+' → İş Takvimi yetkisi verildi'); } }
+function itEkle(tarih,saat){ const myName=(ROLES[state.role]||{}).name||''; const pers=personelKartlari.find(p=>p.ad===myName)?myName:''; state.itPre={tarih:tarih||'', saat:saat||'09:00', personel:pers}; state.itEdit=null; state.adminMode='ekle'; state.adminUsers=false; state.adminTable='TBL-0026'; setModule('admin'); }
 function delIsTakvim(no){ const i=isTakvimi.findIndex(r=>r.no===no); if(i>-1){ isTakvimi.splice(i,1); logAction('trash-2','red', `İş takvimi kaydı silindi · ${no}`); render(); toast('Silindi ✓'); } }
+function captureKonum(cb){ try{ if(navigator&&navigator.geolocation){ toast('Konum alınıyor…'); navigator.geolocation.getCurrentPosition(function(p){ cb(p.coords.latitude.toFixed(5)+', '+p.coords.longitude.toFixed(5)); }, function(){ cb(''); }, {enableHighAccuracy:true,timeout:9000,maximumAge:60000}); } else cb(''); }catch(e){ cb(''); } }
+function itTamamla(no){ const r=isTakvimi.find(x=>x.no===no); if(!r) return; r.durum='Tamamlandı'; render(); toast(no+' tamamlandı ✓ · konum alınıyor'); captureKonum(function(k){ if(k){ const rr=isTakvimi.find(x=>x.no===no); if(rr){ rr.konum=k; } try{saveData();}catch(e){} render(); toast('Konum işlendi 📍'); } }); }
 const TAKVIM_GUNLER=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+const TAKVIM_SAAT_BAS=9, TAKVIM_SAAT_SON=18;
+const SAAT_SLOTS=(()=>{ const a=[]; for(let h=TAKVIM_SAAT_BAS;h<=TAKVIM_SAAT_SON;h++){ a.push(String(h).padStart(2,'0')+':00'); if(h<TAKVIM_SAAT_SON) a.push(String(h).padStart(2,'0')+':30'); } return a; })();
+function saatSelect(id,sel,cls,extra){ return `<select id="${id}" class="${cls||''}" ${extra||''}>${SAAT_SLOTS.map(s=>`<option ${sel===s?'selected':''}>${s}</option>`).join('')}</select>`; }
 const TAKVIM_TEKRAR=['Saatlik','Her Gün','Her Hafta','Her Ay','Yıllık'];
 function addIsTakvimToplu(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
   const personel=gv('itPersonel'); const is=gv('itIs'); if(!personel){toast('Personel seçin');return;} if(!is){toast('İş/görev girin');return;}
@@ -2905,6 +2919,7 @@ function addIsTakvimToplu(){ const g=i=>document.getElementById(i); const gv=i=>
     isTakvimi.unshift({ no:nextKayitNo('0026',isTakvimi), personel, periyot, tarih, is:is+' · '+st, saat:st, durum, aciklama:'Toplu kayıt · '+tekrar+(herSaat?' (her saat başı)':''), toplu:true });
     created++;
   }
+  itYetkiVer(personel);
   logAction('calendar-plus','gold', `Toplu iş takvimi · ${created} görev · ${personel} · ${tekrar}`); render(); toast(created+' görev toplu oluşturuldu ✓'); }
 function isoHaftaNo(ds){ try{ const dt=new Date(ds); dt.setHours(0,0,0,0); dt.setDate(dt.getDate()+3-((dt.getDay()+6)%7)); const w1=new Date(dt.getFullYear(),0,4); return 1+Math.round(((dt-w1)/86400000-3+((w1.getDay()+6)%7))/7); }catch(e){ return ''; } }
 function haftaPazartesi(y,w){ try{ const jan4=new Date(y,0,4); const off=(jan4.getDay()+6)%7; const d=new Date(y,0,4-off); d.setDate(d.getDate()+(w-1)*7); return d.toISOString().slice(0,10); }catch(e){ return ''; } }
@@ -2926,23 +2941,51 @@ function viewIsTakvimi(){
       <button onclick="pdfIsTakvimi()" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="file-down" class="h-4 w-4"></i>PDF</button>
       <button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button>
     </div>
-    ${per==='hafta'?(()=>{ const d=state.takvimTarih||today; let mon; try{ const b=new Date(d); const off=(b.getDay()+6)%7; mon=new Date(b); mon.setDate(b.getDate()-off);}catch(x){mon=new Date();}
-      const days=[...Array(7)].map((_,k)=>{ const dd=new Date(mon); dd.setDate(mon.getDate()+k); return dd.toISOString().slice(0,10); });
-      const GUN=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
-      return `<div class="card rounded-2xl p-3 overflow-x-auto"><div class="grid gap-2 min-w-[760px]" style="grid-template-columns:repeat(7,minmax(0,1fr))">
-      ${days.map((ds,k)=>{ const dr=rows.filter(r=>(r.tarih||'')===ds).sort((a,b)=>String(a.saat||'').localeCompare(String(b.saat||''))); const isToday=ds===today;
-        return `<div class="rounded-xl border ${isToday?'border-gold/50 bg-gold/5':'border-white/8 bg-navy-700/30'} p-2 min-h-[160px]">
-          <div class="text-center mb-2 pb-1.5 border-b border-white/10"><p class="text-[10px] uppercase tracking-wide ${isToday?'text-gold':'text-slate-500'}">${GUN[k]}</p><p class="text-base font-bold ${isToday?'text-gold':'text-slate-200'}">${ds.slice(8,10)}.${ds.slice(5,7)}</p></div>
-          <div class="space-y-1.5">${dr.length?dr.map(r=>`<div class="rounded-lg bg-navy-600/60 border-l-2 border-gold px-2 py-1.5"><p class="text-[11px] font-semibold text-gold leading-tight">${esc(r.saat||'')}</p><p class="text-[11px] text-slate-100 leading-tight">${esc(r.is)}</p>${hepsi?`<p class="text-[10px] text-slate-400 truncate">${esc(r.personel||'')}</p>`:''}${isAdminUser()?`<div class="flex gap-1 mt-1"><button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';state.itEdit='${r.no}';setModule('admin')" class="h-5 w-5 rounded border border-white/15 text-slate-300 hover:border-gold/40 flex items-center justify-center"><i data-lucide="pencil" class="h-3 w-3"></i></button><button onclick="delIsTakvim('${r.no}')" class="h-5 w-5 rounded bg-rose-600 text-white hover:bg-rose-700 flex items-center justify-center"><i data-lucide="trash-2" class="h-3 w-3"></i></button></div>`:''}</div>`).join(''):`<p class="text-[10px] text-slate-600 text-center pt-3">—</p>`}</div>
-        </div>`; }).join('')}
-      </div></div>`; })():`<div class="card rounded-2xl p-5"><div class="space-y-2">
-      ${rows.length?rows.map(r=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
+    ${(()=>{
+      const turRozet=r=>(r.tur&&r.tur!=='Görev')?`<span class="inline-block text-[9px] px-1 rounded bg-gold/20 text-gold mr-1 align-middle">${esc(r.tur)}</span>`:'';
+      const konumHtml=r=>r.konum?`<p class="text-[9px] text-emer-light flex items-center gap-0.5 mt-0.5"><i data-lucide="map-pin" class="h-2.5 w-2.5"></i>${esc(r.konum)}</p>`:'';
+      const tamamlaBtn=r=>r.durum==='Tamamlandı'?`<span class="h-5 px-1.5 rounded bg-emer-light/20 text-emer-light flex items-center gap-0.5 text-[9px]"><i data-lucide="check-check" class="h-3 w-3"></i>Tamam</span>`:`<button onclick="itTamamla('${r.no}')" class="h-5 px-1.5 rounded bg-emer-light/15 text-emer-light border border-emer-light/30 hover:bg-emer-light/25 flex items-center gap-0.5 text-[9px]" title="Görevi tamamla · konum otomatik işlenir"><i data-lucide="check" class="h-3 w-3"></i>Tamamla</button>`;
+      const miniAdmin=r=>isAdminUser()?`<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';state.itEdit='${r.no}';setModule('admin')" class="h-5 w-5 rounded border border-white/15 text-slate-300 hover:border-gold/40 flex items-center justify-center"><i data-lucide="pencil" class="h-3 w-3"></i></button><button onclick="delIsTakvim('${r.no}')" class="h-5 w-5 rounded bg-rose-600 text-white hover:bg-rose-700 flex items-center justify-center"><i data-lucide="trash-2" class="h-3 w-3"></i></button>`:'';
+      const miniCard=r=>`<div class="rounded-lg bg-navy-600/60 border-l-2 ${r.durum==='Tamamlandı'?'border-emer-light':'border-gold'} px-2 py-1.5"><p class="text-[11px] font-semibold text-gold leading-tight">${esc(r.saat||'')}</p><p class="text-[11px] text-slate-100 leading-tight">${turRozet(r)}${esc(r.is)}</p>${hepsi?`<p class="text-[10px] text-slate-400 truncate">${esc(r.personel||'')}</p>`:''}${konumHtml(r)}<div class="flex gap-1 mt-1 flex-wrap items-center">${tamamlaBtn(r)}${miniAdmin(r)}</div></div>`;
+      const addBtn=(ds,saat)=>`<button onclick="itEkle('${ds}','${saat||'09:00'}')" class="w-full mt-1 rounded border border-dashed border-white/15 text-slate-500 hover:border-gold/40 hover:text-gold text-[10px] py-0.5 flex items-center justify-center gap-0.5" title="Bu güne/saate kayıt ekle (gelen kişi, kargo, vb)"><i data-lucide="plus" class="h-3 w-3"></i></button>`;
+      const sortSaat=(a,b)=>String(a.saat||'').localeCompare(String(b.saat||''));
+      if(per==='hafta'){ const d=state.takvimTarih||today; let mon; try{ const b=new Date(d); const off=(b.getDay()+6)%7; mon=new Date(b); mon.setDate(b.getDate()-off);}catch(x){mon=new Date();}
+        const days=[...Array(7)].map((_,k)=>{ const dd=new Date(mon); dd.setDate(mon.getDate()+k); return dd.toISOString().slice(0,10); });
+        const GUN=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+        return `<div class="card rounded-2xl p-3 overflow-x-auto"><div class="grid gap-2 min-w-[760px]" style="grid-template-columns:repeat(7,minmax(0,1fr))">
+        ${days.map((ds,k)=>{ const dr=rows.filter(r=>(r.tarih||'')===ds).sort(sortSaat); const isToday=ds===today;
+          return `<div class="rounded-xl border ${isToday?'border-gold/50 bg-gold/5':'border-white/8 bg-navy-700/30'} p-2 min-h-[160px]"><div class="text-center mb-2 pb-1.5 border-b border-white/10"><p class="text-[10px] uppercase tracking-wide ${isToday?'text-gold':'text-slate-500'}">${GUN[k]}</p><p class="text-base font-bold ${isToday?'text-gold':'text-slate-200'}">${ds.slice(8,10)}.${ds.slice(5,7)}</p></div><div class="space-y-1.5">${dr.length?dr.map(miniCard).join(''):`<p class="text-[10px] text-slate-600 text-center pt-2">—</p>`}${addBtn(ds,'09:00')}</div></div>`; }).join('')}
+        </div></div>`;
+      }
+      if(per==='gun'){ const d=state.takvimTarih||today; const dr=rows.slice().sort(sortSaat);
+        const slots=[]; for(let h=TAKVIM_SAAT_BAS;h<=TAKVIM_SAAT_SON;h++) slots.push(h);
+        const gunAd=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi']; let gad=''; try{ gad=gunAd[new Date(d).getDay()]; }catch(x){}
+        return `<div class="card rounded-2xl p-3"><p class="text-[11px] text-slate-400 mb-2 px-1"><span class="text-gold font-semibold">${gad}</span> · ${d} · ${TAKVIM_SAAT_BAS}:00–${TAKVIM_SAAT_SON}:00</p><div>
+        ${slots.map(h=>{ const hh=String(h).padStart(2,'0'); const hr=dr.filter(r=>String(r.saat||'').slice(0,2)===hh);
+          return `<div class="group flex gap-3 border-t border-white/8 py-1.5 min-h-[46px]"><div class="w-14 shrink-0 text-right text-[11px] text-slate-500 pt-0.5">${hh}:00</div><div class="flex-1 space-y-1">${hr.map(miniCard).join('')}<button onclick="itEkle('${d}','${hh}:00')" class="opacity-0 group-hover:opacity-100 transition rounded border border-dashed border-white/15 text-slate-500 hover:border-gold/40 hover:text-gold text-[10px] px-2 py-0.5 flex items-center gap-0.5" title="${hh}:00'a kayıt ekle"><i data-lucide="plus" class="h-3 w-3"></i>Ekle</button></div></div>`; }).join('')}
+        ${dr.filter(r=>{ const h=parseInt(String(r.saat||'').slice(0,2),10); return !(h>=TAKVIM_SAAT_BAS&&h<=TAKVIM_SAAT_SON); }).map(r=>`<div class="flex gap-3 border-t border-white/8 py-1.5"><div class="w-14 shrink-0 text-right text-[11px] text-slate-500 pt-0.5">${esc(String(r.saat||'').slice(0,5)||'—')}</div><div class="flex-1 space-y-1">${miniCard(r)}</div></div>`).join('')}
+        </div></div>`;
+      }
+      if(per==='ay'){ const m=state.takvimAy||today.slice(0,7); const yy=+m.slice(0,4), mm=+m.slice(5,7);
+        let gridStart; try{ const first=new Date(yy,mm-1,1); const off=(first.getDay()+6)%7; gridStart=new Date(yy,mm-1,1-off); }catch(x){ gridStart=new Date(); }
+        const daysInMonth=new Date(yy,mm,0).getDate(); const firstOff=(new Date(yy,mm-1,1).getDay()+6)%7; const weeks=Math.ceil((firstOff+daysInMonth)/7);
+        const cells=[...Array(weeks*7)].map((_,k)=>{ const dd=new Date(gridStart); dd.setDate(gridStart.getDate()+k); return dd.toISOString().slice(0,10); });
+        const GUN=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+        return `<div class="card rounded-2xl p-3 overflow-x-auto"><div class="grid gap-1 min-w-[760px]" style="grid-template-columns:repeat(7,minmax(0,1fr))">
+        ${GUN.map(g=>`<div class="text-center text-[10px] uppercase tracking-wide text-slate-500 pb-1">${g}</div>`).join('')}
+        ${cells.map(ds=>{ const inMonth=ds.slice(0,7)===m; const cr=inMonth?rows.filter(r=>(r.tarih||'')===ds).sort(sortSaat):[]; const isToday=ds===today;
+          return `<div class="rounded-lg border ${isToday?'border-gold/50 bg-gold/5':'border-white/8'} ${inMonth?'bg-navy-700/30':'bg-navy-800/20 opacity-40'} p-1.5 min-h-[94px]"><p class="text-[11px] font-semibold ${isToday?'text-gold':inMonth?'text-slate-300':'text-slate-600'} mb-1">${ds.slice(8,10)}</p><div class="space-y-0.5">${cr.slice(0,4).map(r=>`<div class="rounded bg-gold/15 border-l-2 border-gold px-1 py-0.5 text-[10px] text-slate-100 truncate ${isAdminUser()?'cursor-pointer hover:bg-gold/25':''}" ${isAdminUser()?`onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';state.itEdit='${r.no}';setModule('admin')"`:''} title="${esc((r.saat||'')+' '+r.is)}">${esc(r.saat||'')} ${esc(r.is)}</div>`).join('')}${cr.length>4?`<p class="text-[9px] text-gold">+${cr.length-4} daha</p>`:''}${inMonth?`<button onclick="itEkle('${ds}','09:00')" class="w-full rounded border border-dashed border-white/10 text-slate-600 hover:border-gold/40 hover:text-gold text-[10px] flex items-center justify-center" title="Bu güne kayıt ekle"><i data-lucide="plus" class="h-3 w-3"></i></button>`:''}</div></div>`; }).join('')}
+        </div></div>`;
+      }
+      return `<div class="card rounded-2xl p-5"><div class="space-y-2">
+      ${rows.length?rows.slice().sort((a,b)=>String((a.tarih||'')+(a.saat||'')).localeCompare(String((b.tarih||'')+(b.saat||'')))).map(r=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
         <span class="h-9 w-9 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center text-gold"><i data-lucide="calendar-check" class="h-4 w-4"></i></span>
-        <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${esc(r.is)}</p><p class="text-[11px] text-slate-500">${esc(r.personel||'—')} · ${esc(r.tarih||'—')}${r.saat?' · '+esc(r.saat):''}${r.aciklama?' · '+esc(r.aciklama):''}</p></div>
-        ${badge(r.durum||'Planlandı',dt(r.durum))}
+        <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${turRozet(r)}${esc(r.is)}</p><p class="text-[11px] text-slate-500">${esc(r.personel||'—')} · ${esc(r.tarih||'—')}${r.saat?' · '+esc(r.saat):''}${r.aciklama?' · '+esc(r.aciklama):''}</p>${konumHtml(r)}</div>
+        ${r.durum!=='Tamamlandı'?`<button onclick="itTamamla('${r.no}')" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emer-light/15 text-emer-light border border-emer-light/30 hover:bg-emer-light/25 text-[11px]" title="Görevi tamamla · konum otomatik"><i data-lucide="check" class="h-3.5 w-3.5"></i>Tamamla</button>`:badge('Tamamlandı','emer')}
         ${isAdminUser()?`<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';state.itEdit='${r.no}';setModule('admin')" class="shrink-0 h-7 w-7 rounded-lg border border-white/15 text-slate-300 hover:border-gold/40 flex items-center justify-center" title="Düzelt"><i data-lucide="pencil" class="h-3.5 w-3.5"></i></button><button onclick="delIsTakvim('${r.no}')" class="shrink-0 h-7 w-7 rounded-lg bg-rose-600 text-white hover:bg-rose-700 flex items-center justify-center" title="Sil"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>`:''}
       </div>`).join(''):`<p class="text-sm text-slate-500 py-6 text-center">Bu dönemde (${pl.toLowerCase()}) görev yok. "İş Ekle" ile ekleyin.</p>`}
-    </div></div>`}`;
+    </div></div>`;
+    })()}`;
 }
 function pdfIsTakvimi(){
   const per=currentSub()||'gun'; const perMap={gun:'Gün',hafta:'Hafta',ay:'Ay',yil:'Yıl'}; const pl=perMap[per]||'Gün';
@@ -2956,7 +2999,7 @@ function pdfIsTakvimi(){
   else { const d=state.takvimTarih||today; let s=d,e=d; try{ const b=new Date(d); const off=(b.getDay()+6)%7; const st=new Date(b); st.setDate(b.getDate()-off); const en=new Date(st); en.setDate(st.getDate()+6); s=st.toISOString().slice(0,10); e=en.toISOString().slice(0,10); }catch(x){} matchDate=t=>t>=s&&t<=e; donem=isoHaftaNo(d)+'. hafta ('+s+' – '+e+')'; }
   const rows=isTakvimi.filter(r=>(hepsi||persDept(r.personel)===dept)&&matchDate(r.tarih||'')).sort((a,b)=>String((a.tarih||'')+(a.saat||'')).localeCompare(String((b.tarih||'')+(b.saat||''))));
   const esc2=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const trs=rows.length?rows.map(r=>`<tr><td>${esc2(r.tarih||'—')}</td><td>${esc2(r.saat||'—')}</td><td>${esc2(r.personel||'—')}</td><td>${esc2(r.is||'')}</td><td>${esc2(r.durum||'Planlandı')}</td><td>${esc2(r.aciklama||'')}</td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:#888;padding:18px">Kayıt yok</td></tr>`;
+  const trs=rows.length?rows.map(r=>`<tr><td>${esc2(r.tarih||'—')}</td><td>${esc2(r.saat||'—')}</td><td>${esc2(r.personel||'—')}</td><td>${esc2(r.tur||'Görev')}</td><td>${esc2(r.is||'')}</td><td>${esc2(r.durum||'Planlandı')}</td><td>${esc2(r.konum||'—')}</td><td>${esc2(r.aciklama||'')}</td></tr>`).join(''):`<tr><td colspan="8" style="text-align:center;color:#888;padding:18px">Kayıt yok</td></tr>`;
   const html=`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>İş Takvimi — ${esc2(baslik)}</title><style>
     body{font-family:Arial,Helvetica,sans-serif;color:#1a2238;margin:28px}
     h1{font-size:20px;margin:0 0 4px} .sub{color:#6b7280;font-size:13px;margin:0 0 18px}
@@ -2971,7 +3014,7 @@ function pdfIsTakvimi(){
     <h1>İş Takvimi — ${esc2(baslik)}</h1>
     <p class="sub">${pl} · ${esc2(donem)} · ${rows.length} görev · Toprak Yatırım</p>
     <div class="bar"></div>
-    <table><thead><tr><th>Tarih</th><th>Saat</th><th>Personel</th><th>Görev / İş</th><th>Durum</th><th>Açıklama</th></tr></thead><tbody>${trs}</tbody></table>
+    <table><thead><tr><th>Tarih</th><th>Saat</th><th>Personel</th><th>Tür</th><th>Görev / İş</th><th>Durum</th><th>Konum</th><th>Açıklama</th></tr></thead><tbody>${trs}</tbody></table>
     <p class="ft">Toprak Yatırım Yönetim Paneli — yazdırmak / PDF kaydetmek için tarayıcı yazdırma penceresini kullanın.</p>
     <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
   </body></html>`;
@@ -6094,15 +6137,16 @@ function tblForm(kod){
       btn('addGirisCikis()','Hareket Ekle'));
   if(kod==='TBL-0024') return yapSatFormCard();
   if(kod==='TBL-0025') return gorevFormCard();
-  if(kod==='TBL-0026'){ const itv=state.itEdit?isTakvimi.find(r=>r.no===state.itEdit):null; return `<div class="card rounded-2xl p-5 mb-4">
-    ${sectionTitle('calendar-clock', itv?('İş Takvimi Düzelt · '+itv.no):'İş Takvimi Kaydı', itv?'Kaydı düzenleyip güncelle':'Tekil veya toplu (saatlik/günlük/haftalık/aylık/yıllık · her saat başı) görev oluştur')}
+  if(kod==='TBL-0026'){ const itv=state.itEdit?isTakvimi.find(r=>r.no===state.itEdit):null; const pre=(!itv&&state.itPre)?state.itPre:{}; const curTur=itv?(itv.tur||'Görev'):(pre.tur||'Görev'); return `<div class="card rounded-2xl p-5 mb-4">
+    ${sectionTitle('calendar-clock', itv?('İş Takvimi Düzelt · '+itv.no):'İş Takvimi Kaydı', itv?'Kaydı düzenleyip güncelle':'Tekil veya toplu görev · tür (gelen kişi/kargo/vb) · konum kayıt sırasında otomatik işlenir')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <select id="itPersonel" class="sm:col-span-3 ${selC}"><option value="">Personel seç…</option>${personelKartlari.map(p=>`<option ${itv&&itv.personel===p.ad?'selected':''}>${esc(p.ad)}</option>`).join('')}</select>
-      <input id="itTarih" type="date" value="${itv?esc(itv.tarih||''):(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}"/>
-      <input id="itSaatTek" type="time" value="${itv&&itv.saat?esc(itv.saat):'09:00'}" class="sm:col-span-2 ${inpC}" title="Saat"/>
-      <select id="itPeriyot" class="sm:col-span-2 ${selC}" title="Periyot (tekil)">${TAKVIM_PERIYOT.map(p=>`<option ${itv&&itv.periyot===p?'selected':''}>${p}</option>`).join('')}</select>
+      <select id="itPersonel" class="sm:col-span-3 ${selC}"><option value="">Personel seç…</option>${personelKartlari.map(p=>`<option ${((itv?itv.personel:pre.personel))===p.ad?'selected':''}>${esc(p.ad)}</option>`).join('')}</select>
+      <select id="itTur" class="sm:col-span-2 ${selC}" title="Kayıt Türü">${TAKVIM_TUR.map(t=>`<option ${curTur===t?'selected':''}>${t}</option>`).join('')}</select>
+      <input id="itTarih" type="date" value="${itv?esc(itv.tarih||''):esc(pre.tarih||(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})())}" class="sm:col-span-3 ${inpC}"/>
+      ${saatSelect('itSaatTek', itv?(itv.saat||'09:00'):(pre.saat||'09:00'), 'sm:col-span-2 '+selC, 'title="Saat (09:00–18:00)"')}
       <select id="itDurum" class="sm:col-span-2 ${selC}">${TAKVIM_DURUM.map(d=>`<option ${itv&&itv.durum===d?'selected':''}>${d}</option>`).join('')}</select>
-      <input id="itIs" value="${itv?esc(itv.is||''):''}" placeholder="İş / görev (ör. Büro durumu kontrolü)" class="sm:col-span-8 ${inpC}"/>
+      <select id="itPeriyot" class="sm:col-span-2 ${selC}" title="Periyot (tekil)">${TAKVIM_PERIYOT.map(p=>`<option ${itv&&itv.periyot===p?'selected':''}>${p}</option>`).join('')}</select>
+      <input id="itIs" value="${itv?esc(itv.is||''):''}" placeholder="İş / görev (ör. Büro durumu kontrolü)" class="sm:col-span-6 ${inpC}"/>
       <input id="itAciklama" value="${itv?esc(itv.aciklama||''):''}" placeholder="Açıklama" class="sm:col-span-4 ${inpC}"/>
     </div>
     <div class="mt-2 flex justify-end gap-2">${itv?`<button onclick="state.itEdit=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button>`:''}<button onclick="addIsTakvim()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="${itv?'save':'plus'}" class="h-4 w-4"></i> ${itv?'Güncelle':'Tekil Ekle'}</button></div>
@@ -6110,7 +6154,7 @@ function tblForm(kod){
       <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="layers" class="h-3.5 w-3.5"></i>Toplu Kayıt Oluştur</p>
       ${(()=>{ const tt=state.itTekrarSel||'Saatlik'; return `<div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
         <select id="itTekrar" onchange="state.itTekrarSel=this.value;render()" class="sm:col-span-3 ${selC}" title="Tekrar">${['Saatlik','Her Gün','Her Hafta','Her Ay','Yıllık'].map(t=>`<option ${tt===t?'selected':''}>${t}</option>`).join('')}</select>
-        <input id="itSaat" type="time" value="09:00" class="sm:col-span-2 ${inpC}" title="Saat"/>
+        ${saatSelect('itSaat', '09:00', 'sm:col-span-2 '+selC, 'title="Saat (09:00–18:00)"')}
         ${tt==='Saatlik'?`<label class="sm:col-span-4 flex items-center gap-2 text-[13px] text-slate-300 px-1"><input id="itHerSaat" type="checkbox" class="h-4 w-4 accent-[#d4af37]"/> Her saat başı</label>`:''}
         ${tt==='Her Hafta'?`<select id="itHaftaGun" class="sm:col-span-4 ${selC}" title="Hangi gün">${['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'].map(d=>`<option value="${d}">Her ${d}</option>`).join('')}</select>`:''}
         ${tt==='Her Ay'?`<div class="sm:col-span-4 flex items-center gap-2"><span class="text-[13px] text-slate-400 shrink-0">Her ayın</span><input id="itAyGun" type="number" min="1" max="31" value="15" class="w-20 ${inpC}"/><span class="text-[13px] text-slate-400">. günü</span></div>`:''}
@@ -6147,7 +6191,7 @@ function viewAdminTable(kod){
   if(kod==='TBL-0022'){ return tbl('Satış Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Varlık',f:r=>badge(r.varlik||'—','emer')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Müşteri',f:r=>esc(r.musteri||'—')},{h:'Tutar',r:1,cls:'text-emer-light font-medium',f:r=>money(r.tutar||0)}],satisIslemleri); }
   if(kod==='TBL-0023'){ return tbl('Giriş / Çıkış Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Hareket',f:r=>badge(r.hareket||'—',r.hareket==='Çıkış'?'red':'emer')},{h:'Giriş Tipi',f:r=>esc(r.girisTipi||'—')},{h:'Varlık',f:r=>esc(r.varlik||'—')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Adet/m²',r:1,f:r=>r.adet||'—'},{h:'Tutar',r:1,f:r=>money(r.tutar||0)}],girisCikislar); }
   if(kod==='TBL-0025'){ return tbl('Personel Görev Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Personel',cls:'text-slate-100 font-medium',f:r=>esc(r.personel||'—')},{h:'Departman / Görev',f:r=>badge(r.rol||'—','gold')},{h:'Görev Sayısı',r:1,f:r=>gorevSayi(r)},{h:'Eklenen İş',f:r=>esc(((r.ekstra||[]).join(' · '))||'—')}],personelGorevleri); }
-  if(kod==='TBL-0026'){ return tbl('İş Takvimi Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Personel',cls:'text-slate-100 font-medium',f:r=>esc(r.personel)},{h:'Periyot',f:r=>badge(r.periyot||'Günlük', r.periyot==='Aylık'?'emer':r.periyot==='Haftalık'?'amber':'gold')},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Saat',f:r=>esc(r.saat||'—')},{h:'İş / Görev',f:r=>esc(r.is||'—')},{h:'Durum',f:r=>badge(r.durum||'Planlandı', r.durum==='Tamamlandı'?'emer':r.durum==='Devam Ediyor'?'amber':'slate')},{h:'Düzenle',f:r=>`<button onclick="state.itEdit='${r.no}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button>`}],isTakvimi); }
+  if(kod==='TBL-0026'){ return tbl('İş Takvimi Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Personel',cls:'text-slate-100 font-medium',f:r=>esc(r.personel)},{h:'Periyot',f:r=>badge(r.periyot||'Günlük', r.periyot==='Aylık'?'emer':r.periyot==='Haftalık'?'amber':'gold')},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Saat',f:r=>esc(r.saat||'—')},{h:'Tür',f:r=>esc(r.tur||'Görev')},{h:'İş / Görev',f:r=>esc(r.is||'—')},{h:'Durum',f:r=>badge(r.durum||'Planlandı', r.durum==='Tamamlandı'?'emer':r.durum==='Devam Ediyor'?'amber':'slate')},{h:'Konum',f:r=>r.konum?`<span class="inline-flex items-center gap-1 text-[11px] text-emer-light"><i data-lucide="map-pin" class="h-3 w-3"></i>${esc(r.konum)}</span>`:'<span class="text-slate-600">—</span>'},{h:'Düzenle',f:r=>`<button onclick="state.itEdit='${r.no}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button>`}],isTakvimi); }
   if(kod==='TBL-0024'){ return tbl('Proje Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Tipi',f:r=>badge(r.projeTipi||'Yap-Sat', r.projeTipi==='Kat Karşılığı'?'emer':'gold')},{h:'İl / İlçe',f:r=>esc((r.il||'—')+(r.ilce?' / '+r.ilce:''))},{h:'Arsa Alanı',r:1,f:r=>fmtM2(r.arsaM2)},{h:'KAKS',r:1,f:r=>r.kaks||'—'},{h:'İnşaat (Brüt)',r:1,f:r=>fmtM2(r.insaatM2)},{h:'Satılabilir',r:1,f:r=>fmtM2(r.satilabilirM2)},{h:'Daire/Dükkan',f:r=>`${r.daire||0} / ${r.dukkan||0}`},{h:'Hedef Maliyet',r:1,cls:'text-gold font-bold',f:r=>money(r.hedefMaliyet||yapSatHedefMaliyet(r))},{h:'Paylaşım',f:r=>esc(r.paylasim||'—')},{h:'Arsa Bedeli',r:1,cls:'text-amber-300',f:r=>money(r.arsaBedel||0)},{h:'Alınan Arsalar',r:1,f:r=>{const o=arsaGirisOzet(r.ad);return o.adet?`${o.adet} arsa · ${fmtM2(o.m2)}`:'—';}},{h:'Düzenle',f:r=>`<button onclick="state.yspEdit='${r.no}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button>`}],yapSatProjeleri); }
   if(kod==='TBL-0020'){ return tbl('İnşaat Maliyet Hesaplama Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'İş / Açıklama',cls:'text-slate-100 font-medium',f:r=>esc(r.ad||'—')},{h:'Yapı Sınıfı',f:r=>esc(r.grup)+(r.sinif?' ('+esc(r.sinif)+')':'')},{h:'Yıl',f:r=>badge(r.yil||'2026','gold')},{h:'Birim (TL/m²)',r:1,f:r=>fmtTL(r.birim)},{h:'m²',r:1,f:r=>new Intl.NumberFormat('tr-TR').format(r.m2||0)},{h:'Maliyet',r:1,cls:'text-gold font-bold',f:r=>fmtTL(r.maliyet)}],insaatMaliyetleri); }
   if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Departman',f:r=>badge(r.bolum||'—','gold')+(r.projeTuru?' '+badge(r.projeTuru,'emer'):'')},{h:'Görev Yeri',f:r=>esc(r.gorevYeri||'—')},{h:'Görevi',f:r=>esc(r.gorev||'—')},{h:'Mesleği',f:r=>esc(r.meslek||'—')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Resmi Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.resmiKod||'—')},{h:'İç Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.icKod||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')},{h:'Yetki Sınıfı',f:r=>r.yetkiSinifiAd?`<span class="text-slate-100">${esc(r.yetkiSinifiAd)}</span>${Array.isArray(r.yetkiler)&&r.yetkiler.length?`<span class="block text-[10px] text-slate-500">${esc(r.yetkiler.join(' · '))}</span>`:''}`:'—'}],personelKartlari); }
