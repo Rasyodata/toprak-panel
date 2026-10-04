@@ -2758,6 +2758,23 @@ function addInsaatMaliyet(){ const g=i=>document.getElementById(i); const gv=i=>
   const no=nextKayitNo('0020', insaatMaliyetleri);
   insaatMaliyetleri.unshift({ no, ad:gv('hesAd'), grup, sinif:ys?ys.sinif:'', yil, birim, m2, maliyet });
   logAction('calculator','gold', `İnşaat maliyet hesabı · ${no} · ${grup} · ${yil} · ${m2} m² = ${fmtTL(maliyet)}`); render(); toast(no+' · '+fmtTL(maliyet)); }
+// Satın Alma / Satış / Giriş-Çıkış tabloları (daire · arsa · dükkan takibi)
+let satinAlmaIslemleri = [];
+let satisIslemleri = [];
+let girisCikislar = [];
+const VARLIK_TURU = ['Daire','Dükkan','Arsa','Diğer'];
+const GIRIS_TIPI = ['Müşteri','Yap-Sat Girişi','Kat Karşılığı Girişi'];
+const HAREKET_TIPI = ['Giriş','Çıkış'];
+function projeOptsHtml(sel){ return `<option value="">Proje seç…</option>`+projects.map(p=>`<option ${sel===p.name?'selected':''}>${esc(p.name)}</option>`).join(''); }
+function addSatinAlma(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const no=nextKayitNo('0021',satinAlmaIslemleri);
+  satinAlmaIslemleri.unshift({ no, tarih:gv('almTarih'), varlik:gv('almVarlik')||'Daire', proje:gv('almProje'), satici:gv('almSatici'), tutar:parseInt((gv('almTutar')||'0').replace(/[^0-9]/g,''),10)||0, aciklama:gv('almAciklama') });
+  logAction('shopping-cart','amber', `Satın alma · ${no} · ${gv('almVarlik')||'Daire'} · ${money(satinAlmaIslemleri[0].tutar)}`); render(); toast(no+' · satın alma eklendi'); }
+function addSatis(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const no=nextKayitNo('0022',satisIslemleri);
+  satisIslemleri.unshift({ no, tarih:gv('stTarih'), varlik:gv('stVarlik')||'Daire', proje:gv('stProje'), musteri:gv('stMusteri'), tutar:parseInt((gv('stTutar')||'0').replace(/[^0-9]/g,''),10)||0, aciklama:gv('stAciklama') });
+  logAction('trending-up','emer', `Satış · ${no} · ${gv('stVarlik')||'Daire'} · ${money(satisIslemleri[0].tutar)}`); render(); toast(no+' · satış eklendi'); }
+function addGirisCikis(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const no=nextKayitNo('0023',girisCikislar);
+  girisCikislar.unshift({ no, tarih:gv('gcTarih'), hareket:gv('gcHareket')||'Giriş', girisTipi:gv('gcGirisTipi'), varlik:gv('gcVarlik')||'Daire', proje:gv('gcProje'), adet:parseInt((gv('gcAdet')||'0').replace(/[^0-9]/g,''),10)||0, tutar:parseInt((gv('gcTutar')||'0').replace(/[^0-9]/g,''),10)||0, aciklama:gv('gcAciklama') });
+  logAction('arrow-left-right','gold', `${gv('gcHareket')||'Giriş'} · ${no} · ${gv('gcVarlik')||'Daire'}${gv('gcProje')?(' · '+gv('gcProje')):''}`); render(); toast(no+' · hareket eklendi'); }
 function nextYtkNo(){ return nextKayitNo('0016', yetkiKartlari); }
 // Yetki Kartı — adım adım tıklı (kademeli) seçim taslağı
 const YK_TOP = [{id:'erp',label:'ERP & CRM',icon:'layout-grid'},{id:'ekran',label:'Toprak Ekranı',icon:'layout-dashboard'},{id:'ayarlar',label:'Ayarlar',icon:'settings'}];
@@ -5597,7 +5614,10 @@ function sysTables(){
     { kod:'TBL-0017', ad:'Yetki Ana Grup Tablosu',   aciklama:'Yetki grubu şablonu · temel rol · varsayılan düzey · kapsam modülleri', sayi:yetkiGruplari.length,                git:"state.adminTable='TBL-0017';render()" },
     { kod:'TBL-0018', ad:'Kayıt Grupları Tablosu',   aciklama:'Kart türüne göre gruplar (ör. Dava → Hukuk Davaları) · kart tanımlarında seçilir', sayi:kayitGruplari.length,          git:"state.adminTable='TBL-0018';render()" },
     { kod:'TBL-0019', ad:'İnşaat Yapı Sınıfı ve Grup Tablosu', aciklama:'Yapı sınıfı/grubu · sınıf tanımı · 2026 birim maliyet (TL/m²) · yaygın yapı türü örnekleri', sayi:yapiSiniflari.length,      git:"state.adminTable='TBL-0019';render()" },
-    { kod:'TBL-0020', ad:'İnşaat Maliyet Hesaplama Tablosu', aciklama:'Yapı sınıfı × m² = maliyet (TBL-0019 birim maliyetinden) · KDV hariç %10 müteahhit kârı dahil', sayi:insaatMaliyetleri.length,  git:"state.adminTable='TBL-0020';render()" }
+    { kod:'TBL-0020', ad:'İnşaat Maliyet Hesaplama Tablosu', aciklama:'Yapı sınıfı × m² = maliyet (TBL-0019 birim maliyetinden) · KDV hariç %10 müteahhit kârı dahil', sayi:insaatMaliyetleri.length,  git:"state.adminTable='TBL-0020';render()" },
+    { kod:'TBL-0021', ad:'Satın Alma Tablosu',       aciklama:'Daire/arsa/dükkan satın alımları · proje · satıcı · tutar', sayi:satinAlmaIslemleri.length,                    git:"state.adminTable='TBL-0021';render()" },
+    { kod:'TBL-0022', ad:'Satış Tablosu',            aciklama:'Daire/arsa/dükkan satışları · proje · müşteri · tutar', sayi:satisIslemleri.length,                          git:"state.adminTable='TBL-0022';render()" },
+    { kod:'TBL-0023', ad:'Giriş / Çıkış Tablosu',    aciklama:'Daire/arsa giriş-çıkış takibi · giriş tipi (müşteri/yap-sat/kat karşılığı) · proje', sayi:girisCikislar.length,  git:"state.adminTable='TBL-0023';render()" }
   ];
 }
 function viewAdminRecords(){
@@ -5627,7 +5647,7 @@ function delRow(kod,i){
     if(i < vendorAccounts.length){ const r=vendorAccounts.splice(i,1)[0]; logAction('trash-2','red','Cari kart silindi · '+(r&&r.ad||'')); }
     else { const li=i-vendorAccounts.length; const r=lawyers.splice(li,1)[0]; logAction('trash-2','red','Avukat kaydı silindi · '+(r&&r.name||'')); }
   } else {
-    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari,'TBL-0013':odemeSozuKartlari,'TBL-0014':butceCikisKartlari,'TBL-0015':giderKartlari,'TBL-0016':yetkiKartlari,'TBL-0017':yetkiGruplari,'TBL-0018':kayitGruplari,'TBL-0019':yapiSiniflari,'TBL-0020':insaatMaliyetleri};
+    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari,'TBL-0013':odemeSozuKartlari,'TBL-0014':butceCikisKartlari,'TBL-0015':giderKartlari,'TBL-0016':yetkiKartlari,'TBL-0017':yetkiGruplari,'TBL-0018':kayitGruplari,'TBL-0019':yapiSiniflari,'TBL-0020':insaatMaliyetleri,'TBL-0021':satinAlmaIslemleri,'TBL-0022':satisIslemleri,'TBL-0023':girisCikislar};
     const arr=map[kod]; if(arr&&i>=0&&i<arr.length){ const r=arr.splice(i,1)[0]; logAction('trash-2','red','Kayıt silindi · '+kod+' · '+((r&&(r.name||r.ad||r.title||r.subject||r.no))||'')); }
   }
   render(); toast('Kayıt silindi ✓');
@@ -5856,6 +5876,15 @@ function tblForm(kod){
       <p class="text-[11px] text-amber-300 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>${INSAAT_MALIYET_NOT}</p>
       <button onclick="addInsaatMaliyet()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="calculator" class="h-4 w-4"></i> Maliyet Hesapla & Ekle</button>
     </div></div>`;
+  if(kod==='TBL-0021') return wrap('Satın Alma Kaydı','Daire/arsa/dükkan satın alımı · proje · satıcı · tutar',
+      `<input id="almTarih" type="date" value="${(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}"/><select id="almVarlik" class="sm:col-span-2 ${selC}">${VARLIK_TURU.map(v=>`<option>${v}</option>`).join('')}</select><select id="almProje" class="sm:col-span-3 ${selC}">${projeOptsHtml('')}</select><input id="almSatici" placeholder="Satıcı / Kaynak" class="sm:col-span-4 ${inpC}"/><input id="almTutar" type="number" placeholder="Alış Tutarı ₺" class="sm:col-span-4 ${inpC}"/><input id="almAciklama" placeholder="Açıklama" class="sm:col-span-8 ${inpC}"/>`,
+      btn('addSatinAlma()','Satın Alma Ekle'));
+  if(kod==='TBL-0022') return wrap('Satış Kaydı','Daire/arsa/dükkan satışı · proje · müşteri · tutar',
+      `<input id="stTarih" type="date" value="${(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}"/><select id="stVarlik" class="sm:col-span-2 ${selC}">${VARLIK_TURU.map(v=>`<option>${v}</option>`).join('')}</select><select id="stProje" class="sm:col-span-3 ${selC}">${projeOptsHtml('')}</select><input id="stMusteri" placeholder="Müşteri" class="sm:col-span-4 ${inpC}"/><input id="stTutar" type="number" placeholder="Satış Tutarı ₺" class="sm:col-span-4 ${inpC}"/><input id="stAciklama" placeholder="Açıklama" class="sm:col-span-8 ${inpC}"/>`,
+      btn('addSatis()','Satış Ekle'));
+  if(kod==='TBL-0023') return wrap('Giriş / Çıkış Kaydı','Daire/arsa giriş-çıkış takibi · giriş tipi · proje',
+      `<input id="gcTarih" type="date" value="${(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}"/><select id="gcHareket" class="sm:col-span-2 ${selC}" title="Hareket">${HAREKET_TIPI.map(v=>`<option>${v}</option>`).join('')}</select><select id="gcGirisTipi" class="sm:col-span-3 ${selC}" title="Giriş Tipi"><option value="">Giriş Tipi…</option>${GIRIS_TIPI.map(v=>`<option>${v}</option>`).join('')}</select><select id="gcVarlik" class="sm:col-span-2 ${selC}">${VARLIK_TURU.map(v=>`<option>${v}</option>`).join('')}</select><select id="gcProje" class="sm:col-span-2 ${selC}">${projeOptsHtml('')}</select><input id="gcAdet" type="number" placeholder="Adet / m²" class="sm:col-span-3 ${inpC}"/><input id="gcTutar" type="number" placeholder="Tutar ₺" class="sm:col-span-3 ${inpC}"/><input id="gcAciklama" placeholder="Açıklama" class="sm:col-span-6 ${inpC}"/>`,
+      btn('addGirisCikis()','Hareket Ekle'));
   return '';
 }
 function viewAdminTable(kod){
@@ -5879,6 +5908,9 @@ function viewAdminTable(kod){
   if(kod==='TBL-0017'){ return tbl('Yetki Ana Grup Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Grup',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.kod||'—')},{h:'Temel Rol',f:r=>esc(r.sinifAd||'—')},{h:'Varsayılan Düzey',f:r=>badge(r.duzey||'—','gold')},{h:'Modüller',f:r=>`<span class="text-[12px]">${(Array.isArray(r.moduller)?r.moduller.length:0)} modül</span>`}],yetkiGruplari); }
   if(kod==='TBL-0018'){ return tbl('Kayıt Grupları Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Grup Adı',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kart Türü',f:r=>badge(grupTurAd(r.tur),'gold')},{h:'Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.kod||'—')},{h:'Açıklama',f:r=>esc(r.aciklama||'—')}],kayitGruplari); }
   if(kod==='TBL-0019'){ return tbl('İnşaat Yapı Sınıfı ve Grup Tablosu',[{h:'Yapı Sınıfı / Grubu',cls:'text-slate-100 font-medium',f:r=>esc(r.grup)},{h:'Sınıf Tanımı',f:r=>badge('('+(r.sinif||'—')+')', r.sinif==='Çok Lüks'?'red':r.sinif==='Lüks / Özel'?'amber':r.sinif==='Standart Konut'?'emer':'gold')},{h:'2026 Birim (TL/m²)',r:1,cls:'text-gold font-medium',f:r=>fmtTL(r.maliyet)},{h:'2027 Birim (TL/m²)',f:r=>`<div class="flex items-center gap-1.5 justify-end">${r.maliyet2027?`<span class="text-gold text-[12px]">${fmtTL(r.maliyet2027)}</span>`:''}<input id="y27_${r.no}" type="number" value="${r.maliyet2027||''}" placeholder="2027 gir…" oninput="this.nextElementSibling.style.display=this.value?'':'none'" class="w-24 bg-navy-700/70 border border-white/10 rounded-lg px-2 py-1 text-[13px] text-slate-100 outline-none focus:border-gold/50" /><button onclick="saveYapi2027('${r.no}')" style="display:${r.maliyet2027?'':'none'}" class="shrink-0 px-2 py-1 rounded-lg bg-gold text-navy-900 text-[11px] font-semibold hover:bg-gold-light transition">Kaydet</button></div>`},{h:'Yaygın Yapı Türü Örnekleri',f:r=>esc(r.ornek||'—')}],yapiSiniflari); }
+  if(kod==='TBL-0021'){ return tbl('Satın Alma Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Varlık',f:r=>badge(r.varlik||'—','gold')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Satıcı',f:r=>esc(r.satici||'—')},{h:'Tutar',r:1,cls:'text-amber-300',f:r=>money(r.tutar||0)}],satinAlmaIslemleri); }
+  if(kod==='TBL-0022'){ return tbl('Satış Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Varlık',f:r=>badge(r.varlik||'—','emer')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Müşteri',f:r=>esc(r.musteri||'—')},{h:'Tutar',r:1,cls:'text-emer-light font-medium',f:r=>money(r.tutar||0)}],satisIslemleri); }
+  if(kod==='TBL-0023'){ return tbl('Giriş / Çıkış Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Hareket',f:r=>badge(r.hareket||'—',r.hareket==='Çıkış'?'red':'emer')},{h:'Giriş Tipi',f:r=>esc(r.girisTipi||'—')},{h:'Varlık',f:r=>esc(r.varlik||'—')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Adet/m²',r:1,f:r=>r.adet||'—'},{h:'Tutar',r:1,f:r=>money(r.tutar||0)}],girisCikislar); }
   if(kod==='TBL-0020'){ return tbl('İnşaat Maliyet Hesaplama Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'İş / Açıklama',cls:'text-slate-100 font-medium',f:r=>esc(r.ad||'—')},{h:'Yapı Sınıfı',f:r=>esc(r.grup)+(r.sinif?' ('+esc(r.sinif)+')':'')},{h:'Yıl',f:r=>badge(r.yil||'2026','gold')},{h:'Birim (TL/m²)',r:1,f:r=>fmtTL(r.birim)},{h:'m²',r:1,f:r=>new Intl.NumberFormat('tr-TR').format(r.m2||0)},{h:'Maliyet',r:1,cls:'text-gold font-bold',f:r=>fmtTL(r.maliyet)}],insaatMaliyetleri); }
   if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Bölüm',f:r=>badge(r.bolum||'—','gold')},{h:'Görev Yeri',f:r=>esc(r.gorevYeri||'—')},{h:'Görevi',f:r=>esc(r.gorev||'—')},{h:'Mesleği',f:r=>esc(r.meslek||'—')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Resmi Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.resmiKod||'—')},{h:'İç Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.icKod||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')},{h:'Yetki Sınıfı',f:r=>r.yetkiSinifiAd?`<span class="text-slate-100">${esc(r.yetkiSinifiAd)}</span>${Array.isArray(r.yetkiler)&&r.yetkiler.length?`<span class="block text-[10px] text-slate-500">${esc(r.yetkiler.join(' · '))}</span>`:''}`:'—'}],personelKartlari); }
   if(kod==='TBL-0010'){
@@ -7204,7 +7236,7 @@ function subTabsLeftHtml(){
       ['TBL-0002','Dava & İcra','gavel'],['TBL-0004','Sözleşme','file-signature'],['TBL-0005','Satıcı / Prim','badge-dollar-sign'],
       ['TBL-0006','Proje','hard-hat'],['TBL-0007','Risk','shield-alert'],['TBL-0009','Cari Tür Kodları','hash'],
       ['TBL-0010','Satın Alma Talep','clipboard-list'],['TBL-0012','Ödeme Emri','receipt-text'],['TBL-0013','Ödeme Sözü','handshake'],
-      ['TBL-0014','Bütçe Çıkış','trending-down'],['TBL-0015','Gider','repeat'],['TBL-0016','Yetki Kartı','shield-check'],['TBL-0017','Yetki Ana Grup','layers'],['TBL-0018','Kayıt Grupları','folder-tree'],['TBL-0019','Yapı Sınıfı & Maliyet','ruler'],['TBL-0020','İnşaat Maliyet Hesapla','calculator'],['TBL-0008','Kullanıcılar','user-cog']
+      ['TBL-0014','Bütçe Çıkış','trending-down'],['TBL-0015','Gider','repeat'],['TBL-0016','Yetki Kartı','shield-check'],['TBL-0017','Yetki Ana Grup','layers'],['TBL-0018','Kayıt Grupları','folder-tree'],['TBL-0019','Yapı Sınıfı & Maliyet','ruler'],['TBL-0020','İnşaat Maliyet Hesapla','calculator'],['TBL-0021','Satın Alma','shopping-cart'],['TBL-0022','Satış','trending-up'],['TBL-0023','Giriş / Çıkış','arrow-left-right'],['TBL-0008','Kullanıcılar','user-cog']
     ];
     return `<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">Kayıt Tabloları</div>`
       + KARTLAR.map(([k,l,ic])=>{ const on = k==='TBL-0008' ? !!state.adminUsers : (state.adminTable===k); const oc = k==='TBL-0008' ? "state.adminTable=null;state.adminUsers=true;setModule('admin')" : `state.adminUsers=false;state.adminTable='${k}';setModule('admin')`;
