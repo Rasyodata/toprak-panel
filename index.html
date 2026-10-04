@@ -210,6 +210,12 @@
         <i data-lucide="layout-dashboard" class="h-4 w-4"></i><span id="ekranBtnLbl" class="whitespace-nowrap">Ekranı</span>
       </button>
 
+      <!-- ERP & CRM (şirket görünümünde · Ekranı'nın sağında · operasyonel modül grubu) -->
+      <button id="erpBtn" onclick="openErp()" title="ERP & CRM" style="display:none"
+        class="h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
+        <i data-lucide="layout-grid" class="h-4 w-4"></i><span class="whitespace-nowrap">ERP &amp; CRM</span>
+      </button>
+
       <!-- AYARLAR (şirket görünümünde · Ekranı'nın sağında · şirketin vurgu/alt renginde · Sistem Yöneticisi) -->
       <button id="ayarlarBtn" onclick="setModule('admin')" title="Ayarlar · Sistem Yöneticisi" style="display:none"
         class="h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
@@ -897,8 +903,12 @@ function buildNav(){
   // Ayarlar (Sistem Yöneticisi) — şirket görünümünde Ekranı'nın sağında, şirketin vurgu (alt) renginde
   const ayBtn=document.getElementById('ayarlarBtn');
   if(ayBtn){ if(state.company!=='all' && isAdminUser()){ ayBtn.style.display=''; const acc='#d4af37'; ayBtn.style.backgroundColor=acc; ayBtn.style.borderColor=acc; const on=state.module==='admin'; ayBtn.classList.toggle('ring-2',on); ayBtn.classList.toggle('ring-white/50',on); ayBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; } else { ayBtn.style.display='none'; ayBtn.classList.remove('ring-2','ring-white/50'); } }
+  // ERP & CRM — şirket görünümünde Ekranı'nın sağında (operasyonel modül grubu; aktifken modüller alt barda)
+  const erpBtn=document.getElementById('erpBtn');
+  if(erpBtn){ if(state.company!=='all'){ erpBtn.style.display=''; const acc='#d4af37'; erpBtn.style.backgroundColor=acc; erpBtn.style.borderColor=acc; const on=isErpModule(state.module); erpBtn.classList.toggle('ring-2',on); erpBtn.classList.toggle('ring-white/50',on); erpBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; } else { erpBtn.style.display='none'; erpBtn.classList.remove('ring-2','ring-white/50'); } }
   const topMods = MODULES.filter(m=>m.group==='category' && can(m) && !LEFT_IDS.includes(m.id) && !(m.id==='company' && state.company==='all') && !(m.id==='dashboard' && state.company!=='all'));
-  mainNav.style.display = topMods.length ? '' : 'none';
+  // Şirket görünümünde üst modül barı gizli (modüller ERP & CRM alt barına taşındı); konsolidede görünür
+  mainNav.style.display = (topMods.length && state.company==='all') ? '' : 'none';
   // Aktif modülün alt zemini — bulunduğumuz şirketin vurgu renginde; alt bardan gezinince üst barda değişir
   const navAccent = '#d4af37';
   const activeStrip = `<span class="absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="background:${navAccent}"></span>`;
@@ -922,7 +932,13 @@ function buildNav(){
   + ((isAdminUser() && state.company==='all') ? `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>` : '');
 
   // SOL BAR — aktif modülün alt-sekmeleri + Patron Ekranı · Duyurular · Erişim + Şirket Seçimi + Sistem Yöneticisi
-  nav.innerHTML = (state.module==='admin' ? subTabsLeftHtml() : (state.company!=='all' ? leftSpecialSubsHtml() : subTabsLeftHtml())) + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
+  // Sol bar: admin → tablo menüsü; şirket görünümünde İstekler grupları / diğer modüllerde tam alt-sekme listesi + özel paneller; konsolide → standart
+  const leftCore = state.module==='admin'
+    ? subTabsLeftHtml()
+    : (state.company!=='all'
+        ? (state.module==='yetkiler' ? leftSpecialSubsHtml() : (subTabsLeftHtml() + leftSpecialSubsHtml()))
+        : subTabsLeftHtml());
+  nav.innerHTML = leftCore + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
     const active = m.id===state.module;
     return `
     <button onclick="setModule('${m.id}')"
@@ -6754,51 +6770,36 @@ const ISTEK_GROUPS = [
   { id:'talepler', label:'Talepler', icon:'inbox', items:[ {id:'odeme',label:'Ödeme Talepleri',icon:'banknote'}, {id:'satinalma',label:'Satın Alma Talepleri',icon:'shopping-cart'}, {id:'fiyat',label:'Fiyat Talepleri',icon:'tag'} ] }
 ];
 function istekGroupOf(sub){ return ISTEK_GROUPS.find(g=>g.items.some(it=>it.id===sub)) || ISTEK_GROUPS[0]; }
+// ERP & CRM modül grubu (şirket görünümünde üst "ERP & CRM" butonunun alt barı)
+const ERP_MODULES = ['yetkiler','company','sales','projects','profitability','finance','legal','hr'];
+function isErpModule(id){ return ERP_MODULES.includes(id); }
+function openErp(){ setModule(isErpModule(state.module)?state.module:'yetkiler'); }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
   if(!bar) return;
-  // İstekler modülü (şirket görünümü) → gruplu üst alt-bar: Onaylar | Talepler (+ Talep Oluştur sağda)
-  if(state.company!=='all' && state.module==='yetkiler'){
-    const cur = currentSub(); const grp = istekGroupOf(cur);
-    bar.style.display='';
-    const comp = COMPANY_TABS.find(x=>x.id===state.company);
-    const ac = ((comp && comp.accent) || '#9a7b1a').replace('#','');
-    const ar=parseInt(ac.slice(0,2),16)||154, ag=parseInt(ac.slice(2,4),16)||123, ab=parseInt(ac.slice(4,6),16)||26;
-    bar.style.setProperty('background-color', `rgba(${ar},${ag},${ab},0.09)`, 'important');
-    bar.style.setProperty('border-bottom', `1px solid rgba(${ar},${ag},${ab},0.22)`, 'important');
-    const gbtns = ISTEK_GROUPS.map(g=>`<button onclick="setSub('${g.items[0].id}')" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition ${g.id===grp.id?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}"><i data-lucide="${g.icon}" class="h-4 w-4 ${g.id===grp.id?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${g.label}</span></button>`).join('');
-    const talepBtn = isAdminUser() ? `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 ml-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>` : '';
-    bar.innerHTML = gbtns + talepBtn;
-    return;
+  const tint = ()=>{ const comp=COMPANY_TABS.find(x=>x.id===state.company); const ac=((comp&&comp.accent)||'#9a7b1a').replace('#',''); const ar=parseInt(ac.slice(0,2),16)||154, ag=parseInt(ac.slice(2,4),16)||123, ab=parseInt(ac.slice(4,6),16)||26; bar.style.setProperty('background-color',`rgba(${ar},${ag},${ab},0.09)`,'important'); bar.style.setProperty('border-bottom',`1px solid rgba(${ar},${ag},${ab},0.22)`,'important'); };
+  const hide = ()=>{ bar.style.display='none'; bar.innerHTML=''; bar.style.removeProperty('background-color'); bar.style.removeProperty('border-bottom'); };
+  const abtn = (on,oc,icon,label)=>`<button onclick="${oc}" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}"><i data-lucide="${icon}" class="h-4 w-4 ${on?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${label}</span></button>`;
+  const talepGold = `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 ml-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>`;
+  if(state.company!=='all'){
+    // ERP & CRM aktif → alt bar modül seçici (İstekler · Firma Bilgileri · Satış · Proje · Finans · Mali · Hukuk&Risk · İK)
+    if(isErpModule(state.module)){
+      bar.style.display=''; tint();
+      const mods = MODULES.filter(m=>ERP_MODULES.includes(m.id) && can(m));
+      bar.innerHTML = mods.map(m=>abtn(m.id===state.module, `setModule('${m.id}')`, m.icon, m.name.replace(/ Yönetimi| Yönetim/,''))).join('') + (isAdminUser()?talepGold:'');
+      return;
+    }
+    // Ayarlar (admin) → tek üst bar: Kayıtlar
+    if(state.module==='admin'){
+      bar.style.display=''; tint();
+      bar.innerHTML = abtn(true, "state.adminUsers=false;state.adminTable=null;setModule('admin')", 'database', 'Kayıtlar');
+      return;
+    }
+    // Toprak Ekranı (dashboard) → alt bar gizli
+    hide(); return;
   }
-  const allSubs = getSubs();
-  // `left:true` olan alt-sekmeler sol barda gösterilir (ör. sözleşme türleri); kalanlar üst yatay alt-barda.
-  const subs = allSubs ? allSubs.filter(s=>!s.left) : null;
-  // Alt-sekmeler üst yatay alt-barda (İstekler hariç → onun sekmeleri sol barda); Talep Oluştur butonu şirket görünümünde alt-barda sağda.
-  const showSubs = state.company!=='all' && state.module!=='admin' && state.module!=='yetkiler' && subs && subs.length>=2;
-  const showTalep = state.company!=='all' && isAdminUser();
-  if(showSubs || showTalep){
-    const active = currentSub();
-    bar.style.display='';
-    // Alt-bar rengi üst bardan farklı — şirketin vurgu renginin hafif tonu (light temadaki !important override'ını da ezer)
-    const comp = COMPANY_TABS.find(x=>x.id===state.company);
-    const ac = ((comp && comp.accent) || '#9a7b1a').replace('#','');
-    const ar=parseInt(ac.slice(0,2),16)||154, ag=parseInt(ac.slice(2,4),16)||123, ab=parseInt(ac.slice(4,6),16)||26;
-    bar.style.setProperty('background-color', `rgba(${ar},${ag},${ab},0.09)`, 'important');
-    bar.style.setProperty('border-bottom', `1px solid rgba(${ar},${ag},${ab},0.22)`, 'important');
-    const subBtns = showSubs ? subs.map(s=>`
-      <button onclick="setSub('${s.id}')"
-        class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition
-               ${s.id===active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}">
-        <i data-lucide="${s.icon}" class="h-4 w-4 ${s.id===active?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${s.label}</span>
-      </button>`).join('') : '';
-    const onaylarBtn = showTalep ? `<button onclick="state.sub=state.sub||{};state.sub.yetkiler='onaylar';setModule('yetkiler')" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border border-white/10 bg-navy-700/40 text-slate-200 hover:border-gold/40 transition"><i data-lucide="stamp" class="h-4 w-4"></i><span class="whitespace-nowrap">Onaylar</span></button>` : '';
-    const talepBtn = showTalep ? `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 ml-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>` : '';
-    bar.innerHTML = subBtns + onaylarBtn + talepBtn;
-  } else {
-    bar.style.display='none'; bar.innerHTML='';
-    bar.style.removeProperty('background-color'); bar.style.removeProperty('border-bottom');
-  }
+  // Konsolide → modüller üst main-nav'da, alt bar gizli
+  hide();
 }
 // Sol barda gösterilecek `left:true` alt-sekmeler (ör. Hukuk & Risk'teki sözleşme türleri) — tüm şirketlerde
 function leftSpecialSubsHtml(){
@@ -6810,11 +6811,10 @@ function leftSpecialSubsHtml(){
       <button onclick="${onclick}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
         <i data-lucide="${icon}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${label}</span>
       </button>`;
-  // İstekler (yetkiler) modülü — şirket görünümünde aktif grubun öğeleri sol barda (Onaylar: Onaylar + İş Onay Akışı · Talepler: Ödeme/Satın Alma/Fiyat Talepleri)
+  // İstekler (yetkiler) modülü — şirket görünümünde gruplar sol barda: Onaylar (Onaylar + İş Onay Akışı) · Talepler (Ödeme/Satın Alma/Fiyat Talepleri)
   if(state.module==='yetkiler'){
-    const grp = istekGroupOf(active);
-    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${grp.label}</div>`
-      + grp.items.map(it=>lbtn(`setSub('${it.id}')`, it.icon, it.label, it.id===active)).join('')
+    return ISTEK_GROUPS.map(g=>`<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">${g.label}</div>`
+      + g.items.map(it=>lbtn(`setSub('${it.id}')`, it.icon, it.label, it.id===active)).join('')).join('')
       + sep;
   }
   // Finans · Nakit Akış → Gün / Hafta / Ay / Yıl rapor dönemi sol barda
@@ -6847,13 +6847,6 @@ function leftSpecialSubsHtml(){
         </button>`
       + sep
       + (!state.vendorView ? cariFilterLeftHtml() : '');
-  }
-  // Satın Alma vb. Finans sekmelerinde → Satıcılar Hesabı sol barda (üst bardan taşındı)
-  if(state.module==='profitability'){
-    const leftSubs = all.filter(s=>s.left);
-    if(leftSubs.length) return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Satıcılar</div>`
-      + leftSubs.map(s=>lbtn(`setSub('${s.id}')`, s.icon, s.label, s.id===active)).join('')
-      + sep;
   }
   // Hukuk & Risk · Dava sekmesi → Dava işlemleri sol barda (İcra üst barda kalır)
   if(state.module==='legal' && (active==='dava' || active==='icra')){
