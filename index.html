@@ -5695,8 +5695,33 @@ function cariFilterLeftHtml(){
   CARI_TURU.forEach(t=>{ const n=kart.filter(k=>k.turu===t).length; if(!n) return; h+=b(t+' ('+n+')', state.cariFilterTuru===t, `state.cariFilterTuru=state.cariFilterTuru==='${t}'?null:'${t}';render()`); });
   return h+'<div class="my-2 border-t border-white/5"></div>';
 }
+const KAYIT_CATS = [
+  {id:'cari',     label:'Cari Kartlar',      icon:'id-card'},
+  {id:'personel', label:'Personel Kartları', icon:'users'},
+  {id:'avukat',   label:'Avukat Kartları',   icon:'scale'},
+  {id:'dava',     label:'Dava Kartları',     icon:'gavel'},
+  {id:'icra',     label:'İcra Kartları',     icon:'receipt-text'},
+  {id:'sozlesme', label:'Sözleşme Kartları', icon:'file-signature'}
+];
+function viewKayitlar(){
+  const cat = state.kayitCat || 'cari';
+  const meta = KAYIT_CATS.find(c=>c.id===cat) || KAYIT_CATS[0];
+  const K=s=>`<span class="font-mono text-[12px] text-gold">${s||'—'}</span>`;
+  const wrap=(sub,head,rows,n)=>`<div class="card rounded-2xl p-5">${sectionTitle(meta.icon,meta.label,n+' kayıt · '+sub)}<div class="overflow-x-auto"><table class="w-full text-sm min-w-[640px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>${head}</tr></thead><tbody>${rows||'<tr><td colspan="9" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>'}</tbody></table></div></div>`;
+  const tr=(cells)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">${cells}</tr>`;
+  let arr, head, rows;
+  if(cat==='cari'){ arr=(typeof getCariKartlar==='function'?getCariKartlar():[]); head='<th class="text-left py-2 font-medium">İç Kod</th><th class="text-left font-medium">Ünvan / Ad</th><th class="text-left font-medium">Tipi</th><th class="text-left font-medium">Türü</th><th class="text-left font-medium">Vergi/TC No</th>'; rows=arr.map(r=>tr(`<td class="py-2.5">${K(r.icKod||r.id||r.kod)}</td><td class="text-slate-100 font-medium">${esc(r.ad||r.unvan||'—')}</td><td class="text-slate-300">${esc(r.tipi||'—')}</td><td class="text-slate-300">${esc(r.turu||'—')}</td><td class="text-slate-400">${esc(r.vergiNo||r.tcNo||'—')}</td>`)).join(''); }
+  else if(cat==='personel'){ arr=personelKartlari; head='<th class="text-left py-2 font-medium">No</th><th class="text-left font-medium">Ad Soyad</th><th class="text-left font-medium">Bölüm</th><th class="text-left font-medium">Görevi</th><th class="text-left font-medium">Yetki Sınıfı</th>'; rows=arr.map(r=>tr(`<td class="py-2.5">${K(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.ad)}</td><td class="text-slate-300">${esc(r.bolum||'—')}</td><td class="text-slate-300">${esc(r.gorev||r.unvan||'—')}</td><td class="text-slate-400">${esc(r.yetkiSinifiAd||'—')}</td>`)).join(''); }
+  else if(cat==='avukat'){ arr=lawyers; head='<th class="text-left py-2 font-medium">Ad</th><th class="text-left font-medium">E-posta</th><th class="text-left font-medium">Büro</th><th class="text-left font-medium">Uzmanlık</th><th class="text-left font-medium">Durum</th>'; rows=arr.map(r=>tr(`<td class="py-2.5 text-slate-100 font-medium">${esc(r.name)}</td><td class="text-slate-300">${esc(r.email||'—')}</td><td class="text-slate-300">${esc(r.buro||'—')}</td><td class="text-slate-400">${esc((r.uzmanlik||[]).join(', ')||'—')}</td><td>${r.approved?badge('Yetkili','emer'):badge('Onay Bekliyor','amber')}</td>`)).join(''); }
+  else if(cat==='dava'||cat==='icra'){ const isIcra=cat==='icra'; arr=lawsuits.filter(l=> isIcra ? (l.tur==='İcra Takibi') : (l.tur!=='İcra Takibi')); head='<th class="text-left py-2 font-medium">No</th><th class="text-left font-medium">Konu</th><th class="text-left font-medium">Tür</th><th class="text-left font-medium">Taraf</th><th class="text-right font-medium">Değer</th><th class="text-left pl-4 font-medium">Hal</th>'; rows=arr.map(r=>tr(`<td class="py-2.5">${K(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.subject)}</td><td class="text-slate-300">${esc(r.tur||'—')}</td><td class="text-slate-300">${esc(r.side||'—')}</td><td class="text-right text-slate-300">${money(r.value||0)}</td><td class="pl-4">${badge(r.hal||'Devam Eden','gold')}</td>`)).join(''); }
+  else if(cat==='sozlesme'){ arr=contracts; head='<th class="text-left py-2 font-medium">Kod</th><th class="text-left font-medium">Başlık</th><th class="text-left font-medium">Taraf</th><th class="text-left font-medium">Risk</th><th class="text-right font-medium">Değer</th>'; rows=arr.map(r=>tr(`<td class="py-2.5">${K(r.id)}</td><td class="text-slate-100 font-medium">${esc(r.title)}</td><td class="text-slate-300">${esc(r.party||'—')}</td><td class="text-slate-300">${esc(r.risk||'—')}</td><td class="text-right text-slate-300">${money(r.value||0)}</td>`)).join(''); }
+  else { arr=[]; head=''; rows=''; }
+  return `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap"><span class="h-9 w-9 rounded-lg bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 flex items-center justify-center"><i data-lucide="database" class="h-5 w-5"></i></span><div><p class="text-sm font-semibold text-slate-100">Kayıtlar</p><p class="text-[11px] text-slate-500">Oluşturulan kartların listesi · soldan tür seçin</p></div></div>`
+    + wrap('oluşturulan kayıtlar', head, rows, (arr?arr.length:0));
+}
 function viewAdmin(){
   if(!isAdminUser() && !state.viewAs) return viewUnauthorized({name:'Sistem Yöneticisi'});
+  if(state.adminMode==='liste') return viewKayitlar();
   if(state.adminTable) return viewAdminTable(state.adminTable);
   if(!state.adminUsers) return viewAdminRecords();
   const card = (k)=>{ const v=ROLES[k]; const mods=MODULES.filter(m=>m.roles.includes(k));
@@ -6789,10 +6814,12 @@ function buildSubNav(){
       bar.innerHTML = mods.map(m=>abtn(m.id===state.module, `setModule('${m.id}')`, m.icon, m.name.replace(/ Yönetimi| Yönetim/,''))).join('') + (isAdminUser()?talepGold:'');
       return;
     }
-    // Ayarlar (admin) → tek üst bar: Kayıtlar
+    // Ayarlar (admin) → üst bar: Kayıt Ekle · Kayıtlar
     if(state.module==='admin'){
       bar.style.display=''; tint();
-      bar.innerHTML = abtn(true, "state.adminUsers=false;state.adminTable=null;setModule('admin')", 'database', 'Kayıtlar');
+      const ekle = state.adminMode!=='liste';
+      bar.innerHTML = abtn(ekle, "state.adminMode='ekle';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'file-plus', 'Kayıt Ekle')
+        + abtn(!ekle, "state.adminMode='liste';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'database', 'Kayıtlar');
       return;
     }
     // Toprak Ekranı (dashboard) → alt bar gizli
@@ -6893,6 +6920,14 @@ function subTabsLeftHtml(){
   const active = currentSub();
   const modName = (MODULES.find(m=>m.id===state.module)||{}).name || (state.module==='admin'?'Sistem Yöneticisi':'');
   const kartMenu = state.module==='admin' ? (()=>{
+    // Kayıtlar modu → oluşturulan kart türleri (Cari/Personel/Avukat/Dava/İcra/Sözleşme Kartları)
+    if(state.adminMode==='liste'){
+      const cur = state.kayitCat || 'cari';
+      return `<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">Kayıtlar</div>`
+        + KAYIT_CATS.map(c=>{ const on=c.id===cur;
+          return `<button onclick="state.kayitCat='${c.id}';state.adminMode='liste';setModule('admin')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${c.icon}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${c.label}</span></button>`; }).join('')
+        + '<div class="my-2 border-t border-white/5"></div>';
+    }
     const KARTLAR=[
       ['TBL-0001','Cari Kart Oluştur','id-card'],['TBL-0011','Personel Oluştur','users'],['TBL-0003','Avukat Tanımla','scale'],
       ['TBL-0002','Dava & İcra','gavel'],['TBL-0004','Sözleşme','file-signature'],['TBL-0005','Satıcı / Prim','badge-dollar-sign'],
