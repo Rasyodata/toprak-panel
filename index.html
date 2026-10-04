@@ -5431,7 +5431,27 @@ const hrByCompany = [];
 const hrDepartments = [];
 const openPositions = [];
 const recentMovements = [];
+function viewHrPersonel(){
+  const sel=state.hrDept||'__hepsi';
+  const list = sel==='__hepsi'?personelKartlari:personelKartlari.filter(p=>(p.bolum||'')===sel);
+  const baslik = sel==='__hepsi'?'Tüm Personeller':sel+' Departmanı';
+  const addable = (isAdminUser()||state.role==='ceo'||state.role==='cfo');
+  return `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
+      <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="contact" class="h-5 w-5"></i></span>
+      <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(baslik)}</p><p class="text-[11px] text-gold">${list.length} personel</p></div>
+      ${addable?`<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0011';setModule('admin')" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="user-plus" class="h-4 w-4"></i>Personel Ekle</button>`:''}
+    </div>
+    <div class="card rounded-2xl p-5"><div class="space-y-2">
+      ${list.length?list.map(p=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
+        <span class="h-10 w-10 shrink-0 rounded-full bg-navy-600 border border-gold/30 text-gold flex items-center justify-center text-[13px] font-bold">${esc((p.ad||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase())}</span>
+        <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-slate-100 truncate">${esc(p.ad)}</p><p class="text-[11px] text-slate-500 truncate">${[p.gorev,p.meslek,p.unvan].filter(Boolean).map(esc).join(' · ')||'—'}${p.gorevYeri?' · <span class=\"text-slate-400\">'+esc(p.gorevYeri)+'</span>':''}</p>${(p.tel||p.email)?`<p class="text-[10px] text-slate-500">${[p.tel,p.email].filter(Boolean).map(esc).join(' · ')}</p>`:''}</div>
+        <span class="shrink-0 text-[10px] px-2 py-1 rounded-lg bg-navy-600/70 border border-white/10 text-slate-300">${esc(p.bolum||'—')}</span>
+        <button onclick="state.takvimDept='${(p.bolum||'').replace(/'/g,"\\'")}';setModule('istakvim')" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gold/40 text-gold text-[11px] hover:bg-gold/10 transition" title="İş Takvimi"><i data-lucide="calendar-days" class="h-3.5 w-3.5"></i>Takvim</button>
+      </div>`).join(''):`<p class="text-sm text-slate-500 py-6 text-center">${sel==='__hepsi'?'Henüz personel kaydı yok.':'Bu departmanda personel yok.'} ${addable?'"Personel Ekle" ile ekleyin.':''}</p>`}
+    </div></div>`;
+}
 function viewHR(){
+  if(currentSub()==='personel') return viewHrPersonel();
   const sf = scopeFirm();
   const hrList = sf ? hrByCompany.filter(c=>c.firm===sf) : hrByCompany;
   const total = hrList.reduce((a,c)=>a+c.count,0);
@@ -7325,7 +7345,7 @@ const SUBTABS = {
   contracts:     [{id:'insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat'},{id:'ik',label:'İK Sözleşmeleri',icon:'users'},{id:'danismanlik',label:'Danışmanlık',icon:'briefcase'},{id:'tedarik',label:'Tedarik',icon:'truck'},{id:'tumu',label:'Tümü',icon:'list'}],
   company:       [{id:'kunye',label:'Firma Bilgileri',icon:'building-2'},{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
-  hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}],
+  hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'personel',label:'Personeller',icon:'contact'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}],
   istakvim:      [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   admin:         [{id:'kayitlar',label:'Kayıtlar',icon:'database'}]
 };
@@ -7435,6 +7455,15 @@ function leftSpecialSubsHtml(){
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">İş Takvimi Dönemi</div>`
       + pb('gun','Gün','calendar') + pb('hafta','Hafta','calendar-days') + pb('ay','Ay','calendar-range') + pb('yil','Yıl','calendar-check')
       + picker + sep;
+  }
+  // İK · Personeller → departmanlar sol barda, tıklayınca o departmanın personelleri sağda
+  if(state.module==='hr' && active==='personel'){
+    const sel=state.hrDept||'__hepsi';
+    const cnt=d=>personelKartlari.filter(p=>(p.bolum||'')===d).length;
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Departmanlar</div>`
+      + lbtn("state.hrDept='__hepsi';render()",'users','Tümü ('+personelKartlari.length+')', sel==='__hepsi')
+      + DEPARTMAN.map(d=>lbtn("state.hrDept='"+d.replace(/'/g,"\\'")+"';render()",'folder', d+' ('+cnt(d)+')', sel===d)).join('')
+      + sep;
   }
   // İşler · Al-Sat → Daire ve Dükkanlar / Arsalar sol barda
   if(state.module==='projects' && active==='alsat'){
