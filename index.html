@@ -1038,6 +1038,7 @@ function kpiDetayKey(label){
   if(/bütçe çıkış|tahmin/.test(t)) return 'butce';
   if(/proje|iş kolu|portföy|yap-sat|daire|arsa/.test(t)) return 'projeler';
   if(/yetki kart/.test(t)) return 'yetkiKart';
+  if(/yapı sınıf|yapi sinif|birim maliyet|birim fiyat|inşaat maliyet|insaat maliyet|tl\/m|m²/.test(t)) return 'yapisinif';
   if(/marj|kârlıl|karlil/.test(t)) return 'marj';
   if(/özkaynak|ozkaynak|özsermaye|ozsermaye/.test(t)) return 'ozkaynak';
   if(/nakit|likidite|serbest nakit/.test(t)) return 'nakit';
@@ -1080,7 +1081,8 @@ const KPI_DETAY = {
   ciro:      {title:'Ciro Dağılımı · şirket bazında', kod:null, arr:()=>companies,             cols:[['Şirket',r=>esc(r.name)],['Ciro',r=>money(r.ciro||0)],['Net Kâr',r=>money(r.net||0)]]},
   marj:      {title:'Kâr Marjı · şirket bazında',     kod:null, arr:()=>companies,             cols:[['Şirket',r=>esc(r.name)],['Marj',r=>'%'+(r.margin||0)],['Net Kâr',r=>money(r.net||0)],['Ciro',r=>money(r.ciro||0)]]},
   ozkaynak:  {title:'Özkaynak · şirket bazında',       kod:null, arr:()=>companies,             cols:[['Şirket',r=>esc(r.name)],['Net Kâr',r=>money(r.net||0)],['Nakit',r=>esc(r.cash||'—')],['Ciro',r=>money(r.ciro||0)]]},
-  nakit:     {title:'Nakit · şirket bazında',          kod:null, arr:()=>companies,             cols:[['Şirket',r=>esc(r.name)],['Nakit',r=>esc(r.cash||'—')],['Net Kâr',r=>money(r.net||0)]]}
+  nakit:     {title:'Nakit · şirket bazında',          kod:null, arr:()=>companies,             cols:[['Şirket',r=>esc(r.name)],['Nakit',r=>esc(r.cash||'—')],['Net Kâr',r=>money(r.net||0)]]},
+  yapisinif: {title:'Yapı Sınıfı Birim Maliyetleri (2026 / 2027)', kod:null, arr:()=>yapiSiniflari, cols:[['Grup',r=>esc(r.grup)],['Sınıf',r=>esc(r.sinif||'—')],['2026 (TL/m²)',r=>fmtTL(r.maliyet)],['2027 (TL/m²)',r=>r.maliyet2027?fmtTL(r.maliyet2027):'—']]}
 };
 function openKpiDetay(key){ state.kpiDetay=key; const m=document.getElementById('kpiModal'); if(m){ renderKpiDetay(); m.classList.remove('hidden'); } }
 function closeKpiDetay(){ state.kpiDetay=null; const m=document.getElementById('kpiModal'); if(m) m.classList.add('hidden'); }
