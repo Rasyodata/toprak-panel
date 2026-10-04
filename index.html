@@ -2958,6 +2958,13 @@ function addIsTakvimToplu(){ const g=i=>document.getElementById(i); const gv=i=>
   logAction('calendar-plus','gold', `Toplu iş takvimi · ${created} görev · ${personel} · ${tekrar}`); render(); toast(created+' görev toplu oluşturuldu ✓'); }
 function isoHaftaNo(ds){ try{ const dt=new Date(ds); dt.setHours(0,0,0,0); dt.setDate(dt.getDate()+3-((dt.getDay()+6)%7)); const w1=new Date(dt.getFullYear(),0,4); return 1+Math.round(((dt-w1)/86400000-3+((w1.getDay()+6)%7))/7); }catch(e){ return ''; } }
 function haftaPazartesi(y,w){ try{ const jan4=new Date(y,0,4); const off=(jan4.getDay()+6)%7; const d=new Date(y,0,4-off); d.setDate(d.getDate()+(w-1)*7); return d.toISOString().slice(0,10); }catch(e){ return ''; } }
+function takvimNav(dir){ const per=currentSub()||'gun'; const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '2026-01-01';}})();
+  if(per==='ay'){ let m=state.takvimAy||today.slice(0,7); let y=+m.slice(0,4), mo=+m.slice(5,7); mo+=dir; if(mo<1){mo=12;y--;} if(mo>12){mo=1;y++;} state.takvimAy=y+'-'+String(mo).padStart(2,'0'); }
+  else if(per==='yil'){ state.takvimYil=String((+(state.takvimYil||today.slice(0,4)))+dir); }
+  else { const step=per==='hafta'?7:1; try{ const d=new Date(state.takvimTarih||today); d.setDate(d.getDate()+dir*step); state.takvimTarih=d.toISOString().slice(0,10); state.takvimHaftaYil=d.getFullYear(); }catch(e){} }
+  render();
+}
+function takvimBugun(){ try{ const iso=new Date().toISOString().slice(0,10); state.takvimTarih=iso; state.takvimAy=iso.slice(0,7); state.takvimYil=iso.slice(0,4); state.takvimHaftaYil=+iso.slice(0,4); }catch(e){} render(); }
 function viewPanelim(){
   const r=ROLES[state.role]||{}; const nm=myName();
   const p=personelKartlari.find(x=>x.ad===nm)||{};
@@ -3041,6 +3048,11 @@ function viewIsTakvimi(opts){
     : `<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button>`;
   return inlineForm + `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
       <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="${kisi?'user':(hepsi?'users':'briefcase')}" class="h-5 w-5"></i></span>
+      <div class="flex items-center gap-1">
+        <button onclick="takvimNav(-1)" title="Önceki ${pl.toLowerCase()}" class="h-8 w-8 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white flex items-center justify-center"><i data-lucide="chevron-left" class="h-4 w-4"></i></button>
+        <button onclick="takvimBugun()" title="Bugüne dön" class="h-8 px-2.5 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white text-[12px] font-medium">Bugün</button>
+        <button onclick="takvimNav(1)" title="Sonraki ${pl.toLowerCase()}" class="h-8 w-8 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white flex items-center justify-center"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
+      </div>
       <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(baslik)}</p><p class="text-[11px] text-gold">${listeOnly?'Görevlerim':pl} · ${esc(donemEtiket)} · ${rows.length} görev</p></div>
       <button onclick="pdfIsTakvimi(${kisi?("'"+String(kisi).replace(/'/g,"\\'")+"'"):''})" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="file-down" class="h-4 w-4"></i>PDF</button>
       ${ekleBtn}
@@ -6028,6 +6040,28 @@ function delRow(kod,i){
   }
   render(); toast('Kayıt silindi ✓');
 }
+function rowArrFor(kod){
+  const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari,'TBL-0013':odemeSozuKartlari,'TBL-0014':butceCikisKartlari,'TBL-0015':giderKartlari,'TBL-0016':yetkiKartlari,'TBL-0017':yetkiGruplari,'TBL-0018':kayitGruplari,'TBL-0019':yapiSiniflari,'TBL-0020':insaatMaliyetleri,'TBL-0021':satinAlmaIslemleri,'TBL-0022':satisIslemleri,'TBL-0023':girisCikislar,'TBL-0024':yapSatProjeleri,'TBL-0025':personelGorevleri,'TBL-0026':isTakvimi};
+  if(kod==='TBL-0001') return vendorAccounts; // (+avukatlar birleşik; generic düzenleme cari kartlara uygulanır)
+  return map[kod]||null;
+}
+const ROW_EDIT_LABELS={ad:'Ad / Unvan',no:'No',name:'Ad',tarih:'Tarih',saat:'Saat',tutar:'Tutar ₺',durum:'Durum',bolum:'Departman',gorev:'Görevi',meslek:'Mesleği',unvan:'Ünvanı',tel:'Telefon',email:'E-posta',is:'İş / Görev',tur:'Tür',aciklama:'Açıklama',personel:'Personel',konum:'Konum',subject:'Konu',title:'Başlık',loc:'Konum',type:'Tip'};
+function editRow(kod,i){ if(!isAdminUser()){ toast('Düzenleme yetkiniz yok'); return; } state.rowEdit={kod,i}; render(); setTimeout(()=>{ try{ const e=document.querySelector('#rowEditForm input,#rowEditForm select,#rowEditForm textarea'); if(e)e.focus(); }catch(x){} },60); }
+function rowEditFormHtml(kod){
+  if(!state.rowEdit || state.rowEdit.kod!==kod) return '';
+  const arr=rowArrFor(kod); if(!arr) return ''; const rec=arr[state.rowEdit.i]; if(!rec) return '';
+  const inpC='w-full bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const keys=Object.keys(rec).filter(k=>{ const v=rec[k]; return v===null || ['string','number','boolean'].includes(typeof v); });
+  const field=(k)=>{ const v=rec[k]; const lab=ROW_EDIT_LABELS[k]||k; const ro=(k==='no'||k==='id'); const isNum=typeof v==='number'; const isDate=/tarih|date/i.test(k)&&/^\d{4}-\d{2}-\d{2}/.test(String(v||'')); const t=isDate?'date':(isNum?'number':'text'); return `<div><label class="block text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">${esc(lab)}</label><input data-rek="${esc(k)}" ${ro?'disabled':''} type="${t}" value="${esc(v==null?'':v)}" class="${inpC} ${ro?'opacity-60':''}"/></div>`; };
+  return `<div id="rowEditForm" class="card card-gold rounded-2xl p-5 mb-4">
+    <div class="flex items-center gap-2 mb-3"><i data-lucide="pencil" class="h-4 w-4 text-gold"></i><span class="text-sm font-semibold text-slate-100">Kaydı Düzelt · ${esc((rec.no||rec.id||''))}</span><span class="ml-auto text-[11px] text-slate-400">${kod} · Sistem Yöneticisi</span></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">${keys.map(field).join('')}</div>
+    <div class="mt-3 flex justify-end gap-2"><button onclick="state.rowEdit=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button><button onclick="saveRowEdit()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="save" class="h-4 w-4"></i>Kaydet</button></div>
+  </div>`;
+}
+function saveRowEdit(){ if(!state.rowEdit) return; const {kod,i}=state.rowEdit; const arr=rowArrFor(kod); if(!arr){ state.rowEdit=null; render(); return; } const rec=arr[i]; if(!rec){ state.rowEdit=null; render(); return; }
+  document.querySelectorAll('#rowEditForm [data-rek]').forEach(el=>{ const k=el.getAttribute('data-rek'); if(k==='no'||k==='id') return; let v=el.value; if(typeof rec[k]==='number'){ v=parseFloat(v); if(isNaN(v)) v=0; } rec[k]=v; });
+  logAction('pencil','gold','Kayıt düzenlendi · '+kod+' · '+((rec.no||rec.id||rec.ad||rec.name||''))); state.rowEdit=null; try{saveData();}catch(e){} render(); toast('Kayıt güncellendi ✓'); }
 function addSalesRepRec(){ const g=i=>document.getElementById(i)||{}; const ad=(g('srAd').value||'').trim(); if(!ad){toast('Ad girin');return;} salesReps.unshift({no:nextKayitNo('0005',salesReps), ad, ekip:(g('srEkip').value||'').trim()||'—', firma:(g('srFirma').value||'').trim()||'—', satis:parseInt(g('srSatis').value||'0',10)||0, tahsilat:parseInt(g('srTahsilat').value||'0',10)||0, oran:parseFloat(g('srOran').value||'1')||1, odenen:0, grup:(g('srGrup').value||'').trim()}); logAction('user-plus','emer','Satıcı tanımlandı · '+ad); render(); toast(ad+' eklendi'); }
 function addProjectRec(){ const g=i=>document.getElementById(i)||{}; const name=(g('prName').value||'').trim(); if(!name){toast('Proje adı girin');return;} projects.unshift({no:nextKayitNo('0006',projects), name, loc:(g('prLoc').value||'').trim()||'—', isKolu:(g('prKol').value||'').trim()||'—', type:(g('prTip').value||'').trim()||'—', progress:parseInt(g('prProg').value||'0',10)||0, budget:0}); logAction('hard-hat','gold','Proje tanımlandı · '+name); render(); toast(name+' eklendi'); }
 function addRiskRec(){ const g=i=>document.getElementById(i)||{}; const name=(g('rkName').value||'').trim(); if(!name){toast('Risk adı girin');return;} risks.unshift({no:nextKayitNo('0007',risks), name, cat:(g('rkCat').value||'').trim()||'Genel', impact:parseInt(g('rkImpact').value||'1',10)||1, prob:parseInt(g('rkProb').value||'1',10)||1, owner:(g('rkOwner').value||'').trim()||'—', action:''}); logAction('shield-alert','amber','Risk tanımlandı · '+name); render(); toast(name+' eklendi'); }
@@ -6295,7 +6329,7 @@ function tblForm(kod){
 function viewAdminTable(kod){
   const back=`<button onclick="state.adminTable=null;render()" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"><i data-lucide="corner-up-left" class="h-4 w-4"></i>Kayıtlara Dön</button>`;
   const canDel = isAdminUser();
-  const tbl=(title,cols,rows)=>`${back}${tblForm(kod)}<div class="card rounded-2xl p-5">${sectionTitle('database',title,rows.length+' kayıt'+(canDel?' · tam yetki: düzenle & sil':''))}<div class="overflow-x-auto"><table class="w-full text-sm min-w-[720px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>${cols.map(c=>`<th class="py-2 font-medium ${c.r?'text-right':'text-left'}">${c.h}</th>`).join('')}${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead><tbody>${rows.length?rows.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">${cols.map(c=>`<td class="py-2.5 ${c.r?'text-right':''} ${c.cls||'text-slate-300'}">${c.f(r)}</td>`).join('')}${canDel?`<td class="text-right"><button onclick="delRow('${kod}',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${cols.length+(canDel?1:0)}" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div></div>`;
+  const tbl=(title,cols,rows)=>`${back}${rowEditFormHtml(kod)}${tblForm(kod)}<div class="card rounded-2xl p-5">${sectionTitle('database',title,rows.length+' kayıt'+(canDel?' · tam yetki: düzenle & sil':''))}<div class="overflow-x-auto"><table class="w-full text-sm min-w-[720px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>${cols.map(c=>`<th class="py-2 font-medium ${c.r?'text-right':'text-left'}">${c.h}</th>`).join('')}${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead><tbody>${rows.length?rows.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">${cols.map(c=>`<td class="py-2.5 ${c.r?'text-right':''} ${c.cls||'text-slate-300'}">${c.f(r)}</td>`).join('')}${canDel?`<td class="text-right whitespace-nowrap"><button onclick="editRow('${kod}',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 font-semibold text-[11px] hover:border-gold/50 hover:text-white transition mr-1"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button><button onclick="delRow('${kod}',${i})" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${cols.length+(canDel?1:0)}" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div></div>`;
   const kod2=s=>`<span class="font-mono text-[12px] text-gold">${s}</span>`;
   if(kod==='TBL-0001'){
     const editV = state.cariEdit ? vendorAccounts.find(x=>x.id===state.cariEdit) : null;
