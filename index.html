@@ -1273,7 +1273,7 @@ function openOnayDetay(kind,id){
       <button onclick="closeOnay()" class="text-slate-500 hover:text-white shrink-0"><i data-lucide="x" class="h-5 w-5"></i></button>
     </div>
     <div class="p-5 space-y-4">
-      <div class="flex items-center gap-2 flex-wrap">${onayDurum(n.st)}${n.tutar?badge(money(n.tutar),'gold'):''}</div>
+      <div class="flex items-center gap-2 flex-wrap">${onayDurum(n.st)}${n.o&&n.o.kapali?badge('Kapatıldı','slate'):''}${n.tutar?badge(money(n.tutar),'gold'):''}</div>
       <div class="grid grid-cols-2 gap-3">
         <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="user" class="h-3 w-3"></i>Talep Eden</p><p class="text-sm font-medium text-slate-100 mt-0.5">${talepEdenOf(id)}</p></div>
         <div class="rounded-xl border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500 flex items-center gap-1"><i data-lucide="building-2" class="h-3 w-3"></i>Taraf / Birim</p><p class="text-sm font-medium text-slate-100 mt-0.5 truncate">${n.taraf}</p></div>
@@ -1303,8 +1303,10 @@ function openOnayDetay(kind,id){
       </div>
 
       ${(()=>{ const a=getAkis(kind,id); const bittiZincir=a.cur>=a.steps.length; const cur=bittiZincir?null:a.steps[a.cur];
+        if(bittiZincir){ const it=onayItem(kind,id);
+          if(it&&it.kapali) return '<p class="text-center text-sm text-slate-400 pt-1 inline-flex items-center justify-center gap-1.5 w-full"><i data-lucide="lock" class="h-4 w-4 text-slate-400"></i>Dosya kapatıldı</p>';
+          return `<div class="pt-1 space-y-2"><p class="text-center text-sm text-emer-light inline-flex items-center justify-center gap-1.5 w-full"><i data-lucide="badge-check" class="h-4 w-4"></i>Onay süreci tamamlandı</p>${canAct?`<button onclick="akisKapat('${kind}','${id}')" class="w-full h-11 rounded-xl bg-navy-600/60 text-gold font-bold text-sm hover:bg-gold/10 transition inline-flex items-center justify-center gap-2 border border-gold/40"><i data-lucide="lock" class="h-4 w-4"></i>Kapat (Dosyayı Kapat)</button>`:''}</div>`; }
         if(!canAct) return '';
-        if(bittiZincir) return '<p class="text-center text-sm text-slate-400 pt-1 inline-flex items-center justify-center gap-1.5 w-full"><i data-lucide="badge-check" class="h-4 w-4 text-emer-light"></i>Onay süreci tamamlandı</p>';
         return `<div class="flex gap-2 pt-1">
           <button onclick="akisOnayla('${kind}','${id}')" class="flex-1 h-11 rounded-xl bg-emer text-navy-900 font-bold text-sm hover:bg-emer-light transition inline-flex items-center justify-center gap-2"><i data-lucide="check" class="h-4 w-4"></i>${cur.unit} Onayı Ver<i data-lucide="arrow-right" class="h-4 w-4"></i></button>
           <button onclick="akisRed('${kind}','${id}')" class="flex-1 h-11 rounded-xl bg-rose-500/90 text-white font-bold text-sm hover:bg-rose-500 transition inline-flex items-center justify-center gap-2"><i data-lucide="x" class="h-4 w-4"></i>Reddet</button>
@@ -1392,6 +1394,7 @@ function akisOnayla(kind,id){
   render(); if(onayModalCtx) openOnayDetay(kind,id);
   toast(`${s.unit} onayı verildi ✓`);
 }
+function akisKapat(kind,id){ const a=getAkis(kind,id); if(a.cur<a.steps.length){ toast('Önce tüm onaylar tamamlanmalı'); return; } const o=onayItem(kind,id); if(!o){ return; } o.kapali=true; logAction('lock','slate', `${id} onay süreci sonrası KAPATILDI (${ROLES[state.role].name})`, 'İş Onay Akışı'); render(); if(onayModalCtx) openOnayDetay(kind,id); toast(`${id} kapatıldı ✓`); }
 function akisRed(kind,id){
   const a=getAkis(kind,id); if(a.cur>=a.steps.length) return;
   const s=a.steps[a.cur]; s.status='rejected'; s.by=birimOnaylayan[s.unit]||ROLES[state.role].name;
