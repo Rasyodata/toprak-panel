@@ -2661,6 +2661,31 @@ function nextGrpNo(){ return nextKayitNo('0018', kayitGruplari); }
 function addKayitGrup(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const ad=gv('grAd'); if(!ad){toast('Grup adı girin');return;} const no=nextGrpNo();
   kayitGruplari.unshift({ no, ad, tur:gv('grTur')||'cari', kod:gv('grKod'), aciklama:gv('grAciklama') });
   logAction('folder-tree','gold', `Kayıt grubu · ${no} · ${ad} (${grupTurAd(gv('grTur')||'cari')})`); render(); toast(no+' · grup oluşturuldu'); }
+let yapiSiniflari = [
+  {no:"T-0019-2026-0001", grup:"1.A Grubu", sinif:"Basit", maliyet:2600, ornek:"Geçici küçük yapılar, basit sundurmalar, fidanlıklar"},
+  {no:"T-0019-2026-0002", grup:"1.B Grubu", sinif:"Basit", maliyet:3900, ornek:"Cam seralar, basit depo ve hangarlar, tek katlı kulübeler"},
+  {no:"T-0019-2026-0003", grup:"1.C Grubu", sinif:"Basit", maliyet:4200, ornek:"Basit tarımsal yapılar, prefabrik ahırlar, açık otoparklar"},
+  {no:"T-0019-2026-0004", grup:"1.D Grubu", sinif:"Basit", maliyet:4800, ornek:"Tonozlu/kemeraltılı basit yapılar, pazar yerleri, gölgelikler"},
+  {no:"T-0019-2026-0005", grup:"2.A Grubu", sinif:"Standart Altı", maliyet:8100, ornek:"Kuleler, su depoları, basit trafo binaları, tek katlı dükkanlar"},
+  {no:"T-0019-2026-0006", grup:"2.B Grubu", sinif:"Standart Altı", maliyet:12500, ornek:"Pnömatik binalar, silolar, hangar niteliğindeki sanayi binaları"},
+  {no:"T-0019-2026-0007", grup:"2.C Grubu", sinif:"Standart Altı", maliyet:15100, ornek:"Yayla evleri, bungalovlar, tek katlı prefabrik konutlar"},
+  {no:"T-0019-2026-0008", grup:"3.A Grubu", sinif:"Standart Konut", maliyet:19800, ornek:"3 kata kadar (3 kat dahil) asansörsüz apartmanlar, kreşler"},
+  {no:"T-0019-2026-0009", grup:"3.B Grubu", sinif:"Standart Konut", maliyet:21050, ornek:"3 kat üzeri konutlar (H ≤ 21.50m), 1-2 yıldızlı oteller"},
+  {no:"T-0019-2026-0010", grup:"3.C Grubu", sinif:"Standart Konut", maliyet:23400, ornek:"Yüksek konutlar (21.50m < H ≤ 30.50m), AVM'ler, villalar"},
+  {no:"T-0019-2026-0011", grup:"4.A Grubu", sinif:"Lüks / Özel", maliyet:26450, ornek:"Çok katlı ofisler, 3 yıldızlı oteller, H > 30.50 m apartmanlar"},
+  {no:"T-0019-2026-0012", grup:"4.B Grubu", sinif:"Lüks / Özel", maliyet:33900, ornek:"İş merkezleri, 4 yıldızlı oteller, büyük tiyatro binaları"},
+  {no:"T-0019-2026-0013", grup:"4.C Grubu", sinif:"Lüks / Özel", maliyet:40500, ornek:"Büyük hastaneler, üniversite kampüsleri, adliye binaları"},
+  {no:"T-0019-2026-0014", grup:"5.A Grubu", sinif:"Çok Lüks", maliyet:42350, ornek:"Radyo-TV istasyonları, büyük kongre merkezleri, müzeler"},
+  {no:"T-0019-2026-0015", grup:"5.B Grubu", sinif:"Çok Lüks", maliyet:43850, ornek:"5 yıldızlı oteller, büyükelçilikler, yüksek teknoloji merkezleri"},
+  {no:"T-0019-2026-0016", grup:"5.C Grubu", sinif:"Çok Lüks", maliyet:48750, ornek:"Üst düzey lüks villalar, saraylar, tarihi eser restorasyonları"},
+  {no:"T-0019-2026-0017", grup:"5.D Grubu", sinif:"Çok Lüks", maliyet:53500, ornek:"Nükleer tesisler, sığınaklar, yüksek güvenlikli devlet binaları"},
+  {no:"T-0019-2026-0018", grup:"5.E Grubu", sinif:"Çok Lüks", maliyet:103500, ornek:"Özel laboratuvarlar, havalimanı terminalleri, çok lüks yapılar"}
+];
+const YAPI_SINIF_TANIM = ['Basit','Standart Altı','Standart Konut','Lüks / Özel','Çok Lüks'];
+function fmtTL(n){ try{ return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0)+' TL'; }catch(e){ return (n||0)+' TL'; } }
+function addYapiSinif(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const grup=gv('ysGrup'); if(!grup){toast('Yapı sınıfı/grubu girin');return;} const no=nextKayitNo('0019', yapiSiniflari);
+  yapiSiniflari.unshift({ no, grup, sinif:gv('ysSinif')||'Basit', maliyet:parseInt((gv('ysMaliyet')||'0').replace(/[^0-9]/g,''),10)||0, ornek:gv('ysOrnek') });
+  logAction('ruler','gold', `Yapı sınıfı · ${no} · ${grup} (${fmtTL(yapiSiniflari[0].maliyet)}/m²)`); render(); toast(no+' eklendi'); }
 function nextYtkNo(){ return nextKayitNo('0016', yetkiKartlari); }
 // Yetki Kartı — adım adım tıklı (kademeli) seçim taslağı
 const YK_TOP = [{id:'erp',label:'ERP & CRM',icon:'layout-grid'},{id:'ekran',label:'Toprak Ekranı',icon:'layout-dashboard'},{id:'ayarlar',label:'Ayarlar',icon:'settings'}];
@@ -5493,7 +5518,8 @@ function sysTables(){
     { kod:'TBL-0015', ad:'Gider Kartı',              aciklama:'Düzenli gider (kira, maaş, YK, mali müşavir…) · tekrarlı çıkış', sayi:giderKartlari.length,                  git:"state.adminTable='TBL-0015';render()" },
     { kod:'TBL-0016', ad:'Yetki Kartı Tablosu',      aciklama:'Kişi/rol · yetki sınıfı · düzey (görür/değiştir/tam) · kapsam', sayi:yetkiKartlari.length,                   git:"state.adminTable='TBL-0016';render()" },
     { kod:'TBL-0017', ad:'Yetki Ana Grup Tablosu',   aciklama:'Yetki grubu şablonu · temel rol · varsayılan düzey · kapsam modülleri', sayi:yetkiGruplari.length,                git:"state.adminTable='TBL-0017';render()" },
-    { kod:'TBL-0018', ad:'Kayıt Grupları Tablosu',   aciklama:'Kart türüne göre gruplar (ör. Dava → Hukuk Davaları) · kart tanımlarında seçilir', sayi:kayitGruplari.length,          git:"state.adminTable='TBL-0018';render()" }
+    { kod:'TBL-0018', ad:'Kayıt Grupları Tablosu',   aciklama:'Kart türüne göre gruplar (ör. Dava → Hukuk Davaları) · kart tanımlarında seçilir', sayi:kayitGruplari.length,          git:"state.adminTable='TBL-0018';render()" },
+    { kod:'TBL-0019', ad:'İnşaat Yapı Sınıfı ve Grup Tablosu', aciklama:'Yapı sınıfı/grubu · sınıf tanımı · 2026 birim maliyet (TL/m²) · yaygın yapı türü örnekleri', sayi:yapiSiniflari.length,      git:"state.adminTable='TBL-0019';render()" }
   ];
 }
 function viewAdminRecords(){
@@ -5523,7 +5549,7 @@ function delRow(kod,i){
     if(i < vendorAccounts.length){ const r=vendorAccounts.splice(i,1)[0]; logAction('trash-2','red','Cari kart silindi · '+(r&&r.ad||'')); }
     else { const li=i-vendorAccounts.length; const r=lawyers.splice(li,1)[0]; logAction('trash-2','red','Avukat kaydı silindi · '+(r&&r.name||'')); }
   } else {
-    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari,'TBL-0013':odemeSozuKartlari,'TBL-0014':butceCikisKartlari,'TBL-0015':giderKartlari,'TBL-0016':yetkiKartlari,'TBL-0017':yetkiGruplari,'TBL-0018':kayitGruplari};
+    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari,'TBL-0013':odemeSozuKartlari,'TBL-0014':butceCikisKartlari,'TBL-0015':giderKartlari,'TBL-0016':yetkiKartlari,'TBL-0017':yetkiGruplari,'TBL-0018':kayitGruplari,'TBL-0019':yapiSiniflari};
     const arr=map[kod]; if(arr&&i>=0&&i<arr.length){ const r=arr.splice(i,1)[0]; logAction('trash-2','red','Kayıt silindi · '+kod+' · '+((r&&(r.name||r.ad||r.title||r.subject||r.no))||'')); }
   }
   render(); toast('Kayıt silindi ✓');
@@ -5738,6 +5764,9 @@ function tblForm(kod){
   if(kod==='TBL-0018') return wrap('Kayıt Grubu Tanımla','Kart türüne göre grup (ör. Dava → Hukuk Davaları) · kart tanımlarında bu gruplar seçilir',
       `<div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Grup No (otomatik)</label><input value="${nextGrpNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div><select id="grTur" class="sm:col-span-3 ${selC}" title="Kart Türü">${GRUP_TURLERI.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select><input id="grAd" placeholder="Grup adı (ör. Hukuk Davaları)" class="sm:col-span-6 ${inpC}"/><input id="grKod" placeholder="Kısa kod" class="sm:col-span-3 font-mono ${inpC}"/><input id="grAciklama" placeholder="Açıklama" class="sm:col-span-9 ${inpC}"/>`,
       btn('addKayitGrup()','Kayıt Grubu Oluştur'));
+  if(kod==='TBL-0019') return wrap('Yapı Sınıfı / Grup Tanımla','İnşaat yapı sınıfı · 2026 birim maliyet (TL/m²) · yaygın yapı türü örnekleri',
+      `<input id="ysGrup" placeholder="Yapı Sınıfı ve Grubu (ör. 3.A Grubu)" class="sm:col-span-4 ${inpC}"/><select id="ysSinif" class="sm:col-span-4 ${selC}">${YAPI_SINIF_TANIM.map(t=>`<option>${t}</option>`).join('')}</select><input id="ysMaliyet" type="number" placeholder="2026 Birim Maliyet (TL/m²)" class="sm:col-span-4 ${inpC}"/><input id="ysOrnek" placeholder="Yaygın yapı türü örnekleri (detaylar)" class="sm:col-span-12 ${inpC}"/>`,
+      btn('addYapiSinif()','Yapı Sınıfı Ekle'));
   return '';
 }
 function viewAdminTable(kod){
@@ -5760,6 +5789,7 @@ function viewAdminTable(kod){
   if(kod==='TBL-0016'){ return tbl('Yetki Kartı Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kişi',f:r=>esc(r.kisi||'—')},{h:'Şirketler',f:r=>esc((Array.isArray(r.sirketler)&&r.sirketler.length?r.sirketler.map(yetkiSirketAd):['—']).join(', '))},{h:'Alt Modül',f:r=>`<span class="text-[12px]">${Object.values(r.altModuller||{}).reduce((a,x)=>a+(Array.isArray(x)?x.length:0),0)} seçim</span>`},{h:'Kart Yetkileri',f:r=>`<span class="text-[11px] text-slate-400">${yetkiOzet(r)}</span>`}],yetkiKartlari); }
   if(kod==='TBL-0017'){ return tbl('Yetki Ana Grup Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Grup',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.kod||'—')},{h:'Temel Rol',f:r=>esc(r.sinifAd||'—')},{h:'Varsayılan Düzey',f:r=>badge(r.duzey||'—','gold')},{h:'Modüller',f:r=>`<span class="text-[12px]">${(Array.isArray(r.moduller)?r.moduller.length:0)} modül</span>`}],yetkiGruplari); }
   if(kod==='TBL-0018'){ return tbl('Kayıt Grupları Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Grup Adı',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kart Türü',f:r=>badge(grupTurAd(r.tur),'gold')},{h:'Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.kod||'—')},{h:'Açıklama',f:r=>esc(r.aciklama||'—')}],kayitGruplari); }
+  if(kod==='TBL-0019'){ return tbl('İnşaat Yapı Sınıfı ve Grup Tablosu',[{h:'Yapı Sınıfı / Grubu',cls:'text-slate-100 font-medium',f:r=>esc(r.grup)},{h:'Sınıf Tanımı',f:r=>badge('('+(r.sinif||'—')+')', r.sinif==='Çok Lüks'?'red':r.sinif==='Lüks / Özel'?'amber':r.sinif==='Standart Konut'?'emer':'gold')},{h:'2026 Birim Maliyeti (TL/m²)',r:1,cls:'text-gold font-medium',f:r=>fmtTL(r.maliyet)},{h:'Yaygın Yapı Türü Örnekleri',f:r=>esc(r.ornek||'—')}],yapiSiniflari); }
   if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Bölüm',f:r=>badge(r.bolum||'—','gold')},{h:'Görev Yeri',f:r=>esc(r.gorevYeri||'—')},{h:'Görevi',f:r=>esc(r.gorev||'—')},{h:'Mesleği',f:r=>esc(r.meslek||'—')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Resmi Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.resmiKod||'—')},{h:'İç Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.icKod||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')},{h:'Yetki Sınıfı',f:r=>r.yetkiSinifiAd?`<span class="text-slate-100">${esc(r.yetkiSinifiAd)}</span>${Array.isArray(r.yetkiler)&&r.yetkiler.length?`<span class="block text-[10px] text-slate-500">${esc(r.yetkiler.join(' · '))}</span>`:''}`:'—'}],personelKartlari); }
   if(kod==='TBL-0010'){
     const durumTone=d=>d==='Sipariş Verildi'?'emer':d==='Reddedildi'?'red':d==='Teklif Toplanıyor'?'gold':'amber';
@@ -7069,7 +7099,7 @@ function subTabsLeftHtml(){
       ['TBL-0002','Dava & İcra','gavel'],['TBL-0004','Sözleşme','file-signature'],['TBL-0005','Satıcı / Prim','badge-dollar-sign'],
       ['TBL-0006','Proje','hard-hat'],['TBL-0007','Risk','shield-alert'],['TBL-0009','Cari Tür Kodları','hash'],
       ['TBL-0010','Satın Alma Talep','clipboard-list'],['TBL-0012','Ödeme Emri','receipt-text'],['TBL-0013','Ödeme Sözü','handshake'],
-      ['TBL-0014','Bütçe Çıkış','trending-down'],['TBL-0015','Gider','repeat'],['TBL-0016','Yetki Kartı','shield-check'],['TBL-0017','Yetki Ana Grup','layers'],['TBL-0018','Kayıt Grupları','folder-tree'],['TBL-0008','Kullanıcılar','user-cog']
+      ['TBL-0014','Bütçe Çıkış','trending-down'],['TBL-0015','Gider','repeat'],['TBL-0016','Yetki Kartı','shield-check'],['TBL-0017','Yetki Ana Grup','layers'],['TBL-0018','Kayıt Grupları','folder-tree'],['TBL-0019','Yapı Sınıfı & Maliyet','ruler'],['TBL-0008','Kullanıcılar','user-cog']
     ];
     return `<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">Kayıt Tabloları</div>`
       + KARTLAR.map(([k,l,ic])=>{ const on = k==='TBL-0008' ? !!state.adminUsers : (state.adminTable===k); const oc = k==='TBL-0008' ? "state.adminTable=null;state.adminUsers=true;setModule('admin')" : `state.adminUsers=false;state.adminTable='${k}';setModule('admin')`;
