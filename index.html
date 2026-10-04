@@ -1038,6 +1038,8 @@ function kpiDetayKey(label){
   if(/bütçe çıkış|tahmin/.test(t)) return 'butce';
   if(/proje|iş kolu|portföy|yap-sat|daire|arsa/.test(t)) return 'projeler';
   if(/yetki kart/.test(t)) return 'yetkiKart';
+  if(/marj|kârlıl|karlil/.test(t)) return 'marj';
+  if(/ciro|gelir|hasılat|hasilat/.test(t)) return 'ciro';
   return null;
 }
 function kpi(icon,label,value,delta,up,accent='gold'){
@@ -1072,15 +1074,17 @@ const KPI_DETAY = {
   gider:     {title:'Gider Kartları',        kod:'TBL-0015', arr:()=>giderKartlari,            cols:[['No',r=>r.no],['Gider',r=>esc(r.ad||'—')],['Tutar',r=>money(r.tutar||0)]]},
   butce:     {title:'Tahminlenen Bütçe Çıkışları', kod:'TBL-0014', arr:()=>butceCikisKartlari, cols:[['No',r=>r.no],['Kalem',r=>esc(r.kalem||'—')],['Tutar',r=>money(r.tutar||0)]]},
   projeler:  {title:'Proje Kayıtları',       kod:'TBL-0006', arr:()=>projects,                 cols:[['Proje',r=>esc(r.name)],['İş Kolu',r=>esc(r.isKolu||'—')],['Bütçe',r=>money(r.budget||0)]]},
-  yetkiKart: {title:'Yetki Kartları',        kod:'TBL-0016', arr:()=>yetkiKartlari,            cols:[['No',r=>r.no],['Ad',r=>esc(r.ad)],['Kişi',r=>esc(r.kisi||'—')]]}
+  yetkiKart: {title:'Yetki Kartları',        kod:'TBL-0016', arr:()=>yetkiKartlari,            cols:[['No',r=>r.no],['Ad',r=>esc(r.ad)],['Kişi',r=>esc(r.kisi||'—')]]},
+  ciro:      {title:'Ciro Dağılımı · şirket bazında', kod:null, arr:()=>companies,             cols:[['Şirket',r=>esc(r.name)],['Ciro',r=>money(r.ciro||0)],['Net Kâr',r=>money(r.net||0)]]},
+  marj:      {title:'Kâr Marjı · şirket bazında',     kod:null, arr:()=>companies,             cols:[['Şirket',r=>esc(r.name)],['Marj',r=>'%'+(r.margin||0)],['Net Kâr',r=>money(r.net||0)],['Ciro',r=>money(r.ciro||0)]]}
 };
 function openKpiDetay(key){ state.kpiDetay=key; const m=document.getElementById('kpiModal'); if(m){ renderKpiDetay(); m.classList.remove('hidden'); } }
 function closeKpiDetay(){ state.kpiDetay=null; const m=document.getElementById('kpiModal'); if(m) m.classList.add('hidden'); }
 function renderKpiDetay(){
   const key=state.kpiDetay; const d=KPI_DETAY[key]; const host=document.getElementById('kpiModalBody'); if(!d||!host){ return; }
-  const rows=d.arr()||[]; const canDel=isAdminUser();
+  const rows=d.arr()||[]; const canDel=isAdminUser() && !!d.kod;
   host.innerHTML = `<div class="flex items-center justify-between gap-3 p-5 border-b border-white/10">
-      <div class="flex items-center gap-3 min-w-0"><span class="h-10 w-10 rounded-xl bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 flex items-center justify-center"><i data-lucide="database" class="h-5 w-5"></i></span><div class="min-w-0"><h3 class="text-base font-bold text-slate-100 truncate">${d.title}</h3><p class="text-[11px] text-slate-500">${rows.length} kayıt · ${d.kod}</p></div></div>
+      <div class="flex items-center gap-3 min-w-0"><span class="h-10 w-10 rounded-xl bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 flex items-center justify-center"><i data-lucide="database" class="h-5 w-5"></i></span><div class="min-w-0"><h3 class="text-base font-bold text-slate-100 truncate">${d.title}</h3><p class="text-[11px] text-slate-500">${rows.length} kayıt${d.kod?(' · '+d.kod):' · salt görünüm (dağılım)'}</p></div></div>
       <button onclick="closeKpiDetay()" class="text-slate-500 hover:text-white shrink-0"><i data-lucide="x" class="h-5 w-5"></i></button></div>
     <div class="p-5 overflow-x-auto"><table class="w-full text-sm min-w-[520px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr>${d.cols.map(c=>`<th class="text-left py-2 font-medium">${c[0]}</th>`).join('')}${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
       <tbody>${rows.length?rows.map((r,i)=>`<tr class="border-b border-white/5 hover:bg-white/[.02]">${d.cols.map(c=>`<td class="py-2.5 text-slate-200">${c[1](r)}</td>`).join('')}${canDel?`<td class="text-right"><button onclick="delRow('${d.kod}',${i});renderKpiDetay()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-400/40 text-rose-300 text-[11px] hover:bg-rose-500/10 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${d.cols.length+(canDel?1:0)}" class="text-center text-slate-500 py-6">Kayıt yok.</td></tr>`}</tbody></table></div>`;
