@@ -936,7 +936,7 @@ function buildNav(){
   const leftCore = state.module==='admin'
     ? subTabsLeftHtml()
     : (state.company!=='all'
-        ? (state.module==='yetkiler' ? leftSpecialSubsHtml() : (subTabsLeftHtml() + leftSpecialSubsHtml()))
+        ? ((state.module==='yetkiler'||state.module==='projects') ? leftSpecialSubsHtml() : (subTabsLeftHtml() + leftSpecialSubsHtml()))
         : subTabsLeftHtml());
   nav.innerHTML = leftCore + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
     const active = m.id===state.module;
@@ -3608,8 +3608,8 @@ function projectDetailPage(idx){
   </div>`;
 }
 function viewProjects(){
-  const subMap = { proje:'Proje', denetim:'Yapı Denetim', taahhut:'İnşaat Taahhüt', yapsat:'Yap-Sat', katkarsiligi:'Kat Karşılığı' };
-  const sub = currentSub() || 'tumu';
+  const subMap = { proje:'Proje', denetim:'Yapı Denetim', taahhut:'İnşaat Taahhüt', yapsat:'Yap-Sat', katkarsiligi:'Kat Karşılığı', daire:'Daire ve Dükkanlar', arsa:'Arsalar', diger:'Diğer' };
+  const sub = currentSub() || 'yapsat';
   // PROJE (mimarlık) → liste + detay sayfası
   if(sub==='proje'){
     if(state.projView!=null && projects[state.projView] && projects[state.projView].isKolu==='Proje') return projectDetailPage(state.projView);
@@ -6938,7 +6938,7 @@ const SUBTABS = {
   dashboard:     [{id:'bi',label:'İş Zekası',icon:'brain-circuit'},{id:'live',label:'Live Dashboard',icon:'radio'},{id:'analytics',label:'Analytics',icon:'line-chart'},{id:'stats',label:'Statistics',icon:'sigma'},{id:'performance',label:'Performance',icon:'gauge'},{id:'konsolide',label:'Bilanço',icon:'scale'},{id:'sirketler',label:'Şirketler',icon:'building-2'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'hukukrisk',label:'Hukuk ve Risk',icon:'shield-alert'}],
   yetkiler:      [{id:'panel',label:'Panel',icon:'layout-dashboard'},{id:'akis',label:'İş Onay Akışı',icon:'git-pull-request'},{id:'onaylar',label:'Onaylar',icon:'stamp'},{id:'odeme',label:'Ödeme Talepleri',icon:'banknote'},{id:'satinalma',label:'Satın Alma Talepleri',icon:'shopping-cart'},{id:'fiyat',label:'Fiyat Talepleri',icon:'tag'},{id:'whatsapp',label:'WhatsApp Yönetimi',icon:'message-circle'},{id:'loglar',label:'İşlem Logları',icon:'history'}],
   sales:         [{id:'satis',label:'Satış',icon:'trending-up'},{id:'crm',label:'CRM & Faturalar',icon:'contact'}],
-  projects:      [{id:'tumu',label:'Tümü',icon:'pie-chart'},{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'}],
+  projects:      [{id:'yapsat',label:'Yap-Sat',icon:'home'},{id:'katkarsiligi',label:'Kat Karşılığı',icon:'handshake'},{id:'daire',label:'Daire ve Dükkanlar',icon:'building'},{id:'arsa',label:'Arsalar',icon:'map'},{id:'diger',label:'Diğer',icon:'folder'}],
   profitability: [{id:'marj',label:'Kâr Marjı',icon:'percent'},{id:'segment',label:'Segment & OPEX',icon:'layers'},{id:'nakit',label:'Nakit Akış',icon:'banknote'},{id:'maliyet',label:'Maliyet Hesapları',icon:'receipt-text'},{id:'butce',label:'Bütçe',icon:'wallet'},{id:'ozkaynak',label:'Özkaynak Durumu',icon:'scale'},{id:'satinalma',label:'Satın Alma',icon:'shopping-cart'},{id:'saticilar',label:'Satıcılar Hesabı',icon:'badge-dollar-sign',left:true}],
   finance:       [{id:'gelir',label:'Gelir Tablosu',icon:'file-spreadsheet'},{id:'vergi',label:'Vergi Planlama',icon:'percent'},{id:'kurumlar',label:'Kurumlar Beyannamesi',icon:'file-text'},{id:'ozkaynak',label:'Özkaynak Hs.',icon:'scale'},{id:'kdv',label:'KDV İadesi',icon:'receipt-text'},{id:'ssk',label:'SSK Hesaplama',icon:'users'}],
   legal:         [{id:'analiz',label:'Analiz',icon:'bar-chart-3'},{id:'dava',label:'Dava',icon:'gavel'},{id:'icra',label:'İcra',icon:'receipt-text'},{id:'avukatlar',label:'Avukatlar',icon:'scale'},{id:'onleyici',label:'Önleyici Hukuk',icon:'shield-check'},{id:'taslak',label:'Sözleşme Taslakları',icon:'file-text',left:true},{id:'c_tumu',label:'Sözleşmeler · Tümü',icon:'file-signature'},{id:'c_insaat',label:'İnşaat Sözleşmeleri',icon:'hard-hat',left:true},{id:'c_ik',label:'İK Sözleşmeleri',icon:'users',left:true},{id:'c_danismanlik',label:'Danışmanlık Söz.',icon:'briefcase',left:true},{id:'c_tedarik',label:'Tedarik Söz.',icon:'truck',left:true},{id:'kvkk',label:'KVKK / Mevzuat',icon:'book-check'}],
@@ -6991,7 +6991,14 @@ function buildSubNav(){
     if(isErpModule(state.module)){
       bar.style.display=''; tint();
       const mods = MODULES.filter(m=>ERP_MODULES.includes(m.id) && can(m));
-      bar.innerHTML = mods.map(m=>abtn(m.id===state.module, `setModule('${m.id}')`, m.icon, m.id==='projects'?'İşler':m.name.replace(/ Yönetimi| Yönetim/,''))).join('') + (isAdminUser()?talepGold:'');
+      const modRow = mods.map(m=>abtn(m.id===state.module, `setModule('${m.id}')`, m.icon, m.id==='projects'?'İşler':m.name.replace(/ Yönetimi| Yönetim/,''))).join('') + (isAdminUser()?talepGold:'');
+      if(state.module==='projects'){
+        const subs=getSubs()||[]; const active=currentSub();
+        const catRow = subs.map(s=>abtn(s.id===active, `setSub('${s.id}')`, s.icon, s.label)).join('');
+        bar.innerHTML = `<div class="flex flex-col gap-2 w-full"><div class="flex gap-2 overflow-x-auto">${modRow}</div><div class="flex gap-2 overflow-x-auto pt-2 border-t border-white/10">${catRow}</div></div>`;
+      } else {
+        bar.innerHTML = modRow;
+      }
       return;
     }
     // Ayarlar (admin) → üst bar: Tablolar · Kayıtlar · Yetki Yönetimi
