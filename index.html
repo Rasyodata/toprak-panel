@@ -2780,10 +2780,45 @@ let yapSatProjeleri = [];
 function fmtM2(n){ try{ return new Intl.NumberFormat('tr-TR').format(n||0)+' m²'; }catch(e){ return (n||0)+' m²'; } }
 // Bir yap-sat projesi için alınan arsaların adedi ve m² toplamı (Giriş/Çıkış tablosundan, varlık=Arsa, giriş)
 function arsaGirisOzet(projeAd){ const arr=girisCikislar.filter(r=>r.varlik==='Arsa' && r.proje===projeAd && r.hareket!=='Çıkış'); return { adet:arr.length, m2:arr.reduce((a,r)=>a+(r.adet||0),0) }; }
+function yapSatHedefMaliyet(r){ const ys=yapiSiniflari.find(y=>y.grup===r.sinif); const birim=ys?(ys.maliyet||0):0; return (r.arsaBedel||0) + Math.round((r.insaatM2||0)*birim); }
+// Yap-Sat projesine bağlı daire/dükkan giriş kayıtlarını (TBL-0023) oluştur/güncelle
+function syncYapSatGiris(no, ad, daire, dukkan){
+  // önce bu projeye ait otomatik girişleri kaldır
+  for(let i=girisCikislar.length-1;i>=0;i--){ if(girisCikislar[i].kaynak==='yapsat' && girisCikislar[i].kaynakNo===no) girisCikislar.splice(i,1); }
+  const mk=(varlik,adet)=>{ if(adet>0) girisCikislar.unshift({ no:nextKayitNo('0023',girisCikislar), tarih:'', hareket:'Giriş', girisTipi:'Yap-Sat Girişi', varlik, proje:ad, adet, tutar:0, aciklama:'Yap-Sat otomatik giriş · '+no, kaynak:'yapsat', kaynakNo:no }); };
+  mk('Dükkan', dukkan); mk('Daire', daire);
+}
 function addYapSatProje(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const nf=i=>parseFloat((gv(i)||'0').replace(/\./g,'').replace(',','.'))||0; const ni=i=>parseInt((gv(i)||'0').replace(/[^0-9]/g,''),10)||0;
-  const ad=gv('yspProje'); if(!ad){toast('Proje adı girin');return;} const no=nextKayitNo('0024',yapSatProjeleri);
-  yapSatProjeleri.unshift({ no, ad, il:gv('yspIl'), ilce:gv('yspIlce'), arsaM2:nf('yspArsaM2'), kaks:nf('yspKaks'), insaatM2:nf('yspInsaatM2'), satilabilirM2:nf('yspSatilabilirM2'), paylasim:gv('yspPaylasim'), arsaBedel:ni('yspArsaBedel') });
-  logAction('home','gold', `Yap-Sat projesi · ${no} · ${ad}${gv('yspIlce')?(' · '+gv('yspIlce')):''}`); render(); toast(no+' · yap-sat projesi eklendi'); }
+  const ad=gv('yspProje'); if(!ad){toast('Proje adı girin');return;}
+  const rec={ ad, il:gv('yspIl'), ilce:gv('yspIlce'), arsaM2:nf('yspArsaM2'), kaks:nf('yspKaks'), insaatM2:nf('yspInsaatM2'), satilabilirM2:nf('yspSatilabilirM2'), paylasim:gv('yspPaylasim'), arsaBedel:ni('yspArsaBedel'), daire:ni('yspDaire'), dukkan:ni('yspDukkan'), sinif:gv('yspSinif') };
+  rec.hedefMaliyet=yapSatHedefMaliyet(rec);
+  let no, isEdit=false;
+  if(state.yspEdit){ const ex=yapSatProjeleri.find(x=>x.no===state.yspEdit); if(ex){ no=ex.no; Object.assign(ex,rec,{no}); isEdit=true; } }
+  if(!isEdit){ no=nextKayitNo('0024',yapSatProjeleri); yapSatProjeleri.unshift(Object.assign({no},rec)); }
+  syncYapSatGiris(no, ad, rec.daire, rec.dukkan);
+  state.yspEdit=null;
+  logAction('home','gold', `Yap-Sat projesi ${isEdit?'güncellendi':'eklendi'} · ${no} · ${ad} · ${rec.daire} daire + ${rec.dukkan} dükkan · hedef ${money(rec.hedefMaliyet)}`); render(); toast(no+(isEdit?' güncellendi ✓':' · daire/dükkan girişleri oluşturuldu ✓')); }
+function yspHesapHedef(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||''); const nf=i=>parseFloat((gv(i)||'0').replace(/\./g,'').replace(',','.'))||0; const ni=i=>parseInt((gv(i)||'0').replace(/[^0-9]/g,''),10)||0; const ys=yapiSiniflari.find(y=>y.grup===(gv('yspSinif')||'').trim()); const birim=ys?(ys.maliyet||0):0; const h=ni('yspArsaBedel')+Math.round(nf('yspInsaatM2')*birim); const el=document.getElementById('yspHedef'); if(el) el.textContent=money(h); }
+function yapSatFormCard(){
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
+  const v = state.yspEdit ? yapSatProjeleri.find(x=>x.no===state.yspEdit) : null;
+  const val=k=>v&&v[k]!=null?esc(String(v[k])):'';
+  const sinifOpts=yapiSiniflari.map(y=>`<option ${v&&v.sinif===y.grup?'selected':''}>${esc(y.grup)}</option>`).join('');
+  const hedef = v?money(yapSatHedefMaliyet(v)):'₺0';
+  return `<div class="card rounded-2xl p-5 mb-4">
+    ${sectionTitle('home', v?('Yap-Sat Düzelt · '+v.no):'Yap-Sat Proje Künyesi','Proje bilgileri · daire/dükkan · hedef maliyet otomatik · kaydedince daire/dükkan girişleri oluşur')}
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+      <input id="yspProje" value="${val('ad')}" placeholder="Proje adı" class="sm:col-span-6 ${inpC}"/><input id="yspIl" value="${val('il')}" placeholder="İli" class="sm:col-span-3 ${inpC}"/><input id="yspIlce" value="${val('ilce')}" placeholder="İlçesi" class="sm:col-span-3 ${inpC}"/>
+      <input id="yspArsaM2" type="number" step="0.01" value="${v?v.arsaM2:''}" placeholder="Arsa Alanı (m²)" class="sm:col-span-3 ${inpC}"/><input id="yspKaks" type="number" step="0.01" value="${v?v.kaks:''}" placeholder="KAKS (Emsal)" class="sm:col-span-3 ${inpC}"/><input id="yspInsaatM2" type="number" step="0.01" value="${v?v.insaatM2:''}" oninput="yspHesapHedef()" placeholder="Toplam İnşaat (Brüt m²)" class="sm:col-span-3 ${inpC}"/><input id="yspSatilabilirM2" type="number" step="0.01" value="${v?v.satilabilirM2:''}" placeholder="Satılabilir (m²)" class="sm:col-span-3 ${inpC}"/>
+      <input id="yspDaire" type="number" value="${v?v.daire:''}" placeholder="Daire Adedi" class="sm:col-span-3 ${inpC}"/><input id="yspDukkan" type="number" value="${v?v.dukkan:''}" placeholder="Dükkan Adedi" class="sm:col-span-3 ${inpC}"/><select id="yspSinif" onchange="yspHesapHedef()" class="sm:col-span-3 ${selC}" title="Yapı Sınıfı (hedef maliyet için)"><option value="">Yapı Sınıfı…</option>${sinifOpts}</select><input id="yspPaylasim" value="${val('paylasim')}" placeholder="Arsa Paylaşım (%50-%50)" class="sm:col-span-3 ${inpC}"/>
+      <input id="yspArsaBedel" type="number" value="${v?v.arsaBedel:''}" oninput="yspHesapHedef()" placeholder="Arsa Satın Alma Bedeli ₺" class="sm:col-span-4 ${inpC}"/>
+    </div>
+    <div class="mt-3 flex items-center justify-between gap-2 flex-wrap">
+      <p class="text-[12px] text-slate-300">Hedeflenen Maliyet / Proje Bedeli: <b class="text-gold" id="yspHedef">${hedef}</b> <span class="text-[10px] text-slate-500">(arsa bedeli + inşaat m² × yapı sınıfı birim maliyeti)</span></p>
+      <div class="flex gap-2">${v?`<button onclick="state.yspEdit=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button>`:''}<button onclick="addYapSatProje()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="save" class="h-4 w-4"></i> ${v?'Güncelle':'Yap-Sat Projesi Ekle'}</button></div>
+    </div></div>`;
+}
 function nextYtkNo(){ return nextKayitNo('0016', yetkiKartlari); }
 // Yetki Kartı — adım adım tıklı (kademeli) seçim taslağı
 const YK_TOP = [{id:'erp',label:'ERP & CRM',icon:'layout-grid'},{id:'ekran',label:'Toprak Ekranı',icon:'layout-dashboard'},{id:'ayarlar',label:'Ayarlar',icon:'settings'}];
@@ -5895,11 +5930,7 @@ function tblForm(kod){
   if(kod==='TBL-0023') return wrap('Giriş / Çıkış Kaydı','Daire/arsa giriş-çıkış takibi · giriş tipi · proje',
       `<input id="gcTarih" type="date" value="${(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-3 ${inpC}"/><select id="gcHareket" class="sm:col-span-2 ${selC}" title="Hareket">${HAREKET_TIPI.map(v=>`<option>${v}</option>`).join('')}</select><select id="gcGirisTipi" class="sm:col-span-3 ${selC}" title="Giriş Tipi"><option value="">Giriş Tipi…</option>${GIRIS_TIPI.map(v=>`<option>${v}</option>`).join('')}</select><select id="gcVarlik" class="sm:col-span-2 ${selC}">${VARLIK_TURU.map(v=>`<option>${v}</option>`).join('')}</select><select id="gcProje" class="sm:col-span-2 ${selC}">${projeOptsHtml('')}</select><input id="gcAdet" type="number" placeholder="Adet / m²" class="sm:col-span-3 ${inpC}"/><input id="gcTutar" type="number" placeholder="Tutar ₺" class="sm:col-span-3 ${inpC}"/><input id="gcAciklama" placeholder="Açıklama" class="sm:col-span-6 ${inpC}"/>`,
       btn('addGirisCikis()','Hareket Ekle'));
-  if(kod==='TBL-0024') return wrap('Yap-Sat Proje Künyesi','Proje genel bilgileri · il/ilçe · arsa & inşaat alanları · paylaşım · arsa bedeli',
-      `<input id="yspProje" placeholder="Proje adı" class="sm:col-span-6 ${inpC}"/><input id="yspIl" placeholder="İli" class="sm:col-span-3 ${inpC}"/><input id="yspIlce" placeholder="İlçesi" class="sm:col-span-3 ${inpC}"/>
-       <input id="yspArsaM2" type="number" step="0.01" placeholder="Arsa Alanı (m²)" class="sm:col-span-3 ${inpC}"/><input id="yspKaks" type="number" step="0.01" placeholder="KAKS (Emsal) oranı" class="sm:col-span-3 ${inpC}"/><input id="yspInsaatM2" type="number" step="0.01" placeholder="Toplam İnşaat Alanı (Brüt m²)" class="sm:col-span-3 ${inpC}"/><input id="yspSatilabilirM2" type="number" step="0.01" placeholder="Satılabilir Alan (m²)" class="sm:col-span-3 ${inpC}"/>
-       <input id="yspPaylasim" placeholder="Arsa Paylaşım Oranı (ör. %50-%50)" class="sm:col-span-4 ${inpC}"/><input id="yspArsaBedel" type="number" placeholder="Arsa Satın Alma Bedeli ₺" class="sm:col-span-4 ${inpC}"/>`,
-      btn('addYapSatProje()','Yap-Sat Projesi Ekle'));
+  if(kod==='TBL-0024') return yapSatFormCard();
   return '';
 }
 function viewAdminTable(kod){
@@ -5926,7 +5957,7 @@ function viewAdminTable(kod){
   if(kod==='TBL-0021'){ return tbl('Satın Alma Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Varlık',f:r=>badge(r.varlik||'—','gold')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Satıcı',f:r=>esc(r.satici||'—')},{h:'Tutar',r:1,cls:'text-amber-300',f:r=>money(r.tutar||0)}],satinAlmaIslemleri); }
   if(kod==='TBL-0022'){ return tbl('Satış Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Varlık',f:r=>badge(r.varlik||'—','emer')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Müşteri',f:r=>esc(r.musteri||'—')},{h:'Tutar',r:1,cls:'text-emer-light font-medium',f:r=>money(r.tutar||0)}],satisIslemleri); }
   if(kod==='TBL-0023'){ return tbl('Giriş / Çıkış Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Hareket',f:r=>badge(r.hareket||'—',r.hareket==='Çıkış'?'red':'emer')},{h:'Giriş Tipi',f:r=>esc(r.girisTipi||'—')},{h:'Varlık',f:r=>esc(r.varlik||'—')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Adet/m²',r:1,f:r=>r.adet||'—'},{h:'Tutar',r:1,f:r=>money(r.tutar||0)}],girisCikislar); }
-  if(kod==='TBL-0024'){ return tbl('Yap-Sat Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'İl / İlçe',f:r=>esc((r.il||'—')+(r.ilce?' / '+r.ilce:''))},{h:'Arsa Alanı',r:1,f:r=>fmtM2(r.arsaM2)},{h:'KAKS',r:1,f:r=>r.kaks||'—'},{h:'İnşaat (Brüt)',r:1,f:r=>fmtM2(r.insaatM2)},{h:'Satılabilir',r:1,f:r=>fmtM2(r.satilabilirM2)},{h:'Paylaşım',f:r=>esc(r.paylasim||'—')},{h:'Arsa Bedeli',r:1,cls:'text-amber-300',f:r=>money(r.arsaBedel||0)},{h:'Alınan Arsalar',r:1,f:r=>{const o=arsaGirisOzet(r.ad);return o.adet?`${o.adet} arsa · ${fmtM2(o.m2)}`:'—';}}],yapSatProjeleri); }
+  if(kod==='TBL-0024'){ return tbl('Yap-Sat Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'İl / İlçe',f:r=>esc((r.il||'—')+(r.ilce?' / '+r.ilce:''))},{h:'Arsa Alanı',r:1,f:r=>fmtM2(r.arsaM2)},{h:'KAKS',r:1,f:r=>r.kaks||'—'},{h:'İnşaat (Brüt)',r:1,f:r=>fmtM2(r.insaatM2)},{h:'Satılabilir',r:1,f:r=>fmtM2(r.satilabilirM2)},{h:'Daire/Dükkan',f:r=>`${r.daire||0} / ${r.dukkan||0}`},{h:'Hedef Maliyet',r:1,cls:'text-gold font-bold',f:r=>money(r.hedefMaliyet||yapSatHedefMaliyet(r))},{h:'Paylaşım',f:r=>esc(r.paylasim||'—')},{h:'Arsa Bedeli',r:1,cls:'text-amber-300',f:r=>money(r.arsaBedel||0)},{h:'Alınan Arsalar',r:1,f:r=>{const o=arsaGirisOzet(r.ad);return o.adet?`${o.adet} arsa · ${fmtM2(o.m2)}`:'—';}},{h:'Düzenle',f:r=>`<button onclick="state.yspEdit='${r.no}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button>`}],yapSatProjeleri); }
   if(kod==='TBL-0020'){ return tbl('İnşaat Maliyet Hesaplama Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'İş / Açıklama',cls:'text-slate-100 font-medium',f:r=>esc(r.ad||'—')},{h:'Yapı Sınıfı',f:r=>esc(r.grup)+(r.sinif?' ('+esc(r.sinif)+')':'')},{h:'Yıl',f:r=>badge(r.yil||'2026','gold')},{h:'Birim (TL/m²)',r:1,f:r=>fmtTL(r.birim)},{h:'m²',r:1,f:r=>new Intl.NumberFormat('tr-TR').format(r.m2||0)},{h:'Maliyet',r:1,cls:'text-gold font-bold',f:r=>fmtTL(r.maliyet)}],insaatMaliyetleri); }
   if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Bölüm',f:r=>badge(r.bolum||'—','gold')},{h:'Görev Yeri',f:r=>esc(r.gorevYeri||'—')},{h:'Görevi',f:r=>esc(r.gorev||'—')},{h:'Mesleği',f:r=>esc(r.meslek||'—')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Resmi Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.resmiKod||'—')},{h:'İç Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.icKod||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')},{h:'Yetki Sınıfı',f:r=>r.yetkiSinifiAd?`<span class="text-slate-100">${esc(r.yetkiSinifiAd)}</span>${Array.isArray(r.yetkiler)&&r.yetkiler.length?`<span class="block text-[10px] text-slate-500">${esc(r.yetkiler.join(' · '))}</span>`:''}`:'—'}],personelKartlari); }
   if(kod==='TBL-0010'){
