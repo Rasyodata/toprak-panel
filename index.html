@@ -869,6 +869,11 @@ function modulePending(id){
   if(id==='sales') return units.filter(u=>u.durum==='Onayda').length + appointments.filter(a=>a.durum==='Onay Bekliyor').length;
   return 0;
 }
+function modDisplayName(m){
+  // Şirket görünümünde "Patron Ekranı" → şirketin ilk kelimesi + " Ekranı" (ör. Toprak İnşaat → "Toprak Ekranı")
+  if(m && m.id==='dashboard' && state.company!=='all'){ const f=(COMPANY_TABS.find(x=>x.id===state.company)||{}).firm||''; return (f.split(' ')[0]||'Patron')+' Ekranı'; }
+  return m.name;
+}
 function buildNav(){
   const LEFT_IDS = ['news','access']; // solda kalacak modüller (Patron Ekranı üst bara taşındı)
   const mainNav = document.getElementById('mainNav');
@@ -886,7 +891,7 @@ function buildNav(){
     <button onclick="setModule('${m.id}')"
       class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition relative overflow-hidden
              ${active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}">
-      <i data-lucide="${m.icon}" class="h-4 w-4 ${active?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${m.name.replace(/ Yönetimi| Yönetim/,'')}</span>
+      <i data-lucide="${m.icon}" class="h-4 w-4 ${active?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${modDisplayName(m).replace(/ Yönetimi| Yönetim/,'')}</span>
       ${pend>0?`<span class="min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">${pend}</span>`:''}
       ${active?activeStrip:''}
     </button>`;
@@ -2449,7 +2454,7 @@ function viewDashboard(){
           <div class="rounded-lg border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">Nakit</p><p class="text-sm font-bold text-slate-200">${c.cash}</p></div>
           <div class="rounded-lg border border-white/8 bg-navy-700/40 p-3"><p class="text-[11px] text-slate-500">Trend</p><p class="text-sm font-bold ${c.trend>=0?'text-emer-light':'text-rose-400'}">${c.trend>=0?'▲':'▼'} %${Math.abs(c.trend)}</p></div>
         </div>
-        <button onclick="setCompany('${firmTab[c.name]||'all'}')" class="mt-4 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="corner-down-right" class="h-4 w-4"></i>${c.name} Patron Ekranı</button>
+        <button onclick="setCompany('${firmTab[c.name]||'all'}')" class="mt-4 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="corner-down-right" class="h-4 w-4"></i>${(c.name.split(' ')[0]||'Toprak')} Ekranı</button>
       </div>`).join('')}
     </div>`;
   })()}
