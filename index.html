@@ -228,6 +228,20 @@
         <i data-lucide="settings" class="h-4 w-4"></i><span class="whitespace-nowrap">Ayarlar</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
 
+      <!-- PERSONEL PANELİ (yalnızca personel girişlerinde · üst bar modülleri) -->
+      <button id="pnlBtn" onclick="setModule('panelim')" title="Panelim" style="display:none"
+        class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
+        <i data-lucide="id-card" class="h-4 w-4"></i><span class="whitespace-nowrap">Panelim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+      </button>
+      <button id="gtkBtn" onclick="setModule('gorevtakvimim')" title="Görev Takvimim" style="display:none"
+        class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
+        <i data-lucide="calendar-days" class="h-4 w-4"></i><span class="whitespace-nowrap">Görev Takvimim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+      </button>
+      <button id="gorBtn" onclick="setModule('gorevlerim')" title="Görevlerim" style="display:none"
+        class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
+        <i data-lucide="list-checks" class="h-4 w-4"></i><span class="whitespace-nowrap">Görevlerim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+      </button>
+
       <!-- USER SWITCHER -->
       <div class="relative ml-auto">
         <button onclick="toggleUserMenu()" id="userBtn"
@@ -557,12 +571,13 @@ function hexLuminance(hex){
   const r=parseInt(h.slice(0,2),16)/255, g=parseInt(h.slice(2,4),16)/255, b=parseInt(h.slice(4,6),16)/255;
   return 0.2126*r + 0.7152*g + 0.0722*b;
 }
-function needsCompanyChoice(role){ return ROLES[role].kind==='internal' && !ROLES[role].sysadmin; } // yalnızca kurumsal yöneticiler şirket seçer
+function needsCompanyChoice(role){ return ROLES[role].kind==='internal' && !ROLES[role].sysadmin && !PERSONEL_ROLES.includes(role); } // yalnızca kurumsal yöneticiler şirket seçer (personel kadrosu kendi panelini görür)
 function landingModule(role){
   if(ROLES[role].sysadmin) return 'admin';
   if(ROLES[role].lawyer) return 'avukat';
   if(ROLES[role].realtor) return 'realtor';
   if(ROLES[role].kind==='external') return 'portal';
+  if(PERSONEL_ROLES.includes(role)) return 'panelim';
   const f = MODULES.find(m=>m.roles.includes(role)); return f?f.id:'dashboard';
 }
 function devicePlatform(){ try{ return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'Mobil':'Web'; }catch(e){ return 'Web'; } }
@@ -595,6 +610,10 @@ function logout(){
 }
 const can = (mod) => !!ROLES[state.role].sysadmin || mod.roles.includes(state.role);
 const isAdminUser = () => state.role==='ceo' || !!ROLES[state.role].sysadmin;
+const myName = () => (ROLES[state.role]||{}).name||'';
+const PERSONEL_ROLES = ['muhasebe','satisekip','satinalma'];
+const isPersonelUser = () => PERSONEL_ROLES.includes(state.role);
+const PERSONEL_MODULES = ['panelim','gorevtakvimim','gorevlerim'];
 const winColor = (w) => w>=70?'emer':w>=50?'gold':w>=40?'amber':'red';
 const fmt = (n) => new Intl.NumberFormat('tr-TR').format(n);
 const money = (n) => {
@@ -921,6 +940,16 @@ function buildNav(){
   const LEFT_IDS = ['news']; // solda kalacak modüller (Erişim/Yetki Yönetimi Ayarlar alt barına taşındı)
   const mainNav = document.getElementById('mainNav');
   const nav = document.getElementById('navMenu');
+  // Personel paneli: üst barda Panelim / Görev Takvimim / Görevlerim; sol barda aktif modülün seçenekleri
+  if(isPersonelUser()){
+    ['ekranBtn','erpBtn','takvimBtn','ayarlarBtn'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.display='none'; b.classList.remove('ring-2','ring-white/50'); } });
+    const setP=(id,mod)=>{ const b=document.getElementById(id); if(!b) return; b.style.display=''; const on=state.module===mod; b.classList.toggle('ring-2',on); b.classList.toggle('ring-white/50',on); b.style.boxShadow=on?'0 4px 16px -4px #d4af37':'none'; const st=b.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; };
+    setP('pnlBtn','panelim'); setP('gtkBtn','gorevtakvimim'); setP('gorBtn','gorevlerim');
+    mainNav.style.display='none';
+    if(nav) nav.innerHTML = leftSpecialSubsHtml();
+    const bn=document.getElementById('bottomNav'); if(bn) bn.innerHTML=[['panelim','id-card','Panelim'],['gorevtakvimim','calendar-days','Takvimim'],['gorevlerim','list-checks','Görevlerim']].map(([m,ic,l])=>`<button onclick="setModule('${m}')" class="flex flex-col items-center justify-center gap-1 flex-1 py-1.5 rounded-xl ${state.module===m?'text-gold':'text-slate-400'}"><i data-lucide="${ic}" class="h-5 w-5"></i><span class="text-[10px] leading-none">${l}</span></button>`).join('');
+    return;
+  } else { ['pnlBtn','gtkBtn','gorBtn'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.display='none'; b.classList.remove('ring-2','ring-white/50'); } }); }
   // ÜST YATAY BAR — operasyonel modüller
   // Şirket görünümünde Patron Ekranı üst bardan kalkar → yazıcının yanındaki canlı "Ekranı" butonuna taşınır
   const ekBtn=document.getElementById('ekranBtn');
@@ -2889,7 +2918,13 @@ function itYetkiVer(personel){ if(!personel) return; const p=personelKartlari.fi
   let yk=yetkiKartlari.find(r=>r.oto==='istakvim' && r.kisi===personel);
   if(yk){ yk.moduller=yk.moduller||[]; if(yk.moduller.indexOf('istakvim')<0) yk.moduller.push('istakvim'); yk.altModuller=yk.altModuller||{}; yk.altModuller.istakvim=yk.altModuller.istakvim||[]; if(dep&&yk.altModuller.istakvim.indexOf(dep)<0) yk.altModuller.istakvim.push(dep); }
   else { const no=nextYtkNo(); yetkiKartlari.unshift({ no, ad:'İş Takvimi Yetkisi · '+personel, kisi:personel, oto:'istakvim', sirketler:['all'], moduller:['istakvim'], altModuller: dep?{istakvim:[dep]}:{istakvim:[]}, gruplar:{}, kartYetki:{}, kartAksiyon:{}, kayitYetki:{} }); logAction('shield-check','emer', `Oto yetki · ${no} · ${personel} · İş Takvimi${dep?' / '+dep:''}`); toast('🛡 '+personel+' → İş Takvimi yetkisi verildi'); } }
-function itEkle(tarih,saat){ const myName=(ROLES[state.role]||{}).name||''; const pers=personelKartlari.find(p=>p.ad===myName)?myName:''; state.itPre={tarih:tarih||'', saat:saat||'09:00', personel:pers}; state.itEdit=null; state.adminMode='ekle'; state.adminUsers=false; state.adminTable='TBL-0026'; setModule('admin'); }
+function itEkle(tarih,saat){ const nm=myName(); if(isPersonelUser()){ state.itPre={tarih:tarih||'', saat:saat||'09:00', personel:nm}; state.itFormOpen=true; render(); setTimeout(function(){var e=document.getElementById('itpIs'); if(e) e.focus();},80); return; } const pers=personelKartlari.find(p=>p.ad===nm)?nm:''; state.itPre={tarih:tarih||'', saat:saat||'09:00', personel:pers}; state.itEdit=null; state.adminMode='ekle'; state.adminUsers=false; state.adminTable='TBL-0026'; setModule('admin'); }
+function itFormToggle(){ state.itFormOpen=!state.itFormOpen; if(state.itFormOpen && !state.itPre){ const t=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})(); state.itPre={tarih:t,saat:'09:00',personel:myName()}; } render(); }
+function addIsTakvimKisi(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const personel=myName(); const is=gv('itpIs'); if(!is){toast('Görev/iş girin');return;} const tur=gv('itpTur')||'Görev'; const saat=gv('itpSaat')||'09:00'; const no=nextKayitNo('0026',isTakvimi);
+  isTakvimi.unshift({ no, personel, tur, periyot:'Günlük', tarih:gv('itpTarih'), saat, is, durum:'Planlandı', aciklama:gv('itpAciklama') });
+  itYetkiVer(personel); state.itFormOpen=false; state.itPre=null;
+  logAction('calendar-clock','gold', `İş takvimi · ${no} · ${personel} · ${tur} · ${is}`); render(); toast(no+' · takviminize eklendi');
+  captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); } }); }
 function delIsTakvim(no){ const i=isTakvimi.findIndex(r=>r.no===no); if(i>-1){ isTakvimi.splice(i,1); logAction('trash-2','red', `İş takvimi kaydı silindi · ${no}`); render(); toast('Silindi ✓'); } }
 function captureKonum(cb){ try{ if(navigator&&navigator.geolocation){ toast('Konum alınıyor…'); navigator.geolocation.getCurrentPosition(function(p){ cb(p.coords.latitude.toFixed(5)+', '+p.coords.longitude.toFixed(5)); }, function(){ cb(''); }, {enableHighAccuracy:true,timeout:9000,maximumAge:60000}); } else cb(''); }catch(e){ cb(''); } }
 function itTamamla(no){ const r=isTakvimi.find(x=>x.no===no); if(!r) return; r.durum='Tamamlandı'; render(); toast(no+' tamamlandı ✓ · konum alınıyor'); captureKonum(function(k){ if(k){ const rr=isTakvimi.find(x=>x.no===no); if(rr){ rr.konum=k; } try{saveData();}catch(e){} render(); toast('Konum işlendi 📍'); } }); }
@@ -2923,9 +2958,59 @@ function addIsTakvimToplu(){ const g=i=>document.getElementById(i); const gv=i=>
   logAction('calendar-plus','gold', `Toplu iş takvimi · ${created} görev · ${personel} · ${tekrar}`); render(); toast(created+' görev toplu oluşturuldu ✓'); }
 function isoHaftaNo(ds){ try{ const dt=new Date(ds); dt.setHours(0,0,0,0); dt.setDate(dt.getDate()+3-((dt.getDay()+6)%7)); const w1=new Date(dt.getFullYear(),0,4); return 1+Math.round(((dt-w1)/86400000-3+((w1.getDay()+6)%7))/7); }catch(e){ return ''; } }
 function haftaPazartesi(y,w){ try{ const jan4=new Date(y,0,4); const off=(jan4.getDay()+6)%7; const d=new Date(y,0,4-off); d.setDate(d.getDate()+(w-1)*7); return d.toISOString().slice(0,10); }catch(e){ return ''; } }
-function viewIsTakvimi(){
-  const per=currentSub()||'gun'; const perMap={gun:'Gün',hafta:'Hafta',ay:'Ay',yil:'Yıl'}; const pl=perMap[per]||'Gün';
-  const dept=state.takvimDept||'__hepsi'; const hepsi = dept==='__hepsi'; const baslik = hepsi?'Tüm Departmanlar':dept;
+function viewPanelim(){
+  const r=ROLES[state.role]||{}; const nm=myName();
+  const p=personelKartlari.find(x=>x.ad===nm)||{};
+  const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
+  const mine=isTakvimi.filter(t=>t.personel===nm);
+  const bugun=mine.filter(t=>(t.tarih||'')===today);
+  const acik=mine.filter(t=>t.durum!=='Tamamlandı');
+  const tamam=mine.filter(t=>t.durum==='Tamamlandı');
+  const row=(ic,l,v)=> v?`<div class="flex items-center gap-3 py-2 border-b border-white/5 last:border-0"><span class="h-8 w-8 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 text-gold flex items-center justify-center"><i data-lucide="${ic}" class="h-4 w-4"></i></span><div class="min-w-0"><p class="text-[10px] uppercase tracking-wider text-slate-500">${l}</p><p class="text-sm text-slate-100 truncate">${esc(v)}</p></div></div>`:'';
+  const sb=(ic,l,v,tone)=>`<div class="card rounded-2xl p-4 flex items-center gap-3"><span class="h-11 w-11 rounded-xl bg-${tone}/15 text-${tone}-light border border-${tone}/30 flex items-center justify-center"><i data-lucide="${ic}" class="h-5 w-5"></i></span><div><p class="text-2xl font-bold text-slate-100 leading-none">${v}</p><p class="text-[11px] text-slate-500 mt-1">${l}</p></div></div>`;
+  return `
+  <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+    ${sb('calendar-check','Bugünkü Görev', bugun.length, 'gold')}
+    ${sb('list-todo','Açık Görev', acik.length, 'amber')}
+    ${sb('check-check','Tamamlanan', tamam.length, 'emer')}
+    ${sb('layers','Toplam Görev', mine.length, 'gold')}
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+    <div class="card rounded-2xl p-5 xl:col-span-1">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="h-14 w-14 rounded-2xl bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 font-bold flex items-center justify-center text-xl">${esc((nm||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase())}</span>
+        <div class="min-w-0"><p class="text-lg font-bold text-slate-100 truncate">${esc(nm)}</p><p class="text-[12px] text-gold">${esc(p.gorev||r.title||'')}</p></div>
+      </div>
+      ${row('briefcase','Görevi', p.gorev||r.title)}
+      ${row('graduation-cap','Mesleği', p.meslek)}
+      ${row('award','Ünvanı', p.unvan)}
+      ${row('building','Departman / Bölüm', p.bolum)}
+      ${row('map-pin','Görev Yeri', p.gorevYeri)}
+      ${row('building-2','Şirket', p.sirket)}
+      ${row('shield-check','Yetki Sınıfı', p.yetkiSinifiAd||r.title)}
+    </div>
+    <div class="card rounded-2xl p-5 xl:col-span-2">
+      ${sectionTitle('contact','İletişim & Kayıt','Kişisel bilgiler')}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+        ${row('hash','Personel No', p.no)}
+        ${row('mail','E-posta', p.email||r.email)}
+        ${row('phone','Telefon', p.tel)}
+        ${row('file-badge','Resmi Muhasebe Kodu', p.resmiKod)}
+        ${row('file-badge','İç Muhasebe Kodu', p.icKod)}
+        ${row('users','Grup', p.grup)}
+      </div>
+      ${(!p.no)?`<p class="text-[11px] text-amber-300 mt-3 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Detaylı personel kartınız (TBL-0011) henüz oluşturulmamış — görüntülenen bilgiler kullanıcı profilinizden gelmektedir.</p>`:''}
+      <div class="mt-4 pt-3 border-t border-white/5 flex gap-2 flex-wrap">
+        <button onclick="setModule('gorevtakvimim')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="calendar-days" class="h-4 w-4"></i>Görev Takvimim</button>
+        <button onclick="setModule('gorevlerim')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="list-checks" class="h-4 w-4"></i>Görevlerim</button>
+      </div>
+    </div>
+  </div>`;
+}
+function viewIsTakvimi(opts){
+  opts=opts||{}; const kisi=opts.kisi||null; const listeOnly = opts.mode==='liste';
+  let per=currentSub()||'gun'; const perMap={gun:'Gün',hafta:'Hafta',ay:'Ay',yil:'Yıl'}; const pl=perMap[per]||'Gün';
+  const dept=state.takvimDept||'__hepsi'; const hepsi = kisi? false : (dept==='__hepsi'); const baslik = kisi? kisi : (hepsi?'Tüm Departmanlar':dept);
   const persDept=ad=>{ const p=personelKartlari.find(x=>x.ad===ad); return p?(p.bolum||''):''; };
   const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '2026-01-01';}})();
   let matchDate, donemEtiket;
@@ -2933,13 +3018,32 @@ function viewIsTakvimi(){
   else if(per==='ay'){ const m=state.takvimAy||today.slice(0,7); matchDate=t=>(t||'').slice(0,7)===m; donemEtiket=m; }
   else if(per==='yil'){ const y=String(state.takvimYil||today.slice(0,4)); matchDate=t=>(t||'').slice(0,4)===y; donemEtiket=y; }
   else { const d=state.takvimTarih||today; let s=d,e=d; try{ const b=new Date(d); const off=(b.getDay()+6)%7; const st=new Date(b); st.setDate(b.getDate()-off); const en=new Date(st); en.setDate(st.getDate()+6); s=st.toISOString().slice(0,10); e=en.toISOString().slice(0,10); }catch(x){} matchDate=t=>t>=s&&t<=e; donemEtiket=isoHaftaNo(d)+'. hafta ('+s+' – '+e+')'; }
-  const rows=isTakvimi.filter(r=>(hepsi || persDept(r.personel)===dept) && matchDate(r.tarih||''));
+  const rows=isTakvimi.filter(r=>(kisi? (r.personel===kisi) : (hepsi || persDept(r.personel)===dept)) && matchDate(r.tarih||''));
   const dt=d=>d==='Tamamlandı'?'emer':d==='Devam Ediyor'?'amber':'slate';
-  return `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
-      <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="${hepsi?'users':'briefcase'}" class="h-5 w-5"></i></span>
-      <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(baslik)}</p><p class="text-[11px] text-gold">${pl} · ${esc(donemEtiket)} · ${rows.length} görev</p></div>
-      <button onclick="pdfIsTakvimi()" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="file-down" class="h-4 w-4"></i>PDF</button>
-      <button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button>
+  if(listeOnly) per='liste';
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/50';
+  const pre=state.itPre||{};
+  const inlineForm = (kisi && state.itFormOpen) ? `<div class="card rounded-2xl p-4 mb-4 border border-gold/30">
+      <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="plus-circle" class="h-3.5 w-3.5"></i>Takvimime Görev Ekle · ${esc(kisi)}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+        <select id="itpTur" class="sm:col-span-3 ${selC}" title="Tür">${TAKVIM_TUR.map(t=>`<option ${(pre.tur||'Görev')===t?'selected':''}>${t}</option>`).join('')}</select>
+        <input id="itpTarih" type="date" value="${esc(pre.tarih||today)}" class="sm:col-span-3 ${inpC}"/>
+        ${saatSelect('itpSaat', pre.saat||'09:00', 'sm:col-span-2 '+selC, 'title="Saat"')}
+        <input id="itpIs" placeholder="Görev / iş (ör. Gelen kargo teslim alındı)" class="sm:col-span-4 ${inpC}"/>
+        <input id="itpAciklama" placeholder="Açıklama (opsiyonel)" class="sm:col-span-12 ${inpC}"/>
+      </div>
+      <div class="mt-2 flex justify-end gap-2"><button onclick="state.itFormOpen=false;state.itPre=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button><button onclick="addIsTakvimKisi()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Ekle</button></div>
+      <p class="text-[10px] text-slate-500 mt-1 flex items-center gap-1"><i data-lucide="map-pin" class="h-3 w-3"></i>Konum kayıt sırasında otomatik işlenir.</p>
+    </div>` : '';
+  const ekleBtn = kisi
+    ? `<button onclick="itFormToggle()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Görev Ekle</button>`
+    : `<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button>`;
+  return inlineForm + `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
+      <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="${kisi?'user':(hepsi?'users':'briefcase')}" class="h-5 w-5"></i></span>
+      <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(baslik)}</p><p class="text-[11px] text-gold">${listeOnly?'Görevlerim':pl} · ${esc(donemEtiket)} · ${rows.length} görev</p></div>
+      <button onclick="pdfIsTakvimi(${kisi?("'"+String(kisi).replace(/'/g,"\\'")+"'"):''})" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="file-down" class="h-4 w-4"></i>PDF</button>
+      ${ekleBtn}
     </div>
     ${(()=>{
       const turRozet=r=>(r.tur&&r.tur!=='Görev')?`<span class="inline-block text-[9px] px-1 rounded bg-gold/20 text-gold mr-1 align-middle">${esc(r.tur)}</span>`:'';
@@ -2958,11 +3062,13 @@ function viewIsTakvimi(){
         </div></div>`;
       }
       if(per==='gun'){ const d=state.takvimTarih||today; const dr=rows.slice().sort(sortSaat);
-        const slots=[]; for(let h=TAKVIM_SAAT_BAS;h<=TAKVIM_SAAT_SON;h++) slots.push(h);
+        const toMin=s=>{ const p=String(s||'').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); };
+        const bucket=s=>Math.floor(toMin(s)/10)*10;  // 10 dk'lık dilime yuvarla
+        const slots=[]; for(let h=TAKVIM_SAAT_BAS;h<=TAKVIM_SAAT_SON;h++){ for(let m=0;m<60;m+=10){ if(h===TAKVIM_SAAT_SON&&m>0) break; slots.push(h*60+m); } }
         const gunAd=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi']; let gad=''; try{ gad=gunAd[new Date(d).getDay()]; }catch(x){}
-        return `<div class="card rounded-2xl p-3"><p class="text-[11px] text-slate-400 mb-2 px-1"><span class="text-gold font-semibold">${gad}</span> · ${d} · ${TAKVIM_SAAT_BAS}:00–${TAKVIM_SAAT_SON}:00</p><div>
-        ${slots.map(h=>{ const hh=String(h).padStart(2,'0'); const hr=dr.filter(r=>String(r.saat||'').slice(0,2)===hh);
-          return `<div class="group flex gap-3 border-t border-white/8 py-1.5 min-h-[46px]"><div class="w-14 shrink-0 text-right text-[11px] text-slate-500 pt-0.5">${hh}:00</div><div class="flex-1 space-y-1">${hr.map(miniCard).join('')}<button onclick="itEkle('${d}','${hh}:00')" class="opacity-0 group-hover:opacity-100 transition rounded border border-dashed border-white/15 text-slate-500 hover:border-gold/40 hover:text-gold text-[10px] px-2 py-0.5 flex items-center gap-0.5" title="${hh}:00'a kayıt ekle"><i data-lucide="plus" class="h-3 w-3"></i>Ekle</button></div></div>`; }).join('')}
+        return `<div class="card rounded-2xl p-3"><p class="text-[11px] text-slate-400 mb-2 px-1"><span class="text-gold font-semibold">${gad}</span> · ${d} · ${TAKVIM_SAAT_BAS}:00–${TAKVIM_SAAT_SON}:00 · 10 dk dilimler</p><div>
+        ${slots.map(sm=>{ const hh=String(Math.floor(sm/60)).padStart(2,'0'); const mm=String(sm%60).padStart(2,'0'); const tam=sm%60===0; const hr=dr.filter(r=>bucket(r.saat)===sm);
+          return `<div class="group flex gap-3 ${tam?'border-t border-white/10':'border-t border-white/[.03]'} py-1 ${tam?'min-h-[30px]':'min-h-[22px]'}"><div class="w-14 shrink-0 text-right pt-0.5 ${tam?'text-[12px] font-semibold text-gold':'text-[10px] text-slate-500'}">${tam?hh+':00':':'+mm}</div><div class="flex-1 space-y-1">${hr.map(miniCard).join('')}<button onclick="itEkle('${d}','${hh}:${mm}')" class="opacity-0 group-hover:opacity-100 transition rounded border border-dashed border-white/15 text-slate-500 hover:border-gold/40 hover:text-gold text-[10px] px-2 py-0.5 flex items-center gap-0.5" title="${hh}:${mm}'a kayıt ekle"><i data-lucide="plus" class="h-3 w-3"></i>Ekle</button></div></div>`; }).join('')}
         ${dr.filter(r=>{ const h=parseInt(String(r.saat||'').slice(0,2),10); return !(h>=TAKVIM_SAAT_BAS&&h<=TAKVIM_SAAT_SON); }).map(r=>`<div class="flex gap-3 border-t border-white/8 py-1.5"><div class="w-14 shrink-0 text-right text-[11px] text-slate-500 pt-0.5">${esc(String(r.saat||'').slice(0,5)||'—')}</div><div class="flex-1 space-y-1">${miniCard(r)}</div></div>`).join('')}
         </div></div>`;
       }
@@ -2987,9 +3093,9 @@ function viewIsTakvimi(){
     </div></div>`;
     })()}`;
 }
-function pdfIsTakvimi(){
+function pdfIsTakvimi(kisi){
   const per=currentSub()||'gun'; const perMap={gun:'Gün',hafta:'Hafta',ay:'Ay',yil:'Yıl'}; const pl=perMap[per]||'Gün';
-  const dept=state.takvimDept||'__hepsi'; const hepsi=dept==='__hepsi'; const baslik=hepsi?'Tüm Departmanlar':dept;
+  const dept=state.takvimDept||'__hepsi'; const hepsi= kisi? false : (dept==='__hepsi'); const baslik= kisi? kisi : (hepsi?'Tüm Departmanlar':dept);
   const persDept=ad=>{ const p=personelKartlari.find(x=>x.ad===ad); return p?(p.bolum||''):''; };
   const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '2026-01-01';}})();
   let matchDate, donem;
@@ -2997,7 +3103,7 @@ function pdfIsTakvimi(){
   else if(per==='ay'){ const m=state.takvimAy||today.slice(0,7); matchDate=t=>(t||'').slice(0,7)===m; donem=m; }
   else if(per==='yil'){ const y=String(state.takvimYil||today.slice(0,4)); matchDate=t=>(t||'').slice(0,4)===y; donem=y; }
   else { const d=state.takvimTarih||today; let s=d,e=d; try{ const b=new Date(d); const off=(b.getDay()+6)%7; const st=new Date(b); st.setDate(b.getDate()-off); const en=new Date(st); en.setDate(st.getDate()+6); s=st.toISOString().slice(0,10); e=en.toISOString().slice(0,10); }catch(x){} matchDate=t=>t>=s&&t<=e; donem=isoHaftaNo(d)+'. hafta ('+s+' – '+e+')'; }
-  const rows=isTakvimi.filter(r=>(hepsi||persDept(r.personel)===dept)&&matchDate(r.tarih||'')).sort((a,b)=>String((a.tarih||'')+(a.saat||'')).localeCompare(String((b.tarih||'')+(b.saat||''))));
+  const rows=isTakvimi.filter(r=>(kisi? (r.personel===kisi) : (hepsi||persDept(r.personel)===dept))&&matchDate(r.tarih||'')).sort((a,b)=>String((a.tarih||'')+(a.saat||'')).localeCompare(String((b.tarih||'')+(b.saat||''))));
   const esc2=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const trs=rows.length?rows.map(r=>`<tr><td>${esc2(r.tarih||'—')}</td><td>${esc2(r.saat||'—')}</td><td>${esc2(r.personel||'—')}</td><td>${esc2(r.tur||'Görev')}</td><td>${esc2(r.is||'')}</td><td>${esc2(r.durum||'Planlandı')}</td><td>${esc2(r.konum||'—')}</td><td>${esc2(r.aciklama||'')}</td></tr>`).join(''):`<tr><td colspan="8" style="text-align:center;color:#888;padding:18px">Kayıt yok</td></tr>`;
   const html=`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>İş Takvimi — ${esc2(baslik)}</title><style>
@@ -6896,6 +7002,9 @@ const VIEWS = {
   partnership: viewPartnership,
   hr: viewHR,
   istakvim: viewIsTakvimi,
+  panelim: ()=>viewPanelim(),
+  gorevtakvimim: ()=>viewIsTakvimi({kisi:myName()}),
+  gorevlerim: ()=>viewIsTakvimi({kisi:myName(), mode:'liste'}),
   news: viewNews,
   access: viewAccess
 };
@@ -7347,6 +7456,9 @@ const SUBTABS = {
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'personel',label:'Personeller',icon:'contact'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}],
   istakvim:      [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
+  panelim:       [{id:'bilgiler',label:'Kişisel Bilgiler',icon:'id-card'}],
+  gorevtakvimim: [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
+  gorevlerim:    [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   admin:         [{id:'kayitlar',label:'Kayıtlar',icon:'database'}]
 };
 function isLawyer(){ return !!ROLES[state.role].lawyer; }
@@ -7441,8 +7553,14 @@ function leftSpecialSubsHtml(){
       + g.items.map(it=>lbtn(`setSub('${it.id}')`, it.icon, it.label, it.id===active)).join('')).join('')
       + sep;
   }
-  // İş Takvimi → sol barda personel listesi (seçilince o personelin takvimi sağda)
-  if(state.module==='istakvim'){
+  // Panelim → Kişisel Bilgiler
+  if(state.module==='panelim'){
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Panelim</div>`
+      + lbtn("setSub('bilgiler')",'id-card','Kişisel Bilgiler', true) + sep;
+  }
+  // İş Takvimi / Görev Takvimim / Görevlerim → sol barda Gün/Hafta/Ay/Yıl dönem seçimi
+  if(state.module==='istakvim' || state.module==='gorevtakvimim' || state.module==='gorevlerim'){
+    const baslikLbl = state.module==='gorevlerim'?'Görevlerim':state.module==='gorevtakvimim'?'Görev Takvimim':'İş Takvimi Dönemi';
     const per=currentSub()||'gun';
     const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '2026-01-01';}})();
     const selC='w-full bg-navy-700/70 border border-white/10 rounded-lg px-2 py-1.5 text-[13px] text-slate-200 outline-none';
@@ -7452,7 +7570,7 @@ function leftSpecialSubsHtml(){
     else if(per==='hafta'){ const curYear=+((state.takvimHaftaYil)||(state.takvimTarih||today).slice(0,4)); const curWk=isoHaftaNo(state.takvimTarih||today)||1; picker=`<div class="px-2 pt-1 space-y-1"><label class="block text-[10px] text-slate-500">Yıl ve hafta seç</label><div class="flex gap-1"><select onchange="state.takvimHaftaYil=+this.value;state.takvimTarih=haftaPazartesi(+this.value,${curWk});render()" class="${selC}" style="max-width:88px">${[2025,2026,2027,2028,2029,2030].map(y=>`<option ${curYear===y?'selected':''}>${y}</option>`).join('')}</select><select onchange="state.takvimTarih=haftaPazartesi(${curYear},+this.value);render()" class="${selC} flex-1">${[...Array(53)].map((_,i)=>i+1).map(w=>`<option value="${w}" ${curWk===w?'selected':''}>${w}. hafta</option>`).join('')}</select></div><p class="text-[10px] text-gold flex items-center gap-1"><i data-lucide="calendar-days" class="h-3 w-3"></i>${curWk}. hafta · ${curYear} seçili</p></div>`; }
     else if(per==='ay') picker=`<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Ay seç</label><input type="month" value="${esc(state.takvimAy||today.slice(0,7))}" onchange="state.takvimAy=this.value;render()" class="${selC}"/></div>`;
     else if(per==='yil') picker=`<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Yıl seç</label><select onchange="state.takvimYil=this.value;render()" class="${selC}">${[2025,2026,2027,2028,2029,2030].map(y=>`<option ${String(state.takvimYil||today.slice(0,4))===String(y)?'selected':''}>${y}</option>`).join('')}</select></div>`;
-    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">İş Takvimi Dönemi</div>`
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${baslikLbl}</div>`
       + pb('gun','Gün','calendar') + pb('hafta','Hafta','calendar-days') + pb('ay','Ay','calendar-range') + pb('yil','Yıl','calendar-check')
       + picker + sep;
   }
@@ -7750,6 +7868,8 @@ document.addEventListener('keydown',(e)=>{
 /* Erişilebilirlik: tüm dekoratif ikonlara aria-hidden ekle (ekran okuyucu atlar) */
 try{ if(window.lucide && lucide.createIcons){ const _ci=lucide.createIcons.bind(lucide); lucide.createIcons=(o={})=>_ci({attrs:{'aria-hidden':'true','focusable':'false'}, ...o}); } }catch(e){}
 try{ loadData(); }catch(e){}
+/* Takvim her açılışta güncel dönemi göstersin (gün=bugün, hafta=bu hafta, ay=bu ay, yıl=bu yıl) */
+try{ const _n=new Date(); const _iso=_n.toISOString().slice(0,10); state.takvimTarih=_iso; state.takvimAy=_iso.slice(0,7); state.takvimYil=_iso.slice(0,4); state.takvimHaftaYil=+_iso.slice(0,4); }catch(e){}
 try{ seedAuditFromData(); }catch(e){}
 render();
 initCookie();
