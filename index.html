@@ -614,12 +614,7 @@ function rejectAppt(id){ const a=appointments.find(x=>x.id===id); if(!a) return;
 function setRealtorTab(t){ state.module='realtor'; state.realtorTab=t; render(); }
 
 /* ---------- ONAY GEÇMİŞİ (audit log) ---------- */
-let auditLog = [
-  { icon:'check-circle-2', tone:'emer',  modul:'Satın Alma', text:'PO-2039 onaylandı · Çelik Donatı Tedariki',   who:'Ahmet Yıldız (CEO)',  time:'29.09.2026 16:42' },
-  { icon:'send',           tone:'gold',  modul:'Satın Alma', text:'PO-2040 patron onayına gönderildi',            who:'Selin Demir (CFO)',   time:'29.09.2026 14:10' },
-  { icon:'ban',            tone:'red',   modul:'Satın Alma', text:'PO-2037 reddedildi · Fazla stok talebi',        who:'Ahmet Yıldız (CEO)',  time:'28.09.2026 11:05' },
-  { icon:'stamp',          tone:'emer',  modul:'Sözleşmeler',text:'SZ-87 patron onayı verildi · Reklam Anlaşması', who:'Ahmet Yıldız (CEO)',  time:'27.09.2026 09:30' }
-];
+let auditLog = [];
 function currentModuleName(){
   const m = MODULES.find(x=>x.id===state.module);
   if(m) return m.name;
@@ -1112,28 +1107,23 @@ function nakitLiveTick(){
   const cnt=document.getElementById('nakitIslemSay'); if(cnt) cnt.textContent = (parseInt(cnt.textContent||'0',10)+1);
 }
 const butceByYear = {
-  2026: [['İnşaat Maliyetleri',2400000000,2512000000],['Pazarlama & Satış',180000000,164000000],['Personel',2500000000,2544000000],['Finansman',130000000,118000000],['Genel Yönetim',95000000,91000000]],
-  2027: [['İnşaat Maliyetleri',2900000000,2960000000],['Pazarlama & Satış',220000000,205000000],['Personel',2850000000,2810000000],['Finansman',160000000,172000000],['Genel Yönetim',110000000,104000000]],
-  2028: [['İnşaat Maliyetleri',3400000000,3380000000],['Pazarlama & Satış',260000000,268000000],['Personel',3200000000,3240000000],['Finansman',185000000,178000000],['Genel Yönetim',125000000,120000000]]
+  2026: [],
+  2027: [],
+  2028: []
 };
 function setButceYil(y){ state.butceYil = y; render(); }
-const agendaEvents = [
-  { day:'14', mon:'Eki', title:'Olağanüstü Genel Kurul', time:'10:00', place:'Genel Merkez', tag:'Kritik', tone:'red' },
-  { day:'17', mon:'Eki', title:'Yönetim Kurulu Toplantısı', time:'14:00', place:'Toplantı Salonu A', tag:'YK', tone:'gold' },
-  { day:'22', mon:'Eki', title:'Kıyıpark Adana Hakediş Sunumu', time:'11:30', place:'Yüreğir Şantiye', tag:'Proje', tone:'emer' },
-  { day:'28', mon:'Eki', title:'Bankalar & Finansman Görüşmesi', time:'15:00', place:'Online', tag:'Finans', tone:'gold' }
-];
+const agendaEvents = [];
 /* ============================================================
    YETKİLER — Onaylar · Ödeme/Satın Alma/Fiyat Talepleri · Loglar
    (yalnızca Toprak Grup · konsolide) — dashboard tarzı
    ============================================================ */
 let odemeTalepleri = [];
 let fiyatTalepleri = [];
-let istekLive = { islenen:35600000 };
+let istekLive = { islenen:0 };
 function istekLiveTick(){
   const lv=document.getElementById('lvIslenen');
   if(!lv || lv.offsetParent===null) return; // yalnız İstekler Paneli görünürken
-  istekLive.islenen += Math.floor(Math.random()*220000);
+  istekLive.islenen += 0;
   lv.textContent = money(istekLive.islenen);
   lv.style.transition='color .3s'; lv.style.color='#34d399';
   setTimeout(()=>{ if(lv) lv.style.color=''; }, 350);
@@ -1570,8 +1560,8 @@ function viewYetkiler(){
   <div data-sub="odeme" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
     ${kpi('banknote','Bekleyen Ödeme', odBek.length+' talep', money(odTutar),'true','amber')}
     ${kpi('stamp','Patron Onayında', odPatron+' talep','yüksek tutar','true', odPatron>0?'red':'emer')}
-    ${kpi('check-check','Bu Ay Ödenen', money(14200000),'%6,4','true','emer')}
-    ${kpi('calendar-clock','Vadesi Yaklaşan', '3 talep','7 gün içinde','true','gold')}
+    ${kpi('check-check','Bu Ay Ödenen', money(0),'%0','true','emer')}
+    ${kpi('calendar-clock','Vadesi Yaklaşan', '0','7 gün içinde','true','gold')}
   </div>
   <div data-sub="odeme" class="card rounded-2xl p-5 mb-5">
     ${sectionTitle('banknote','Ödeme Talepleri','Onay akışı · tedarikçi/alacaklı')}
@@ -1596,8 +1586,8 @@ function viewYetkiler(){
   <div data-sub="satinalma" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
     ${kpi('shopping-cart','Bekleyen Talep', saBek.length+' talep', money(saTutar),'true','amber')}
     ${kpi('stamp','Patron Onayında', purchaseRequests.filter(p=>p.status==='patron').length+' talep','','true','red')}
-    ${kpi('check-check','Bu Ay Onaylanan', money(21400000),'%8,0','true','emer')}
-    ${kpi('building','Firma Sayısı', '4 iştirak','grup geneli','true','gold')}
+    ${kpi('check-check','Bu Ay Onaylanan', money(0),'%0','true','emer')}
+    ${kpi('building','Firma Sayısı', '0','grup geneli','true','gold')}
   </div>
   <div data-sub="satinalma" class="card rounded-2xl p-5 mb-5">
     ${sectionTitle('shopping-cart','Satın Alma Talepleri','Birim → Patron onay akışı')}
@@ -1610,7 +1600,7 @@ function viewYetkiler(){
   <div data-sub="fiyat" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
     ${kpi('tag','Açık Fiyat Talebi', fyAcik+' RFQ','teklif toplama','true','amber')}
     ${kpi('clipboard-check','Onaya Hazır', fyHazir+' talep','teklif tamamlandı','true', fyHazir>0?'emer':'gold')}
-    ${kpi('users','Ortalama Teklif', '3,5 tedarikçi','RFQ başına','true','gold')}
+    ${kpi('users','Ortalama Teklif', '0','RFQ başına','true','gold')}
     ${kpi('coins','Tahmini Bütçe', money(fiyatTalepleri.reduce((a,f)=>a+f.tahmini,0)),'açık RFQ','true','emer')}
   </div>
   <div data-sub="fiyat" class="card rounded-2xl p-5 mb-5">
@@ -1819,8 +1809,8 @@ function viewBI(){
   const tickData = [
     ...comps.map(c=>({s:sym(c.name), v:money(c.ciro), chg:c.trend})),
     {s:'NET KÂR', v:money(totNet), chg:+14.7},
-    {s:'EBITDA', v:'%27,4', chg:+1.8},
-    {s:'NAKİT', v:money(742000000), chg:+6.1},
+    {s:'EBITDA', v:'%0', chg:+1.8},
+    {s:'NAKİT', v:money(0), chg:+6.1},
     {s:'HEDEF', v:'%'+ach, chg:ach>=90?+2:-3},
     {s:'KONUT SATIŞ', v:satilan.toLocaleString('tr-TR')+' adet', chg:+9.2},
     {s:'ONAY', v:bekleyen+' bekliyor', chg:null, flag:patronBekleyen>0?'red':null},
@@ -1969,7 +1959,7 @@ function viewLiveBoard(){
   <div data-sub="live" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
     ${kpi('landmark','Konsolide Ciro', money(totCiro),'canlı','true','gold')}
     ${kpi('wallet','Net Kâr', money(totNet),'canlı','true','emer')}
-    ${kpi('activity','Serbest Nakit','₺742 Mn','anlık','true','emer')}
+    ${kpi('activity','Serbest Nakit',money(0),'anlık','true','emer')}
     ${kpi('trending-up','Grup Endeksi','₺'+ (biState.TYH?biState.TYH.price.toFixed(0):'1000'),'TYH','true','gold')}
   </div>
   <div data-sub="live" class="card rounded-2xl p-5 mb-5">
@@ -2025,9 +2015,9 @@ function viewStats(){
     ${stat('home','Satılan Daire',uSold+' / '+uTot,'%'+Math.round(uSold/uTot*100)+' doluluk','emer')}
     ${stat('hard-hat','Aktif Proje',projects.length,projects.filter(p=>p.status==='Tamamlandı').length+' tamamlandı','gold')}
     ${stat('gavel','Aktif Dava',lawsuits.filter(l=>l.hal==='Devam Eden').length,lawsuits.length+' toplam','red')}
-    ${stat('percent','Ort. Brüt Marj','%28,1','segment','emer')}
-    ${stat('scale','Özkaynak',money(4465000000),'ROE %20,1','gold')}
-    ${stat('activity','EBITDA Marj','%27,4','+1,8 puan','emer')}
+    ${stat('percent','Ort. Brüt Marj','%0','segment','emer')}
+    ${stat('scale','Özkaynak',money(0),'ROE %0','gold')}
+    ${stat('activity','EBITDA Marj','%0','+1,8 puan','emer')}
   </div>
   <div data-sub="stats" class="card rounded-2xl p-5 mb-5">
     ${sectionTitle('bar-chart-4','Şirket Karşılaştırma İstatistikleri','Ciro · net · marj · trend')}
@@ -2229,10 +2219,10 @@ function viewDashboard(){
   })()}
 
   <div data-sub="konsolide" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-    ${kpi('landmark','Konsolide Ciro (Yıllık)', money(totCiro), '%9,2','true','gold')}
-    ${kpi('wallet','Net Kâr', money(totNet), '%14,7','true','emer')}
-    ${kpi('activity','Serbest Nakit Akışı', money(742000000), '%6,1','true','emer')}
-    ${kpi('percent','Konsolide EBITDA Marj', '%27,4', '%1,8','false','red')}
+    ${kpi('landmark','Konsolide Ciro (Yıllık)', money(totCiro), '%0','true','gold')}
+    ${kpi('wallet','Net Kâr', money(totNet), '%0','true','emer')}
+    ${kpi('activity','Serbest Nakit Akışı', money(0), '%0','true','emer')}
+    ${kpi('percent','Konsolide EBITDA Marj', '%0', '%0','false','red')}
   </div>
 
   ${(()=>{
@@ -2504,7 +2494,7 @@ function viewDashboard(){
     ${kpi('shield-alert','Açık Risk', risks.length+' Madde', risks.filter(r=>r.impact*r.prob>=6).length+' kritik','false','red')}
     ${kpi('gavel','Dava & İcra', lawsuits.length+' Dosya', money(lawsuits.reduce((a,l)=>a+l.value,0)),'true','gold')}
     ${kpi('file-signature','Sözleşme', contracts.length+' Adet', contracts.filter(c=>c.status==='pending'||c.status==='patron').length+' onayda','true','amber')}
-    ${kpi('shield-check','Uyum Skoru', '%92', '%3,0','true','emer')}
+    ${kpi('shield-check','Uyum Skoru', '%0', '%0','true','emer')}
   </div>
   <div data-sub="hukukrisk" class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-5">
     <div class="card rounded-2xl p-5">
@@ -2538,33 +2528,10 @@ function activityFeed(){
 /* ============================================================
    VIEW: SALES (Satış Yönetimi)
    ============================================================ */
-const crmLeads = [
-  { name:'Kaya İnşaat Yatırım',  rep:'B. Yılmaz', project:'Melikgazi Karacaoğlu K.D.', value:12400000, stage:'Müzakere', prob:70, next:'Sözleşme taslağı' },
-  { name:'Deniz Holding',         rep:'B. Yılmaz', project:'Kıyıpark Adana',            value:28600000, stage:'Teklif',    prob:45, next:'Fiyat revizyonu' },
-  { name:'Ege Grup A.Ş.',         rep:'S. Arı',    project:'TKN Flats',                 value:8900000,  stage:'Sözleşme',  prob:88, next:'İmza randevusu' },
-  { name:'Anadolu Emlak',         rep:'S. Arı',    project:'Sır GYO Talas K.D.',        value:6200000,  stage:'Fırsat',    prob:25, next:'İlk görüşme' },
-  { name:'Başak Yatırım',         rep:'B. Yılmaz', project:'AFME Neveser',              value:15300000, stage:'Müzakere', prob:60, next:'Ödeme planı' }
-];
-const salesTrend = [
-  { m:'Mar', sales:92,  collect:78 }, { m:'Nis', sales:108, collect:95 },
-  { m:'May', sales:96,  collect:101 },{ m:'Haz', sales:134, collect:112 },
-  { m:'Tem', sales:148, collect:128 },{ m:'Ağu', sales:121, collect:140 },
-  { m:'Eyl', sales:166, collect:149 }
-];
-const pipeline = [
-  { stage:'Fırsat (Lead)', count:48, value:92000000, pct:100, color:'gold' },
-  { stage:'Teklif Aşaması', count:29, value:64000000, pct:68,  color:'gold' },
-  { stage:'Müzakere',       count:17, value:41000000, pct:44,  color:'emer' },
-  { stage:'Sözleşme',       count:9,  value:23000000, pct:24,  color:'emer' },
-  { stage:'Kazanıldı',      count:6,  value:15500000, pct:16,  color:'emer' }
-];
-const unitSales = [
-  { project:'Melikgazi Karacaoğlu K.D.', total:280, sold:214, reserved:34, revenue:1284000000 },
-  { project:'Sır GYO Talas K.D.',        total:240, sold:158, reserved:30, revenue:948000000 },
-  { project:'TKN Flats',                 total:180, sold:132, reserved:22, revenue:792000000 },
-  { project:'AFME Neveser',              total:160, sold:88,  reserved:26, revenue:528000000 },
-  { project:'Kıyıpark Adana',            total:320, sold:140, reserved:48, revenue:980000000 }
-];
+const crmLeads = [];
+const salesTrend = [];
+const pipeline = [];
+const unitSales = [];
 /* ---------- Satıcılar (satış temsilcileri) cari hesabı ---------- */
 const salesReps = [];
 /* ---------- Cari Hesaplar (Satıcılar Hesabı · satıcı/taşeron/müteahhit/danışman) ---------- */
@@ -2892,9 +2859,9 @@ function viewSales(){
   return `
   ${emlakOnay}
   <div data-sub="satis" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    ${kpi('target','Yıllık Satış Hedefi', money(180000000), '%72 Tamamlandı','true','gold')}
-    ${kpi('check-circle','Gerçekleşen', money(129600000), '%12,4','true','emer')}
-    ${kpi('users','Aktif Fırsat', '109', '+14','true','emer')}
+    ${kpi('target','Yıllık Satış Hedefi', money(0), '%72 Tamamlandı','true','gold')}
+    ${kpi('check-circle','Gerçekleşen', money(0), '%0','true','emer')}
+    ${kpi('users','Aktif Fırsat', '0', '—','true','emer')}
   </div>
 
   <div data-sub="satis" class="grid grid-cols-1 xl:grid-cols-5 gap-4 mt-5">
@@ -3037,7 +3004,7 @@ function viewPurchase(){
   <div data-sub="satinalma" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     ${kpi('clock','Birim Onayı Bekleyen', pending.length+' Talep', money(totalPending),'true','amber')}
     ${kpi('stamp','Patron Onayında', atPatron.length+' Talep', money(atPatron.reduce((a,p)=>a+p.amount,0)),'true','gold')}
-    ${kpi('check-check','Bu Ay Onaylanan', money(21400000), '%8,0','true','emer')}
+    ${kpi('check-check','Bu Ay Onaylanan', money(0), '%0','true','emer')}
   </div>
 
   ${canAct ? `
@@ -3509,11 +3476,11 @@ function viewProjects(){
   // YAP-SAT → Maliyet Hs · İnşaat Hs · Satış Şeması
   if(sub==='yapsat'){
     const ys = projects.filter(p=>p.isKolu==='Yap-Sat');
-    const maliyet = [['Arsa Bedeli',620000000,'gold'],['İnşaat Maliyeti',880000000,'amber'],['Ruhsat & Harçlar',48000000,'slate'],['Pazarlama & Satış',62000000,'emer'],['Finansman Gideri',74000000,'red'],['Genel Giderler',36000000,'gold']];
+    const maliyet = [];
     const toplamMaliyet = maliyet.reduce((a,m)=>a+m[1],0);
     const mxM = Math.max(...maliyet.map(m=>m[1]));
-    const satisGeliri = 2180000000;
-    const hakedis = [['1. Hakediş · Temel',120000000,'Ödendi'],['2. Hakediş · Kaba İnşaat',240000000,'Ödendi'],['3. Hakediş · İnce İşler',180000000,'Onayda'],['4. Hakediş · Teslim',160000000,'Planlandı']];
+    const satisGeliri = 0;
+    const hakedis = [];
     const uSold = unitSales.reduce((a,u)=>a+u.sold,0), uTot=unitSales.reduce((a,u)=>a+u.total,0);
     return `
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -3640,21 +3607,14 @@ function viewProfit(){
   if(currentSub()==='saticilar' && state.cariView) return viewCariDetail(state.cariView);
   if(currentSub()==='saticilar' && state.vendorView==='new') return viewVendorForm();
   if(currentSub()==='saticilar' && state.vendorView==='suspect') return viewVendorSuspect();
-  const rows = [
-    { name:'Toprak Gayrimenkul',  gross:34.2, net:21.6, opex:118000000 },
-    { name:'Toprak İnşaat',  gross:26.8, net:15.5, opex:164000000 },
-    { name:'Toprak Turizm',gross:19.4, net:11.7, opex:92000000 }
-  ];
-  const opexItems = [
-    ['Personel Giderleri',38,'gold'],['Operasyonel & Bakım',24,'emer'],
-    ['Pazarlama & Satış',14,'amber'],['Genel Yönetim',13,'gold'],['Finansman Giderleri',11,'red']
-  ];
+  const rows = [];
+  const opexItems = [];
   return `
   ${currentSub()==='nakit'?'':`<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-    ${kpi('trending-up','Konsolide Brüt Marj', '%28,1', '%2,3','true','emer')}
-    ${kpi('badge-percent','Konsolide Net Marj', '%17,6', '%1,1','true','emer')}
-    ${kpi('receipt-text','Toplam OPEX', money(374000000), '%3,4','false','red')}
-    ${kpi('scale','Gider / Ciro', '%7,3', '%0,6','true','gold')}
+    ${kpi('trending-up','Konsolide Brüt Marj', '%0', '%0','true','emer')}
+    ${kpi('badge-percent','Konsolide Net Marj', '%0', '%0','true','emer')}
+    ${kpi('receipt-text','Toplam OPEX', money(0), '%0','false','red')}
+    ${kpi('scale','Gider / Ciro', '%0', '%0','true','gold')}
   </div>`}
 
   <div data-sub="marj" class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-5">
@@ -3743,7 +3703,7 @@ function viewProfit(){
   <!-- MALİYET HESAPLARI -->
   <div data-sub="maliyet" class="card rounded-2xl p-5">
     ${sectionTitle('receipt-text','Maliyet Hesapları','Konsolide maliyet kalemleri')}
-    ${(()=>{ const m=[['Direkt İnşaat Maliyeti',2512000000,'gold'],['Arsa & Kamulaştırma',620000000,'amber'],['Malzeme & Tedarik',880000000,'emer'],['İşçilik & Taşeron',540000000,'gold'],['Finansman Gideri',118000000,'red'],['Genel Üretim Gideri',164000000,'slate']]; const t=m.reduce((a,x)=>a+x[1],0); const mx=Math.max(...m.map(x=>x[1])); return `
+    ${(()=>{ const m=[]; const t=m.reduce((a,x)=>a+x[1],0); const mx=Math.max(...m.map(x=>x[1])); return `
     <div class="space-y-3">${m.map(([n,v,c])=>`<div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-300">${n}</span><span class="text-slate-400">${money(v)}</span></div>${progress(Math.round(v/mx*100),c)}</div>`).join('')}</div>
     <div class="mt-3 pt-3 border-t border-white/5 flex justify-between text-sm"><span class="text-slate-400">Toplam Maliyet</span><span class="font-bold text-white">${money(t)}</span></div>`; })()}
   </div>
@@ -3759,25 +3719,20 @@ function viewProfit(){
   <div data-sub="ozkaynak" class="card rounded-2xl p-5">
     ${sectionTitle('scale','Özkaynak Durumu','Varlık · yükümlülük · özkaynak')}
     <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
-      ${kpi('layers','Toplam Varlık', money(6367000000),'Aktif','true','gold')}
-      ${kpi('credit-card','Toplam Borç', money(2528000000),'Pasif','false','red')}
-      ${kpi('scale','Özkaynak', money(3839000000),'Net değer','true','emer')}
-      ${kpi('percent','Borç/Özkaynak', '0,66','Kaldıraç','true','gold')}
+      ${kpi('layers','Toplam Varlık', money(0),'Aktif','true','gold')}
+      ${kpi('credit-card','Toplam Borç', money(0),'Pasif','false','red')}
+      ${kpi('scale','Özkaynak', money(0),'Net değer','true','emer')}
+      ${kpi('percent','Borç/Özkaynak', '—','Kaldıraç','true','gold')}
     </div>
     <div class="space-y-3">
-      ${[['Ödenmiş Sermaye',1500000000,'gold'],['Geçmiş Yıl Kârları',1443000000,'emer'],['Dönem Net Kârı',896000000,'emer']].map(([n,v,c])=>`<div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-300">${n}</span><span class="text-slate-400">${money(v)}</span></div>${progress(Math.round(v/3839000000*100),c)}</div>`).join('')}
+      ${[].map(([n,v,c])=>`<div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-300">${n}</span><span class="text-slate-400">${money(v)}</span></div>${progress(Math.round(v/3839000000*100),c)}</div>`).join('')}
     </div>
   </div>
 
   ${viewPurchase()}
   ${salesAccountHtml()}`;
 }
-const segmentProfit = [
-  { name:'Konut Satışı',     rev:3180000000, cost:2290000000 },
-  { name:'Ticari / Ofis',    rev:980000000,  cost:620000000 },
-  { name:'Arsa / Arazi',     rev:540000000,  cost:300000000 },
-  { name:'Kiralama & İşletme',rev:410000000,  cost:250000000 }
-];
+const segmentProfit = [];
 
 /* ============================================================
    VIEW: LEGAL & RISK (Hukuk & Risk)
@@ -3803,17 +3758,9 @@ function cellColor(score){ // 1..9
 /* ---------- KURUMSAL YÖNETİM verileri ---------- */
 const govAssemblies = [];
 const govBoard = [];
-const govAmendments = [
-  { article:'Madde 6 — Sermaye', change:'Kayıtlı sermaye tavanı ₺2 Milyar', stage:'Ticaret Sicili Tescili', pct:80, tone:'emer' },
-  { article:'Madde 11 — Yönetim Kurulu', change:'Üye sayısı 5→7', stage:'Genel Kurul Onayı Bekliyor', pct:45, tone:'amber' },
-  { article:'Madde 18 — Temsil & İlzam', change:'İmza yetki grupları güncellemesi', stage:'Taslak Hazırlık', pct:20, tone:'gold' }
-];
+const govAmendments = [];
 const govCommittees = [];
-const govAuthority = [
-  { group:'(A) Grubu — Patron/CEO', scope:'Sınırsız temsil & ilzam', color:'gold' },
-  { group:'(B) Grubu — CFO + 1 Müdür', scope:'₺10M’e kadar çift imza', color:'emer' },
-  { group:'(C) Grubu — Müdürler', scope:'₺1M’e kadar çift imza', color:'emer' }
-];
+const govAuthority = [];
 
 function setLegalArea(k){ state.legalArea = (state.legalArea===k?null:k); render(); }
 function setDavaKpi(v){ state.davaKpi = state.davaKpi===v?null:v; render(); }
@@ -3870,7 +3817,7 @@ function legalAreaPanel(key){
     return wrap('shield-check','Önleyici Hukuk · Alınan Tedbirler', risks.length+' aksiyon', body);
   }
   if(key==='uyum'){
-    const items=[['KVKK Uyumu','Aydınlatma metni & VERBİS kaydı güncel','%96','emer'],['İş Hukuku','Özlük dosyaları & İSG uyumu','%90','gold'],['Vergi Mevzuatı','Beyan & tam tasdik süreçleri','%92','emer'],['Ticaret Hukuku','Sözleşme & sicil uyumu','%88','gold']];
+    const items=[['KVKK Uyumu','Aydınlatma metni & VERBİS kaydı güncel','%0','emer'],['İş Hukuku','Özlük dosyaları & İSG uyumu','%0','gold'],['Vergi Mevzuatı','Beyan & tam tasdik süreçleri','%0','emer'],['Ticaret Hukuku','Sözleşme & sicil uyumu','%0','gold']];
     const body = `<div class="space-y-3">${items.map(([n,d,p,c])=>`
       <div><div class="flex justify-between text-xs mb-1"><span class="text-slate-200">${n}</span><span class="text-slate-400">${p}</span></div>${progress(parseInt(p),c)}<p class="text-[11px] text-slate-500 mt-1">${d}</p></div>`).join('')}</div>`;
     return wrap('book-check','Mevzuata Uyum Durumu','4 alan', body);
@@ -4010,7 +3957,7 @@ function viewLegal(){
   const legalAreas = [
     { key:'sozlesme', icon:'file-signature', title:'Sözleşme Yönetimi',  desc:'Ticari sözleşmeleri hazırlar, inceler ve onaylar.',                         metric:contracts.length+' sözleşme',  mLabel:'aktif portföy', tone:'gold' },
     { key:'onleyici', icon:'shield-check',   title:'Önleyici Hukuk',     desc:'Uyuşmazlık doğmadan riskleri belirler ve tedbir alır.',                     metric:'8 tedbir',        mLabel:'açık aksiyon',  tone:'emer' },
-    { key:'uyum',     icon:'book-check',     title:'Mevzuata Uyum',      desc:'KVKK, iş hukuku ve vergi mevzuatına uyumu sağlar.',                         metric:'%92',             mLabel:'uyum skoru',    tone:'emer' },
+    { key:'uyum',     icon:'book-check',     title:'Mevzuata Uyum',      desc:'KVKK, iş hukuku ve vergi mevzuatına uyumu sağlar.',                         metric:'%0',             mLabel:'uyum skoru',    tone:'emer' },
     { key:'dava',     icon:'gavel',          title:'Dava ve İcra',       desc:'Şirket adına davaları ve icra takiplerini yönetir / koordine eder.',        metric:lawsuits.length+' dosya', mLabel:'dava + icra', tone:'amber' },
     { key:'kurumsal', icon:'landmark',       title:'Kurumsal Yönetim',   desc:'Genel kurul, yönetim kurulu ve ana sözleşme değişikliklerini yürütür.',     metric:'3 süreç',         mLabel:'devam eden',    tone:'gold' }
   ];
@@ -4067,7 +4014,7 @@ function viewLegal(){
       ${kpi('shield-alert','Açık Risk', risks.length+' Madde', '2 yüksek','false','red')}
       ${kpi('gavel','Devam Eden Dava', _vis.filter(l=>(l.hal||'Devam Eden')==='Devam Eden').length+' Dosya', money(_vis.reduce((a,l)=>a+l.value,0)),'true','gold')}
       ${kpi('file-signature','Bekleyen Sözleşme', contracts.filter(c=>c.status==='pending').length+' Adet', 'Onay havuzu','true','amber')}
-      ${kpi('shield-check','Uyum Skoru', '%92', '%3,0','true','emer')}
+      ${kpi('shield-check','Uyum Skoru', '%0', '%0','true','emer')}
     </div>`;
   }
   return `
@@ -4526,7 +4473,7 @@ function viewPartnership(){
   return `
   <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
     ${kpi('network','İştirak Sayısı', shList.length+' Şirket', '1 yeni süreç','true','gold')}
-    ${kpi('pie-chart','Ort. Holding Payı', '%'+avgHold, '%5,0','true','emer')}
+    ${kpi('pie-chart','Ort. Holding Payı', '%'+avgHold, '%0','true','emer')}
     ${kpi('hand-coins','2025 Temettü Hakedişi', money(divList.reduce((a,d)=>a+d.holdingShare,0)), 'Holding payı','true','emer')}
     ${kpi('stamp','Bekleyen Kurul Kararı', boardDecisions.filter(b=>!b.signed).length+' Adet', 'İmza süreci','false','amber')}
   </div>
@@ -4687,24 +4634,10 @@ const cashProjection = [
   { m:'Nis', in:600, out:470 }, { m:'May', in:520, out:500 }, { m:'Haz', in:640, out:520 },
   { m:'Tem', in:700, out:540 }, { m:'Ağu', in:580, out:560 }, { m:'Eyl', in:760, out:590 }
 ];
-const incomeStatement = [
-  { label:'Net Satışlar (Ciro)',       value:5110000000, tone:'slate',  bold:true },
-  { label:'Satışların Maliyeti (-)',   value:-3672000000,tone:'red' },
-  { label:'Brüt Kâr',                  value:1438000000, tone:'gold',   bold:true },
-  { label:'Faaliyet Giderleri (-)',    value:-374000000, tone:'red' },
-  { label:'Faaliyet Kârı (EBIT)',      value:1064000000, tone:'emer',   bold:true },
-  { label:'Finansman Giderleri (-)',   value:-118000000, tone:'red' },
-  { label:'Vergi Karşılığı (-)',       value:-50000000,  tone:'red' },
-  { label:'Net Dönem Kârı',            value:896000000,  tone:'emer',   bold:true }
-];
-const balanceAssets = [ ['Nakit & Nakit Benzeri',742000000],['Ticari Alacaklar',684000000],['Stoklar',521000000],['Maddi Duran Varlıklar',3180000000],['İştirakler',1240000000] ];
-const balanceLiab   = [ ['Ticari Borçlar',498000000],['Kısa Vadeli Finansal Borç',610000000],['Uzun Vadeli Finansal Borç',1420000000],['Özkaynaklar',3839000000] ];
-const bankPositions = [
-  { bank:'Ziraat Bankası', type:'Vadesiz TL',  amount:286000000, color:'gold' },
-  { bank:'İş Bankası',     type:'Vadeli TL',   amount:214000000, color:'emer' },
-  { bank:'Garanti BBVA',   type:'Döviz (USD)', amount:168000000, color:'gold' },
-  { bank:'Akbank',         type:'Vadesiz TL',  amount:74000000,  color:'emer' }
-];
+const incomeStatement = [];
+const balanceAssets = [];
+const balanceLiab   = [];
+const bankPositions = [];
 const receivablesAging = [ ['0-30 gün',58,'emer'],['31-60 gün',24,'gold'],['61-90 gün',11,'amber'],['90+ gün',7,'red'] ];
 function viewFinance(){
   const totalAssets = balanceAssets.reduce((a,x)=>a+x[1],0);
@@ -4713,10 +4646,10 @@ function viewFinance(){
   const toneCls = t=> t==='emer'?'text-emer-light':t==='red'?'text-rose-400':t==='gold'?'text-gold':'text-slate-300';
   return `
   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-    ${kpi('banknote','Toplam Banka Pozisyonu', money(totalBank), '%4,8','true','gold')}
-    ${kpi('wallet','Net Dönem Kârı', money(896000000), '%14,7','true','emer')}
-    ${kpi('scale','Borç / Özkaynak', '0,53', '%2,0','true','emer')}
-    ${kpi('droplet','Cari Oran', '1,78', '%1,2','false','gold')}
+    ${kpi('banknote','Toplam Banka Pozisyonu', money(totalBank), '%0','true','gold')}
+    ${kpi('wallet','Net Dönem Kârı', money(0), '%0','true','emer')}
+    ${kpi('scale','Borç / Özkaynak', '—', '%0','true','emer')}
+    ${kpi('droplet','Cari Oran', '—', '%0','false','gold')}
   </div>
 
   <div data-sub="gelir" class="grid grid-cols-1 xl:grid-cols-5 gap-4 mt-5">
@@ -4795,7 +4728,7 @@ function viewFinance(){
   <div data-sub="gelir" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('percent','Temel Finansal Oranlar','Mali sağlık göstergeleri')}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      ${[['Cari Oran','1,78','emer'],['Likidite (Asit-Test)','1,21','emer'],['Borç / Özkaynak','0,53','gold'],['Özkaynak Kârlılığı (ROE)','%23,3','emer'],['Aktif Kârlılığı (ROA)','%13,4','gold'],['Net Kâr Marjı','%17,6','emer'],['EBITDA Marjı','%27,4','gold'],['Faiz Karşılama','9,0x','emer']].map(([n,v,c])=>`
+      ${[['Cari Oran','—','emer'],['Likidite (Asit-Test)','—','emer'],['Borç / Özkaynak','—','gold'],['Özkaynak Kârlılığı (ROE)','%0','emer'],['Aktif Kârlılığı (ROA)','%0','gold'],['Net Kâr Marjı','%0','emer'],['EBITDA Marjı','%0','gold'],['Faiz Karşılama','—','emer']].map(([n,v,c])=>`
       <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4 text-center">
         <p class="text-xl font-bold ${c==='emer'?'text-emer-light':'text-gold'}">${v}</p>
         <p class="text-[11px] text-slate-500 mt-1">${n}</p>
@@ -4866,9 +4799,9 @@ function viewFinance(){
 
   <!-- ===================== VERGİ PLANLAMA ===================== -->
   <div data-sub="vergi" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    ${kpi('percent','Efektif Vergi Oranı','%23,4','Yasal %25','true','emer')}
-    ${kpi('calendar-clock','Cari Dönem Geçici Vergi', money(214000000),'3. Dönem','true','gold')}
-    ${kpi('piggy-bank','Yıllık Tasarruf (Teşvik)', money(86000000),'Ar-Ge + Yatırım','true','emer')}
+    ${kpi('percent','Efektif Vergi Oranı','%0','Yasal %25','true','emer')}
+    ${kpi('calendar-clock','Cari Dönem Geçici Vergi', money(0),'3. Dönem','true','gold')}
+    ${kpi('piggy-bank','Yıllık Tasarruf (Teşvik)', money(0),'Ar-Ge + Yatırım','true','emer')}
   </div>
   <div data-sub="vergi" class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-5">
     <div class="card rounded-2xl p-5 xl:col-span-2">
@@ -4878,7 +4811,7 @@ function viewFinance(){
           <th class="text-left py-2 font-medium">Dönem</th><th class="text-right font-medium">Matrah</th>
           <th class="text-right font-medium">Hesaplanan (%25)</th><th class="text-right font-medium">Beyan Tarihi</th><th class="text-left pl-4 font-medium">Durum</th></tr></thead>
         <tbody>
-        ${[['1. Dönem (Oca-Mar)',620000000,'17.05.2026','odendi'],['2. Dönem (Nis-Haz)',710000000,'17.08.2026','odendi'],['3. Dönem (Tem-Eyl)',856000000,'17.11.2026','tahakkuk'],['4. Dönem (Eki-Ara)',540000000,'17.02.2027','plan']].map(([d,m,t,s])=>`
+        ${[].map(([d,m,t,s])=>`
           <tr class="border-b border-white/5 hover:bg-white/[.02]">
             <td class="py-3 font-medium text-slate-100">${d}</td>
             <td class="text-right text-slate-300">${money(m)}</td>
@@ -4891,9 +4824,9 @@ function viewFinance(){
     <div class="card rounded-2xl p-5">
       ${sectionTitle('shield-check','Vergi Avantajları & Teşvikler','Planlama kalemleri')}
       <div class="space-y-3">
-        ${[['Ar-Ge İndirimi',38000000,'emer'],['Yatırım Teşvik (İndirimli KV)',28000000,'emer'],['İstihdam Teşviki (5510)',14000000,'gold'],['Bağış & Sponsorluk',6000000,'gold']].map(([n,v,c])=>`<div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-300">${n}</span><span class="text-slate-400">${money(v)}</span></div>${progress(Math.round(v/38000000*100),c)}</div>`).join('')}
+        ${[].map(([n,v,c])=>`<div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-300">${n}</span><span class="text-slate-400">${money(v)}</span></div>${progress(Math.round(v/38000000*100),c)}</div>`).join('')}
       </div>
-      <p class="mt-4 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Toplam yıllık vergi tasarrufu: <b class="text-emer-light">${money(86000000)}</b></p>
+      <p class="mt-4 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Toplam yıllık vergi tasarrufu: <b class="text-emer-light">${money(0)}</b></p>
     </div>
   </div>
 
@@ -4903,13 +4836,13 @@ function viewFinance(){
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
       <div class="overflow-x-auto"><table class="w-full text-sm">
         <tbody>
-        ${[['Ticari Bilanço Kârı',2896000000,'text-slate-100',false],['(+) Kanunen Kabul Edilmeyen Gider (KKEG)',184000000,'text-rose-400',false],['(−) İştirak Kazancı İstisnası',120000000,'text-emer-light',false],['(−) Ar-Ge İndirimi',152000000,'text-emer-light',false],['(−) Geçmiş Yıl Zararları',0,'text-slate-400',false],['Kurumlar Vergisi Matrahı',2808000000,'text-white',true]].map(([n,v,cls,bold])=>`
+        ${[].map(([n,v,cls,bold])=>`
           <tr class="border-b border-white/5 ${bold?'font-bold bg-white/[.03]':''}">
             <td class="py-2.5 ${bold?'text-white':'text-slate-300'}">${n}</td>
             <td class="text-right ${cls}">${money(v)}</td></tr>`).join('')}
         </tbody></table></div>
       <div class="space-y-3">
-        ${[['Hesaplanan Kurumlar Vergisi (%25)',702000000,'gold'],['(−) Mahsup Edilen Geçici Vergi',648000000,'emer'],['Ödenecek Kurumlar Vergisi',54000000,'red']].map(([n,v,c])=>`
+        ${[].map(([n,v,c])=>`
           <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4 flex items-center justify-between">
             <span class="text-sm text-slate-300">${n}</span>
             <span class="text-lg font-bold ${c==='red'?'text-rose-400':c==='emer'?'text-emer-light':'text-gold'}">${money(v)}</span></div>`).join('')}
@@ -4925,16 +4858,16 @@ function viewFinance(){
     <div class="card rounded-2xl p-5 xl:col-span-3">
       ${sectionTitle('scale','Özkaynak Kalemleri','Bilanço · pasif')}
       <div class="space-y-3">
-        ${[['Ödenmiş Sermaye',1500000000,'gold'],['Sermaye Yedekleri',240000000,'gold'],['Yasal Yedekler (I. ve II. Tertip)',386000000,'emer'],['Geçmiş Yıl Kârları',1443000000,'emer'],['Dönem Net Kârı',896000000,'emer'],['(−) Dönem Zararı',0,'red']].map(([n,v,c])=>`<div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-300">${n}</span><span class="text-slate-400">${money(v)}</span></div>${progress(Math.round(v/1500000000*100>100?100:v/1500000000*100),c)}</div>`).join('')}
+        ${[].map(([n,v,c])=>`<div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-300">${n}</span><span class="text-slate-400">${money(v)}</span></div>${progress(Math.round(v/1500000000*100>100?100:v/1500000000*100),c)}</div>`).join('')}
       </div>
       <div class="mt-4 rounded-xl border border-emer/30 bg-emer/10 p-4 flex items-center justify-between">
         <span class="text-sm text-slate-200">Toplam Özkaynaklar</span>
-        <span class="text-xl font-bold text-emer-light">${money(4465000000)}</span></div>
+        <span class="text-xl font-bold text-emer-light">${money(0)}</span></div>
     </div>
     <div class="card rounded-2xl p-5 xl:col-span-2">
       ${sectionTitle('activity','Özkaynak Rasyoları','Mali bünye')}
       <div class="grid grid-cols-2 gap-3">
-        ${[['Özkaynak/Aktif','%54','emer'],['Borç/Özkaynak','0,66','gold'],['Özkaynak Kârlılığı (ROE)','%20,1','emer'],['Kaldıraç Oranı','1,85','gold']].map(([n,v,c])=>`
+        ${[].map(([n,v,c])=>`
           <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
             <p class="text-[11px] text-slate-500">${n}</p>
             <p class="text-xl font-bold ${c==='emer'?'text-emer-light':'text-gold'} mt-1">${v}</p></div>`).join('')}
@@ -4945,10 +4878,10 @@ function viewFinance(){
 
   <!-- ===================== KDV İADESİ ===================== -->
   <div data-sub="kdv" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-    ${kpi('receipt-text','Hesaplanan KDV', money(892000000),'Dönem','true','gold')}
-    ${kpi('corner-down-left','İndirilecek KDV', money(1046000000),'Dönem','true','emer')}
-    ${kpi('wallet','Devreden KDV', money(154000000),'Sonraki döneme','true','amber')}
-    ${kpi('badge-dollar-sign','İade Talebi', money(68000000),'Onay sürecinde','true','emer')}
+    ${kpi('receipt-text','Hesaplanan KDV', money(0),'Dönem','true','gold')}
+    ${kpi('corner-down-left','İndirilecek KDV', money(0),'Dönem','true','emer')}
+    ${kpi('wallet','Devreden KDV', money(0),'Sonraki döneme','true','amber')}
+    ${kpi('badge-dollar-sign','İade Talebi', money(0),'Onay sürecinde','true','emer')}
   </div>
   <div data-sub="kdv" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('file-check-2','KDV İade Talepleri','İade türü · YMM tasdik durumu')}
@@ -4957,7 +4890,7 @@ function viewFinance(){
         <th class="text-left py-2 font-medium">Dönem</th><th class="text-left font-medium">İade Türü</th>
         <th class="text-right font-medium">Tutar</th><th class="text-left pl-4 font-medium">YMM Raporu</th><th class="text-left font-medium">Durum</th></tr></thead>
       <tbody>
-      ${[['2026/03','İndirimli Orana Tabi (Md.29)',42000000,'Tasdik Edildi','iade'],['2026/06','İndirimli Orana Tabi (Md.29)',26000000,'Hazırlanıyor','surec'],['2026/02','İhracat İstisnası (Md.11)',18000000,'Tasdik Edildi','iade']].map(([d,t,v,ymm,s])=>`
+      ${[].map(([d,t,v,ymm,s])=>`
         <tr class="border-b border-white/5 hover:bg-white/[.02]">
           <td class="py-3 font-mono text-[12px] text-gold">${d}</td>
           <td class="text-slate-200">${t}</td>
@@ -4970,10 +4903,10 @@ function viewFinance(){
 
   <!-- ===================== SSK (SGK) HESAPLAMA ===================== -->
   <div data-sub="ssk" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-    ${kpi('users','Toplam Sigortalı','4.280','Aktif','true','emer')}
-    ${kpi('banknote','Aylık SGK Tahakkuku', money(68400000),'Prim + İşsizlik','true','gold')}
-    ${kpi('gift','Teşvik İndirimi', money(7200000),'5510 / 7103','true','emer')}
-    ${kpi('calendar-clock','Ödeme Günü','Ayın 23.','SGK','true','gold')}
+    ${kpi('users','Toplam Sigortalı','0','Aktif','true','emer')}
+    ${kpi('banknote','Aylık SGK Tahakkuku', money(0),'Prim + İşsizlik','true','gold')}
+    ${kpi('gift','Teşvik İndirimi', money(0),'5510 / 7103','true','emer')}
+    ${kpi('calendar-clock','Ödeme Günü','—','SGK','true','gold')}
   </div>
   <div data-sub="ssk" class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-5">
     <div class="card rounded-2xl p-5">
@@ -4983,7 +4916,7 @@ function viewFinance(){
           <th class="text-left py-2 font-medium">Prim Türü</th><th class="text-right font-medium">İşçi</th>
           <th class="text-right font-medium">İşveren</th><th class="text-right font-medium">Toplam</th></tr></thead>
         <tbody>
-        ${[['Kısa Vadeli Sig.','%0','%2,0','%2,0'],['Malullük, Yaşlılık, Ölüm','%9,0','%11,0','%20,0'],['Genel Sağlık Sig.','%5,0','%7,5','%12,5'],['İşsizlik Sigortası','%1,0','%2,0','%3,0']].map(([n,a,b,c])=>`
+        ${[].map(([n,a,b,c])=>`
           <tr class="border-b border-white/5"><td class="py-2.5 text-slate-200">${n}</td>
           <td class="text-right text-slate-300">${a}</td><td class="text-right text-slate-300">${b}</td>
           <td class="text-right text-gold font-medium">${c}</td></tr>`).join('')}
@@ -4996,41 +4929,25 @@ function viewFinance(){
     <div class="card rounded-2xl p-5">
       ${sectionTitle('building-2','Şirket Bazında SGK Yükü','Aylık tahakkuk · ₺')}
       <div class="space-y-3">
-        ${[['Toprak İnşaat',29800000,2180,'gold'],['Toprak Gayrimenkul',21400000,1240,'emer'],['Toprak Turizm',14200000,980,'emer'],['Toprak Grup',3000000,200,'gold']].map(([f,v,n,c])=>`
+        ${[].map(([f,v,n,c])=>`
           <div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-300">${f} <span class="text-slate-500">· ${n} kişi</span></span><span class="text-slate-400">${money(v)}</span></div>${progress(Math.round(v/29800000*100),c)}</div>`).join('')}
       </div>
       <div class="mt-4 rounded-xl border border-gold/30 bg-gold/10 p-4 flex items-center justify-between">
         <span class="text-sm text-slate-200">Aylık Toplam SGK Tahakkuku</span>
-        <span class="text-lg font-bold text-gold">${money(68400000)}</span></div>
+        <span class="text-lg font-bold text-gold">${money(0)}</span></div>
     </div>
   </div>`;
 }
-const budgetVsActual = [
-  { name:'İnşaat Maliyetleri', budget:2400000000, actual:2512000000 },
-  { name:'Pazarlama & Satış',  budget:180000000,  actual:164000000 },
-  { name:'Personel',           budget:2500000000, actual:2544000000 },
-  { name:'Finansman',          budget:130000000,  actual:118000000 },
-  { name:'Genel Yönetim',      budget:95000000,   actual:91000000 }
-];
+const budgetVsActual = [];
 
 /* ============================================================
    VIEW: HR (İK Yönetimi)
    ============================================================ */
 const salaryBands = [];
 const hrByCompany = [];
-const hrDepartments = [ ['Saha / Üretim',52,'gold'],['Operasyon & Lojistik',21,'emer'],['Mühendislik',12,'emer'],['İdari & Finans',9,'gold'],['Satış & Pazarlama',6,'amber'] ];
-const openPositions = [
-  { title:'Şantiye Şefi',          firm:'Toprak İnşaat',  level:'Yönetici', cand:14, urgent:true },
-  { title:'Elektrik Mühendisi',    firm:'Toprak Gayrimenkul',  level:'Uzman',    cand:28, urgent:false },
-  { title:'Filo Operasyon Sorumlusu',firm:'Toprak Turizm',level:'Orta',   cand:9,  urgent:true },
-  { title:'Mali Analist',          firm:'Toprak Grup', level:'Uzman',    cand:22, urgent:false }
-];
-const recentMovements = [
-  { name:'Elif Çetin',   action:'İşe Başladı', dept:'Mühendislik',  firm:'Toprak Gayrimenkul',  date:'29.09.2026', type:'in' },
-  { name:'Murat Aslan',  action:'Terfi',        dept:'Saha',         firm:'Toprak İnşaat',  date:'27.09.2026', type:'up' },
-  { name:'Deniz Kaya',   action:'İşten Ayrıldı',dept:'Lojistik',     firm:'Toprak Turizm',date:'25.09.2026', type:'out' },
-  { name:'Can Öztürk',   action:'İşe Başladı',  dept:'Finans',       firm:'Toprak Grup', date:'23.09.2026', type:'in' }
-];
+const hrDepartments = [];
+const openPositions = [];
+const recentMovements = [];
 function viewHR(){
   const sf = scopeFirm();
   const hrList = sf ? hrByCompany.filter(c=>c.firm===sf) : hrByCompany;
@@ -5040,10 +4957,10 @@ function viewHR(){
   const sbMax = Math.max(...salaryBands.map(b=>b.count));
   return `
   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-    ${kpi('users','Toplam Kadro', fmt(total)+' Kişi', '+64 bu çeyrek','true','gold')}
-    ${kpi('user-plus','Açık Pozisyon', openPositions.length+' İlan', '73 aday','true','emer')}
-    ${kpi('activity','Devir Oranı (Turnover)', '%7,8', '%1,1','true','emer')}
-    ${kpi('receipt-text','Aylık Bordro Maliyeti', money(212000000), '%3,2','false','red')}
+    ${kpi('users','Toplam Kadro', fmt(total)+' Kişi', '—','true','gold')}
+    ${kpi('user-plus','Açık Pozisyon', openPositions.length+' İlan', '—','true','emer')}
+    ${kpi('activity','Devir Oranı (Turnover)', '%0', '%0','true','emer')}
+    ${kpi('receipt-text','Aylık Bordro Maliyeti', money(0), '%0','false','red')}
   </div>
 
   <div data-sub="kadro" class="grid grid-cols-1 xl:grid-cols-5 gap-4 mt-5">
@@ -5130,7 +5047,7 @@ function viewHR(){
   <div data-sub="kadro" class="card rounded-2xl p-5 mt-5">
     ${sectionTitle('gauge','İK Performans Göstergeleri','Yıllık özet')}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      ${[['Çalışan Memnuniyeti','%84','emer'],['Eğitim (Kişi/Saat)','38 sa','gold'],['Devamsızlık Oranı','%2,3','gold'],['Ort. İşe Alım Süresi','27 gün','emer'],['Performans Ort.','4,2/5','emer'],['İç Terfi Oranı','%46','gold'],['Fazla Mesai Oranı','%6,1','amber'],['İSG Skoru','%97','emer']].map(([n,v,c])=>`
+      ${[].map(([n,v,c])=>`
       <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4 text-center">
         <p class="text-xl font-bold ${c==='emer'?'text-emer-light':c==='amber'?'text-amber-300':'text-gold'}">${v}</p>
         <p class="text-[11px] text-slate-500 mt-1">${n}</p>
@@ -5155,7 +5072,7 @@ function viewHR(){
     <div class="xl:col-span-2 card rounded-2xl p-5">
       ${sectionTitle('wallet','Bordro Özeti','Aylık')}
       <div class="space-y-3">
-        ${[['Toplam Aylık Bordro', money(212000000),'gold'],['Ortalama Brüt Maaş', money(49500),'emer'],['SGK + Vergi Yükü', money(78400000),'red'],['Yıllık Personel Maliyeti', money(2544000000),'gold']].map(([n,v,c])=>`
+        ${[].map(([n,v,c])=>`
         <div class="flex items-center justify-between rounded-xl border border-white/8 bg-navy-700/40 p-3">
           <span class="text-sm text-slate-300">${n}</span>
           <span class="text-sm font-bold ${c==='emer'?'text-emer-light':c==='red'?'text-rose-400':'text-gold'}">${v}</span>
@@ -5219,8 +5136,8 @@ function viewNews(){
   <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
     ${kpi('megaphone','Aktif Duyuru', announcements.length+' Adet', announcements.filter(a=>a.pin).length+' sabit','true','gold')}
     ${kpi('phone-incoming','Yeni Talep', yeni+' Arama', '“Sizi Arayalım”','true','emer')}
-    ${kpi('phone-call','Bu Ay Dönülen', '38 Talep', '%8,0','true','emer')}
-    ${kpi('timer','Ort. Dönüş Süresi', '2,4 sa', '%12','true','gold')}
+    ${kpi('phone-call','Bu Ay Dönülen', '0', '%0','true','emer')}
+    ${kpi('timer','Ort. Dönüş Süresi', '0', '%0','true','gold')}
   </div>
 
   <div class="grid grid-cols-1 xl:grid-cols-5 gap-4 mt-5">
@@ -6312,8 +6229,8 @@ function saveContractEdit(id){
 function viewKvkk(){
   return `
   <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-    ${kpi('shield-check','Uyum Skoru', '%92', '%3,0','true','emer')}
-    ${kpi('book-check','Mevzuat Alanı', '4 Başlık', 'KVKK · İş · Vergi · Ticaret','true','gold')}
+    ${kpi('shield-check','Uyum Skoru', '%0', '%0','true','emer')}
+    ${kpi('book-check','Mevzuat Alanı', '0', 'KVKK · İş · Vergi · Ticaret','true','gold')}
     ${kpi('users-round','Genel Kurul', govAssemblies.length+' Toplantı', '1 planlı','true','gold')}
     ${kpi('clipboard-check','Kurul Kararı', govBoard.length+' Gündem', '1 beklemede','true','emer')}
   </div>
