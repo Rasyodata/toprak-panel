@@ -206,20 +206,20 @@
 
       <!-- ŞİRKET EKRANI (yalnızca şirket görünümünde · yazıcının sağında, canlı renkle) -->
       <button id="ekranBtn" onclick="setModule('dashboard')" title="Şirket Ekranı" style="display:none"
-        class="h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="layout-dashboard" class="h-4 w-4"></i><span id="ekranBtnLbl" class="whitespace-nowrap">Ekranı</span>
+        class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
+        <i data-lucide="layout-dashboard" class="h-4 w-4"></i><span id="ekranBtnLbl" class="whitespace-nowrap">Ekranı</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
 
       <!-- ERP & CRM (şirket görünümünde · Ekranı'nın sağında · operasyonel modül grubu) -->
       <button id="erpBtn" onclick="openErp()" title="ERP & CRM" style="display:none"
-        class="h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="layout-grid" class="h-4 w-4"></i><span class="whitespace-nowrap">ERP &amp; CRM</span>
+        class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
+        <i data-lucide="layout-grid" class="h-4 w-4"></i><span class="whitespace-nowrap">ERP &amp; CRM</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
 
       <!-- AYARLAR (şirket görünümünde · Ekranı'nın sağında · şirketin vurgu/alt renginde · Sistem Yöneticisi) -->
       <button id="ayarlarBtn" onclick="setModule('admin')" title="Ayarlar · Sistem Yöneticisi" style="display:none"
-        class="h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="settings" class="h-4 w-4"></i><span class="whitespace-nowrap">Ayarlar</span>
+        class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
+        <i data-lucide="settings" class="h-4 w-4"></i><span class="whitespace-nowrap">Ayarlar</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
 
       <!-- USER SWITCHER -->
@@ -899,13 +899,13 @@ function buildNav(){
   // ÜST YATAY BAR — operasyonel modüller
   // Şirket görünümünde Patron Ekranı üst bardan kalkar → yazıcının yanındaki canlı "Ekranı" butonuna taşınır
   const ekBtn=document.getElementById('ekranBtn');
-  if(ekBtn){ if(state.company!=='all'){ ekBtn.style.display=''; const dm=MODULES.find(m=>m.id==='dashboard'); const lbl=ekBtn.querySelector('#ekranBtnLbl'); if(lbl) lbl.textContent=modDisplayName(dm); const acc='#d4af37'; ekBtn.style.backgroundColor=acc; ekBtn.style.borderColor=acc; const on=state.module==='dashboard'; ekBtn.classList.toggle('ring-2',on); ekBtn.classList.toggle('ring-white/50',on); ekBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; } else { ekBtn.style.display='none'; ekBtn.classList.remove('ring-2','ring-white/50'); } }
+  if(ekBtn){ if(state.company!=='all'){ ekBtn.style.display=''; const dm=MODULES.find(m=>m.id==='dashboard'); const lbl=ekBtn.querySelector('#ekranBtnLbl'); if(lbl) lbl.textContent=modDisplayName(dm); const acc='#d4af37'; ekBtn.style.backgroundColor=acc; ekBtn.style.borderColor=acc; const on=state.module==='dashboard'; ekBtn.classList.toggle('ring-2',on); ekBtn.classList.toggle('ring-white/50',on); ekBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; const st=ekBtn.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; } else { ekBtn.style.display='none'; ekBtn.classList.remove('ring-2','ring-white/50'); } }
   // Ayarlar (Sistem Yöneticisi) — şirket görünümünde Ekranı'nın sağında, şirketin vurgu (alt) renginde
   const ayBtn=document.getElementById('ayarlarBtn');
-  if(ayBtn){ if(state.company!=='all' && isAdminUser()){ ayBtn.style.display=''; const acc='#d4af37'; ayBtn.style.backgroundColor=acc; ayBtn.style.borderColor=acc; const on=state.module==='admin'; ayBtn.classList.toggle('ring-2',on); ayBtn.classList.toggle('ring-white/50',on); ayBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; } else { ayBtn.style.display='none'; ayBtn.classList.remove('ring-2','ring-white/50'); } }
+  if(ayBtn){ if(state.company!=='all' && isAdminUser()){ ayBtn.style.display=''; const acc='#d4af37'; ayBtn.style.backgroundColor=acc; ayBtn.style.borderColor=acc; const on=state.module==='admin'; ayBtn.classList.toggle('ring-2',on); ayBtn.classList.toggle('ring-white/50',on); ayBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; const st=ayBtn.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; } else { ayBtn.style.display='none'; ayBtn.classList.remove('ring-2','ring-white/50'); } }
   // ERP & CRM — şirket görünümünde Ekranı'nın sağında (operasyonel modül grubu; aktifken modüller alt barda)
   const erpBtn=document.getElementById('erpBtn');
-  if(erpBtn){ if(state.company!=='all'){ erpBtn.style.display=''; const acc='#d4af37'; erpBtn.style.backgroundColor=acc; erpBtn.style.borderColor=acc; const on=isErpModule(state.module); erpBtn.classList.toggle('ring-2',on); erpBtn.classList.toggle('ring-white/50',on); erpBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; } else { erpBtn.style.display='none'; erpBtn.classList.remove('ring-2','ring-white/50'); } }
+  if(erpBtn){ if(state.company!=='all'){ erpBtn.style.display=''; const acc='#d4af37'; erpBtn.style.backgroundColor=acc; erpBtn.style.borderColor=acc; const on=isErpModule(state.module); erpBtn.classList.toggle('ring-2',on); erpBtn.classList.toggle('ring-white/50',on); erpBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; const st=erpBtn.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; } else { erpBtn.style.display='none'; erpBtn.classList.remove('ring-2','ring-white/50'); } }
   const topMods = MODULES.filter(m=>m.group==='category' && can(m) && !LEFT_IDS.includes(m.id) && !(m.id==='company' && state.company==='all') && !(m.id==='dashboard' && state.company!=='all'));
   // Şirket görünümünde üst modül barı gizli (modüller ERP & CRM alt barına taşındı); konsolidede görünür
   mainNav.style.display = (topMods.length && state.company==='all') ? '' : 'none';
@@ -6988,7 +6988,7 @@ function buildSubNav(){
     if(isErpModule(state.module)){
       bar.style.display=''; tint();
       const mods = MODULES.filter(m=>ERP_MODULES.includes(m.id) && can(m));
-      bar.innerHTML = mods.map(m=>abtn(m.id===state.module, `setModule('${m.id}')`, m.icon, m.name.replace(/ Yönetimi| Yönetim/,''))).join('') + (isAdminUser()?talepGold:'');
+      bar.innerHTML = mods.map(m=>abtn(m.id===state.module, `setModule('${m.id}')`, m.icon, m.id==='projects'?'İşler':m.name.replace(/ Yönetimi| Yönetim/,''))).join('') + (isAdminUser()?talepGold:'');
       return;
     }
     // Ayarlar (admin) → üst bar: Tablolar · Kayıtlar · Yetki Yönetimi
