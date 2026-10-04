@@ -2629,6 +2629,11 @@ function addGiderKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g(
   logAction('repeat','amber', `Gider kartı · ${no} · ${ad} (${g('gdCikisTuru').value}) · ${money(gdTutar)} · ${tekrarOzet(giderKartlari[0])}`);
   logAction('git-pull-request','gold', `${no} gider kartı İş Onay Akışına düştü · Muhasebe → Finans Müdürü → Patron`, 'İş Onay Akışı');
   render(); toast(no+' · onay akışına düştü'); }
+let yetkiKartlari = [];
+function nextYtkNo(){ const max=yetkiKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'YTK-2026-'+String(max+1).padStart(4,'0'); }
+function addYetkiKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g('ykAd').value||'').trim(); if(!ad){toast('Yetki kartı adı girin');return;} const no=nextYtkNo(); const sinif=g('ykSinif').value||'';
+  yetkiKartlari.unshift({ no, ad, kisi:(g('ykKisi').value||'').trim(), sinif, sinifAd:(sinif&&ROLES[sinif]?(ROLES[sinif].title||ROLES[sinif].name):''), kapsam:g('ykKapsam').value||'Tümü', duzey:g('ykDuzey').value||'Görür', aciklama:(g('ykAciklama').value||'').trim(), yetkiler:(typeof rolYetkileri==='function'?rolYetkileri(sinif):[]) });
+  logAction('shield-check','emer', `Yetki kartı · ${no} · ${ad}${sinif?(' · '+(ROLES[sinif].title||ROLES[sinif].name)):''}`); render(); toast(no+' · yetki kartı oluşturuldu'); }
 function sayiYazi(n){ n=Math.round(Math.abs(n||0)); if(n===0) return 'Sıfır'; const b=['','Bir','İki','Üç','Dört','Beş','Altı','Yedi','Sekiz','Dokuz']; const o=['','On','Yirmi','Otuz','Kırk','Elli','Altmış','Yetmiş','Seksen','Doksan']; const gr=['','Bin','Milyon','Milyar','Trilyon'];
   const uc=x=>{let s='';const y=Math.floor(x/100),k=Math.floor((x%100)/10),t=x%10;if(y)s+=(y>1?b[y]:'')+'Yüz';if(k)s+=o[k];if(t)s+=b[t];return s;};
   let parts=[],i=0; while(n>0){let g3=n%1000; if(g3){let p=uc(g3); if(i===1&&g3===1)p=''; parts.unshift(p+gr[i]);} n=Math.floor(n/1000); i++;} return parts.join(''); }
@@ -5381,7 +5386,8 @@ function sysTables(){
     { kod:'TBL-0012', ad:'Ödeme Emri Kartı',         aciklama:'Ödeme emri belgesi · hak sahibi · bütçe · kesinti · onay silsilesi', sayi:odemeEmriKartlari.length,                git:"state.adminTable='TBL-0012';render()" },
     { kod:'TBL-0013', ad:'Ödeme Sözü Kartı',         aciklama:'Ödeme taahhüdü · tutar · vade · durum',             sayi:odemeSozuKartlari.length,                        git:"state.adminTable='TBL-0013';render()" },
     { kod:'TBL-0014', ad:'Tahminlenen Bütçe Çıkış Kartı', aciklama:'Öngörülen harcama · çıkış tipi/türü · tekrar · tahmini tutar', sayi:butceCikisKartlari.length,          git:"state.adminTable='TBL-0014';render()" },
-    { kod:'TBL-0015', ad:'Gider Kartı',              aciklama:'Düzenli gider (kira, maaş, YK, mali müşavir…) · tekrarlı çıkış', sayi:giderKartlari.length,                  git:"state.adminTable='TBL-0015';render()" }
+    { kod:'TBL-0015', ad:'Gider Kartı',              aciklama:'Düzenli gider (kira, maaş, YK, mali müşavir…) · tekrarlı çıkış', sayi:giderKartlari.length,                  git:"state.adminTable='TBL-0015';render()" },
+    { kod:'TBL-0016', ad:'Yetki Kartı Tablosu',      aciklama:'Kişi/rol · yetki sınıfı · düzey (görür/değiştir/tam) · kapsam', sayi:yetkiKartlari.length,                   git:"state.adminTable='TBL-0016';render()" }
   ];
 }
 function viewAdminRecords(){
@@ -5411,7 +5417,7 @@ function delRow(kod,i){
     if(i < vendorAccounts.length){ const r=vendorAccounts.splice(i,1)[0]; logAction('trash-2','red','Cari kart silindi · '+(r&&r.ad||'')); }
     else { const li=i-vendorAccounts.length; const r=lawyers.splice(li,1)[0]; logAction('trash-2','red','Avukat kaydı silindi · '+(r&&r.name||'')); }
   } else {
-    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari,'TBL-0013':odemeSozuKartlari,'TBL-0014':butceCikisKartlari,'TBL-0015':giderKartlari};
+    const map={'TBL-0002':lawsuits,'TBL-0003':lawyers,'TBL-0004':contracts,'TBL-0005':salesReps,'TBL-0006':projects,'TBL-0007':risks,'TBL-0010':satinAlmaTalepKartlari,'TBL-0011':personelKartlari,'TBL-0012':odemeEmriKartlari,'TBL-0013':odemeSozuKartlari,'TBL-0014':butceCikisKartlari,'TBL-0015':giderKartlari,'TBL-0016':yetkiKartlari};
     const arr=map[kod]; if(arr&&i>=0&&i<arr.length){ const r=arr.splice(i,1)[0]; logAction('trash-2','red','Kayıt silindi · '+kod+' · '+((r&&(r.name||r.ad||r.title||r.subject||r.no))||'')); }
   }
   render(); toast('Kayıt silindi ✓');
@@ -5619,6 +5625,8 @@ function tblForm(kod){
       `<input id="prName" placeholder="Proje adı" class="sm:col-span-6 ${inpC}"/><input id="prLoc" placeholder="Konum" class="sm:col-span-6 ${inpC}"/><input id="prKol" placeholder="İş Kolu" class="sm:col-span-4 ${inpC}"/><input id="prTip" placeholder="Tip" class="sm:col-span-4 ${inpC}"/><input id="prProg" type="number" placeholder="İlerleme %" class="sm:col-span-4 ${inpC}"/>`, btn('addProjectRec()','Proje Tanımla'));
   if(kod==='TBL-0007') return wrap('Risk Tanımla','Yeni risk maddesi',
       `<input id="rkName" placeholder="Risk adı" class="sm:col-span-5 ${inpC}"/><input id="rkCat" placeholder="Kategori" class="sm:col-span-3 ${inpC}"/><input id="rkImpact" type="number" min="1" max="3" placeholder="Etki 1-3" class="sm:col-span-2 ${inpC}"/><input id="rkProb" type="number" min="1" max="3" placeholder="Olasılık 1-3" class="sm:col-span-2 ${inpC}"/><input id="rkOwner" placeholder="Sorumlu" class="sm:col-span-12 ${inpC}"/>`, btn('addRiskRec()','Risk Tanımla'));
+  if(kod==='TBL-0016') return wrap('Yetki Kartı Oluştur','Kişi/rol · yetki sınıfı · düzey · kapsam · yetkiler sınıftan otomatik',
+      `<div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Belge No (otomatik)</label><input value="${nextYtkNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div><input id="ykAd" placeholder="Yetki kartı adı / başlık" class="sm:col-span-5 ${inpC}"/><select id="ykKisi" class="sm:col-span-4 ${selC}"><option value="">Kişi (personel)…</option>${personelKartlari.map(p=>`<option>${esc(p.ad)}</option>`).join('')}</select><select id="ykSinif" class="sm:col-span-4 ${selC}"><option value="">Yetki Sınıfı…</option>${Object.keys(ROLES).filter(k=>ROLES[k].kind==='internal').map(k=>`<option value="${k}">${esc(ROLES[k].title||ROLES[k].name)}</option>`).join('')}</select><select id="ykKapsam" class="sm:col-span-4 ${selC}"><option>Tümü</option>${COMPANY_TABS.filter(c=>c.id!=='all').map(c=>`<option>${esc(c.firm||c.label)}</option>`).join('')}</select><select id="ykDuzey" class="sm:col-span-4 ${selC}">${['Görür','Değiştir','Tam Yetki'].map(o=>`<option>${o}</option>`).join('')}</select><input id="ykAciklama" placeholder="Açıklama / kapsam notu" class="sm:col-span-12 ${inpC}"/>`, btn('addYetkiKart()','Yetki Kartı Oluştur'));
   return '';
 }
 function viewAdminTable(kod){
@@ -5638,6 +5646,7 @@ function viewAdminTable(kod){
   if(kod==='TBL-0005'){ return tbl('Satıcı / Prim Tablosu',[{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Ekip',f:r=>esc(r.ekip)},{h:'Şirket',f:r=>esc(r.firma)},{h:'Satış',r:1,f:r=>money(r.satis)},{h:'Tahsilat',r:1,f:r=>money(r.tahsilat)}],salesReps); }
   if(kod==='TBL-0006'){ return tbl('Projeler Tablosu',[{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Konum',f:r=>esc(r.loc)},{h:'İş Kolu',f:r=>esc(r.isKolu)},{h:'İlerleme',r:1,f:r=>'%'+r.progress}],projects); }
   if(kod==='TBL-0007'){ return tbl('Risk Tablosu',[{h:'Risk',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Kategori',f:r=>esc(r.cat||'—')},{h:'Etki',r:1,f:r=>r.impact},{h:'Olasılık',r:1,f:r=>r.prob},{h:'Sorumlu',f:r=>esc(r.owner||'—')}],risks); }
+  if(kod==='TBL-0016'){ return tbl('Yetki Kartı Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kişi',f:r=>esc(r.kisi||'—')},{h:'Yetki Sınıfı',f:r=>esc(r.sinifAd||'—')},{h:'Düzey',f:r=>badge(r.duzey||'—','gold')},{h:'Kapsam',f:r=>esc(r.kapsam||'—')}],yetkiKartlari); }
   if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Bölüm',f:r=>badge(r.bolum||'—','gold')},{h:'Görev Yeri',f:r=>esc(r.gorevYeri||'—')},{h:'Görevi',f:r=>esc(r.gorev||'—')},{h:'Mesleği',f:r=>esc(r.meslek||'—')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Resmi Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.resmiKod||'—')},{h:'İç Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.icKod||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')},{h:'Yetki Sınıfı',f:r=>r.yetkiSinifiAd?`<span class="text-slate-100">${esc(r.yetkiSinifiAd)}</span>${Array.isArray(r.yetkiler)&&r.yetkiler.length?`<span class="block text-[10px] text-slate-500">${esc(r.yetkiler.join(' · '))}</span>`:''}`:'—'}],personelKartlari); }
   if(kod==='TBL-0010'){
     const durumTone=d=>d==='Sipariş Verildi'?'emer':d==='Reddedildi'?'red':d==='Teklif Toplanıyor'?'gold':'amber';
@@ -5721,7 +5730,7 @@ function viewKayitlar(){
 }
 function viewAdmin(){
   if(!isAdminUser() && !state.viewAs) return viewUnauthorized({name:'Sistem Yöneticisi'});
-  if(state.adminMode==='yetki') return viewAccess();
+  if(state.adminMode==='yetki') return state.yetkiForm ? viewAdminTable('TBL-0016') : viewAccess();
   if(state.adminMode==='liste') return viewKayitlar();
   if(state.adminTable) return viewAdminTable(state.adminTable);
   if(!state.adminUsers) return viewAdminRecords();
@@ -6821,7 +6830,7 @@ function buildSubNav(){
       const mode = state.adminMode==='liste'?'liste':(state.adminMode==='yetki'?'yetki':'ekle');
       bar.innerHTML = abtn(mode==='ekle', "state.adminMode='ekle';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'table', 'Tablolar')
         + abtn(mode==='liste', "state.adminMode='liste';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'database', 'Kayıtlar')
-        + abtn(mode==='yetki', "state.adminMode='yetki';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'shield-check', 'Yetki Yönetimi');
+        + abtn(mode==='yetki', "state.adminMode='yetki';state.yetkiForm=false;state.adminUsers=false;state.adminTable=null;setModule('admin')", 'shield-check', 'Yetki Yönetimi');
       return;
     }
     // Toprak Ekranı (dashboard) → alt bar gizli
@@ -6922,7 +6931,15 @@ function subTabsLeftHtml(){
   const active = currentSub();
   const modName = (MODULES.find(m=>m.id===state.module)||{}).name || (state.module==='admin'?'Sistem Yöneticisi':'');
   const kartMenu = state.module==='admin' ? (()=>{
-    if(state.adminMode==='yetki') return '';
+    // Yetki Yönetimi modu → Yetki Kartı Oluştur (üstte) · Yetki Kayıtları (altta)
+    if(state.adminMode==='yetki'){
+      const onForm=!!state.yetkiForm;
+      const yb=(on,oc,ic,l)=>`<button onclick="${oc}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${ic}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${l}</span></button>`;
+      return `<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">Yetki Yönetimi</div>`
+        + yb(onForm, "state.yetkiForm=true;setModule('admin')", 'shield-plus', 'Yetki Kartı Oluştur')
+        + yb(!onForm, "state.yetkiForm=false;setModule('admin')", 'list-checks', 'Yetki Kayıtları')
+        + '<div class="my-2 border-t border-white/5"></div>';
+    }
     // Kayıtlar modu → oluşturulan kart türleri (Cari/Personel/Avukat/Dava/İcra/Sözleşme Kartları)
     if(state.adminMode==='liste'){
       const cur = state.kayitCat || 'cari';
@@ -6936,13 +6953,15 @@ function subTabsLeftHtml(){
       ['TBL-0002','Dava & İcra','gavel'],['TBL-0004','Sözleşme','file-signature'],['TBL-0005','Satıcı / Prim','badge-dollar-sign'],
       ['TBL-0006','Proje','hard-hat'],['TBL-0007','Risk','shield-alert'],['TBL-0009','Cari Tür Kodları','hash'],
       ['TBL-0010','Satın Alma Talep','clipboard-list'],['TBL-0012','Ödeme Emri','receipt-text'],['TBL-0013','Ödeme Sözü','handshake'],
-      ['TBL-0014','Bütçe Çıkış','trending-down'],['TBL-0015','Gider','repeat'],['TBL-0008','Kullanıcılar','user-cog']
+      ['TBL-0014','Bütçe Çıkış','trending-down'],['TBL-0015','Gider','repeat'],['TBL-0016','Yetki Kartı','shield-check'],['TBL-0008','Kullanıcılar','user-cog']
     ];
     return `<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">Kayıt Tabloları</div>`
       + KARTLAR.map(([k,l,ic])=>{ const on = k==='TBL-0008' ? !!state.adminUsers : (state.adminTable===k); const oc = k==='TBL-0008' ? "state.adminTable=null;state.adminUsers=true;setModule('admin')" : `state.adminUsers=false;state.adminTable='${k}';setModule('admin')`;
         return `<button onclick="${oc}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${ic}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${l}</span></button>`; }).join('')
       + '<div class="my-2 border-t border-white/5"></div>';
   })() : '';
+  // Ayarlar (admin) → sol bar tamamen moda göre kartMenu'dan gelir (jenerik alt-sekme listesi yok)
+  if(state.module==='admin') return kartMenu;
   return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${modName}</div>`
     + subs.map(s=>`
       <button onclick="setSub('${s.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${s.id===active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
