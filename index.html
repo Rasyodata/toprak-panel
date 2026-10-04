@@ -2582,17 +2582,20 @@ let vendorAccounts = [];
 const CARI_TIPI = ['Satıcı','Müşteri','Danışman','Diğer'];
 const CARI_TURU = ['Avukat','Satıcı','Taşeron','Müteahhit','Mali Müşavir','Tedarikçi','Diğer'];
 let cariTurKod = { 'Avukat':'AVK','Satıcı':'STC','Taşeron':'TSR','Müteahhit':'MTH','Mali Müşavir':'MLM','Tedarikçi':'TDR','Diğer':'DGR' };
-function nextCariKod(){ const max=vendorAccounts.reduce((m,v)=>{const n=parseInt((String(v.id).split('-')[1]||'0'),10);return n>m?n:m;},0); return 'CARI-'+String(max+1).padStart(4,'0'); }
+const KAYIT_YIL = 2026;
+// Birleşik kayıt no: <tabloNo>-<yıl>-<sıra> (ör. 0002-2026-0001) · başında TBL- yok
+function nextKayitNo(tnum, arr){ const pre='T-'+tnum+'-'+KAYIT_YIL+'-'; const max=(arr||[]).reduce((m,r)=>{ const s=String((r&&(r.no||r.id))||''); if(s.indexOf(pre)===0){ const n=parseInt(s.slice(pre.length),10)||0; return n>m?n:m; } return m; },0); return pre+String(max+1).padStart(4,'0'); }
+function nextCariKod(){ return nextKayitNo('0001', vendorAccounts); }
 let satinAlmaTalepKartlari = [];
-function nextSatNo(){ const max=satinAlmaTalepKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'SAT-2026-'+String(max+1).padStart(4,'0'); }
+function nextSatNo(){ return nextKayitNo('0010', satinAlmaTalepKartlari); }
 const PERSONEL_BOLUM = ['Şirket','Proje','Yap-Sat','Al-Sat','Satın Alma','Finans','İnşaat','İK','Bilgi İşlem','Saha Operasyon','Diğer'];
 const HIZMET_TURU = ['İşçilik','Danışmanlık','Taşıma / Nakliye','Bakım - Onarım','Kiralama','Taşeronluk','Diğer'];
 let personelKartlari = [];
-function nextPrsNo(){ const max=personelKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[1]||'0'),10);return n>m?n:m;},0); return 'PRS-'+String(max+1).padStart(4,'0'); }
+function nextPrsNo(){ return nextKayitNo('0011', personelKartlari); }
 let odemeEmriKartlari = [];
-function nextOeNo(){ const max=odemeEmriKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'ÖEB-2026-'+String(max+1).padStart(4,'0'); }
+function nextOeNo(){ return nextKayitNo('0012', odemeEmriKartlari); }
 let odemeSozuKartlari = [];
-function nextOszNo(){ const max=odemeSozuKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'ÖSZ-2026-'+String(max+1).padStart(4,'0'); }
+function nextOszNo(){ return nextKayitNo('0013', odemeSozuKartlari); }
 function addOdemeSozu(){ const g=i=>document.getElementById(i)||{}; const hak=(g('osHak').value||'').trim(); if(!hak){toast('Hak sahibi girin');return;} const no=nextOszNo();
   odemeSozuKartlari.unshift({ no, hakSahibi:hak, tutar:parseInt(g('osTutar').value||'0',10)||0, sozTarih:(g('osSozTarih').value||'').trim(), vade:(g('osVade').value||'').trim(), dayanak:(g('osDayanak').value||'').trim(), aciklama:(g('osAciklama').value||'').trim(), veren:(g('osVeren').value||'').trim(), durum:g('osDurum').value||'Söz Verildi' });
   const sozTutar=parseInt(g('osTutar').value||'0',10)||0;
@@ -2605,7 +2608,7 @@ const GIDER_TURU = ['Kira Gideri','Personel Maaşları','Yönetim Kurulu Ödemel
 const TEKRAR_TIPI = ['Tek Seferlik','Her Ay','Belirli Tekrar'];
 function tekrarOzet(r){ if(!r||r.tekrar==='Tek Seferlik'||!r.tekrar) return 'Tek Seferlik'; const gun=r.ayGun?('her ayın '+r.ayGun+'. günü'):'her ay'; return r.tekrar==='Belirli Tekrar'?(gun+' · '+(r.kez||0)+' kez'):(gun); }
 let butceCikisKartlari = [];
-function nextTbcNo(){ const max=butceCikisKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'TBÇ-2026-'+String(max+1).padStart(4,'0'); }
+function nextTbcNo(){ return nextKayitNo('0014', butceCikisKartlari); }
 function addButceCikis(){ const g=i=>document.getElementById(i)||{}; const kalem=(g('bcKalem').value||'').trim(); if(!kalem){toast('Kalem/açıklama girin');return;} const no=nextTbcNo();
   butceCikisKartlari.unshift({ no, tarih:(g('bcTarih').value||'').trim(), kalem, cikisTipi:g('bcCikisTipi').value||'Gider', cikisTuru:g('bcCikisTuru').value||'Diğer', butceKodu:(g('bcKod').value||'').trim(), donem:(g('bcDonem').value||'').trim(), tutar:parseInt(g('bcTutar').value||'0',10)||0, kesinlik:g('bcKesinlik').value||'Orta', proje:(g('bcProje').value||'').trim(), aciklama:(g('bcAciklama').value||'').trim(), ek:(g('bcEk').value||'').trim(),
     tekrar:g('bcTekrar').value||'Tek Seferlik', ayGun:parseInt(g('bcAyGun').value||'0',10)||0, kez:parseInt(g('bcKez').value||'0',10)||0,
@@ -2620,7 +2623,7 @@ function saveButceEdit(i){ const b=butceCikisKartlari[i]; if(!b) return; const g
   { const s=document.getElementById('bcOnaycilar'); if(s) b.onaycilar=[...s.selectedOptions].map(o=>o.value); }
   state.bcEdit=null; logAction('pencil','gold', `${b.no} bütçe çıkışı güncellendi · ${b.kalem}`); render(); toast('Güncellendi ✓'); }
 let giderKartlari = [];
-function nextGdrNo(){ const max=giderKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'GDR-2026-'+String(max+1).padStart(4,'0'); }
+function nextGdrNo(){ return nextKayitNo('0015', giderKartlari); }
 function addGiderKart(){ const g=i=>document.getElementById(i)||{}; const ad=(g('gdAd').value||'').trim(); if(!ad){toast('Gider adı girin');return;} const no=nextGdrNo();
   giderKartlari.unshift({ no, ad, cikisTipi:g('gdCikisTipi').value||'Gider', cikisTuru:g('gdCikisTuru').value||'Kira Gideri', alacakli:(g('gdAlacakli').value||'').trim(), tutar:parseInt(g('gdTutar').value||'0',10)||0, butceKodu:(g('gdKod').value||'').trim(),
     tekrar:g('gdTekrar').value||'Her Ay', ayGun:parseInt(g('gdAyGun').value||'0',10)||0, kez:parseInt(g('gdKez').value||'0',10)||0, baslangic:(g('gdBaslangic').value||'').trim(), aciklama:(g('gdAciklama').value||'').trim() });
@@ -2640,7 +2643,7 @@ const YETKI_KART_TURLERI = [
 ];
 const YETKI_MODULLER = [['yetkiler','İstekler'],['company','Firma Bilgileri'],['sales','Satış'],['projects','Proje'],['profitability','Finans'],['finance','Mali'],['legal','Hukuk & Risk'],['hr','İK'],['admin','Ayarlar']];
 let yetkiGruplari = [];
-function nextYgpNo(){ const max=yetkiGruplari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'YGP-2026-'+String(max+1).padStart(4,'0'); }
+function nextYgpNo(){ return nextKayitNo('0017', yetkiGruplari); }
 function addYetkiGrup(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const ms=i=>{const s=g(i);return s?[...s.selectedOptions].map(o=>o.value):[];};
   const ad=gv('ygAd'); if(!ad){toast('Grup adı girin');return;} const no=nextYgpNo(); const sinif=gv('ygSinif');
   yetkiGruplari.unshift({ no, ad, kod:gv('ygKod'), sinif, sinifAd:(sinif&&ROLES[sinif]?(ROLES[sinif].title||ROLES[sinif].name):''), duzey:gv('ygDuzey')||'Listede Görür', moduller:ms('ygModuller'), aciklama:gv('ygAciklama') });
@@ -2651,11 +2654,11 @@ const GRUP_TURLERI = [['cari','Cari'],['personel','Personel'],['dava','Dava'],['
 function grupTurAd(t){ const x=GRUP_TURLERI.find(g=>g[0]===t); return x?x[1]:t; }
 function gruplarByTur(){ const turler=[].slice.call(arguments); return kayitGruplari.filter(g=>turler.includes(g.tur)); }
 function grupSelectHtml(id,cls){ const turler=[].slice.call(arguments,2); const gs=gruplarByTur.apply(null,turler); return `<select id="${id}" class="${cls}" title="Grup"><option value="">Grup (opsiyonel)…</option>${gs.map(g=>`<option>${esc(g.ad)}</option>`).join('')}</select>`; }
-function nextGrpNo(){ const max=kayitGruplari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'GRP-2026-'+String(max+1).padStart(4,'0'); }
+function nextGrpNo(){ return nextKayitNo('0018', kayitGruplari); }
 function addKayitGrup(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const ad=gv('grAd'); if(!ad){toast('Grup adı girin');return;} const no=nextGrpNo();
   kayitGruplari.unshift({ no, ad, tur:gv('grTur')||'cari', kod:gv('grKod'), aciklama:gv('grAciklama') });
   logAction('folder-tree','gold', `Kayıt grubu · ${no} · ${ad} (${grupTurAd(gv('grTur')||'cari')})`); render(); toast(no+' · grup oluşturuldu'); }
-function nextYtkNo(){ const max=yetkiKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'YTK-2026-'+String(max+1).padStart(4,'0'); }
+function nextYtkNo(){ return nextKayitNo('0016', yetkiKartlari); }
 // Yetki Kartı — adım adım tıklı (kademeli) seçim taslağı
 const YK_TOP = [{id:'erp',label:'ERP & CRM',icon:'layout-grid'},{id:'ekran',label:'Toprak Ekranı',icon:'layout-dashboard'},{id:'ayarlar',label:'Ayarlar',icon:'settings'}];
 function ykAltModuller(topId){
@@ -4007,8 +4010,10 @@ function davaFormInner(){
   return `
     ${sectionTitle('folder-plus','Dava / İcra Girişi','Yeni dosya · yönetici onayına düşer · yetkiler Avukat/Personel Atamadan verilir')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <input id="dvKonu" type="text" placeholder="Dava / icra konusu…" class="sm:col-span-6 ${inpC}" />
-      <select id="dvTur" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Hukuk Davası</option><option>İcra Takibi</option><option>Ceza</option><option>İş Hukuku</option></select>
+      <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Dosya No (otomatik)</label><input value="${nextKayitNo('0002',lawsuits)}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
+      <input id="dvKonu" type="text" placeholder="Dosya konusu…" class="sm:col-span-5 ${inpC}" />
+      <select id="dvTip" class="sm:col-span-2 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none" title="Dosya Tipi"><option>Dava</option><option>İcra</option></select>
+      <select id="dvTur" class="sm:col-span-2 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none" title="Dosya Türü"><option>Hukuk Davası</option><option>Ticari Dava</option><option>İş Hukuku</option><option>Ceza</option><option>İdari Dava</option><option>İlamlı İcra</option><option>İlamsız İcra</option><option>Kambiyo İcra</option></select>
       <select id="dvTaraf" class="sm:col-span-3 bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none"><option>Lehine</option><option>Aleyhine</option></select>
       <input id="dvTutar" type="number" placeholder="Anlaşma/Bütçe ₺" class="sm:col-span-4 ${inpC}" />
       <input id="dvGider" type="number" placeholder="Dava/icra gideri ₺" class="sm:col-span-4 ${inpC}" />
@@ -4543,8 +4548,7 @@ function addContractDraft(){
   const file=((document.getElementById('szFile')||{}).value||'').trim();
   if(!title){ toast('Taslak başlığı girin'); return; }
   const me = ROLES[state.role].lawyer || '';
-  const maxNo=contracts.reduce((m,c)=>{const n=parseInt((c.id.split('-')[1]||'0'),10);return n>m?n:m;},90);
-  const id='SZ-'+(maxNo+1);
+  const id=nextKayitNo('0004', contracts);
   const grup=((document.getElementById('szGrup')||{}).value||'').trim();
   contracts.unshift({ id, title, party, value:value||0, risk, grup, status:'pending', avukat:me, taslak:true, file:file||'' });
   logAction('file-plus','gold', `${id} sözleşme taslağı oluşturuldu · ${title} (${me})`);
@@ -5521,9 +5525,9 @@ function delRow(kod,i){
   }
   render(); toast('Kayıt silindi ✓');
 }
-function addSalesRepRec(){ const g=i=>document.getElementById(i)||{}; const ad=(g('srAd').value||'').trim(); if(!ad){toast('Ad girin');return;} salesReps.unshift({ad, ekip:(g('srEkip').value||'').trim()||'—', firma:(g('srFirma').value||'').trim()||'—', satis:parseInt(g('srSatis').value||'0',10)||0, tahsilat:parseInt(g('srTahsilat').value||'0',10)||0, oran:parseFloat(g('srOran').value||'1')||1, odenen:0, grup:(g('srGrup').value||'').trim()}); logAction('user-plus','emer','Satıcı tanımlandı · '+ad); render(); toast(ad+' eklendi'); }
-function addProjectRec(){ const g=i=>document.getElementById(i)||{}; const name=(g('prName').value||'').trim(); if(!name){toast('Proje adı girin');return;} projects.unshift({name, loc:(g('prLoc').value||'').trim()||'—', isKolu:(g('prKol').value||'').trim()||'—', type:(g('prTip').value||'').trim()||'—', progress:parseInt(g('prProg').value||'0',10)||0, budget:0}); logAction('hard-hat','gold','Proje tanımlandı · '+name); render(); toast(name+' eklendi'); }
-function addRiskRec(){ const g=i=>document.getElementById(i)||{}; const name=(g('rkName').value||'').trim(); if(!name){toast('Risk adı girin');return;} risks.unshift({name, cat:(g('rkCat').value||'').trim()||'Genel', impact:parseInt(g('rkImpact').value||'1',10)||1, prob:parseInt(g('rkProb').value||'1',10)||1, owner:(g('rkOwner').value||'').trim()||'—', action:''}); logAction('shield-alert','amber','Risk tanımlandı · '+name); render(); toast(name+' eklendi'); }
+function addSalesRepRec(){ const g=i=>document.getElementById(i)||{}; const ad=(g('srAd').value||'').trim(); if(!ad){toast('Ad girin');return;} salesReps.unshift({no:nextKayitNo('0005',salesReps), ad, ekip:(g('srEkip').value||'').trim()||'—', firma:(g('srFirma').value||'').trim()||'—', satis:parseInt(g('srSatis').value||'0',10)||0, tahsilat:parseInt(g('srTahsilat').value||'0',10)||0, oran:parseFloat(g('srOran').value||'1')||1, odenen:0, grup:(g('srGrup').value||'').trim()}); logAction('user-plus','emer','Satıcı tanımlandı · '+ad); render(); toast(ad+' eklendi'); }
+function addProjectRec(){ const g=i=>document.getElementById(i)||{}; const name=(g('prName').value||'').trim(); if(!name){toast('Proje adı girin');return;} projects.unshift({no:nextKayitNo('0006',projects), name, loc:(g('prLoc').value||'').trim()||'—', isKolu:(g('prKol').value||'').trim()||'—', type:(g('prTip').value||'').trim()||'—', progress:parseInt(g('prProg').value||'0',10)||0, budget:0}); logAction('hard-hat','gold','Proje tanımlandı · '+name); render(); toast(name+' eklendi'); }
+function addRiskRec(){ const g=i=>document.getElementById(i)||{}; const name=(g('rkName').value||'').trim(); if(!name){toast('Risk adı girin');return;} risks.unshift({no:nextKayitNo('0007',risks), name, cat:(g('rkCat').value||'').trim()||'Genel', impact:parseInt(g('rkImpact').value||'1',10)||1, prob:parseInt(g('rkProb').value||'1',10)||1, owner:(g('rkOwner').value||'').trim()||'—', action:''}); logAction('shield-alert','amber','Risk tanımlandı · '+name); render(); toast(name+' eklendi'); }
 function satinAlmaFormCard(){
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
   const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
@@ -5744,12 +5748,12 @@ function viewAdminTable(kod){
     const form = editV ? vendorFormCard('Cari Kart Düzenle · '+editV.id,'Değişiklik bağlı kayıtlara yansır', editV) : vendorFormCard('Cari Kart Tanımla','Carilerin tanımlandığı kart tablosu · tüm sistemde/şirketlerde geçerli');
     return `${back}${hdr}${form}
     <p class="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="h-3.5 w-3.5"></i>Tanımlı cariler Finans › Satıcılar Hesabı › Cari Hesaplar'da (türüne göre) listelenir ve orada düzenlenir.</p>`; }
-  if(kod==='TBL-0002'){ return tbl('Dava & İcra Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Konu',cls:'text-slate-100 font-medium',f:r=>esc(r.subject)},{h:'Tür',f:r=>r.tur||'—'},{h:'Taraf',f:r=>r.side||'—'},{h:'Değer',r:1,f:r=>money(r.value||0)},{h:'Hal',r:1,f:r=>r.hal||'—'}],lawsuits); }
-  if(kod==='TBL-0003'){ return tbl('Avukat Tanıtım Tablosu',[{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'E-posta',f:r=>esc(r.email||'—')},{h:'Büro',f:r=>esc(r.buro||'—')},{h:'Uzmanlık',f:r=>esc((r.uzmanlik||[]).join(', ')||'—')},{h:'Durum',r:1,f:r=>r.approved?'Yetkili':'Onay Bekliyor'}],lawyers); }
+  if(kod==='TBL-0002'){ return tbl('Dava & İcra Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Konu',cls:'text-slate-100 font-medium',f:r=>esc(r.subject)},{h:'Tipi',f:r=>badge(r.tip||(r.tur==='İcra Takibi'?'İcra':'Dava'), r.tip==='İcra'||r.tur==='İcra Takibi'?'amber':'gold')},{h:'Türü',f:r=>esc(r.dosyaTuru||r.tur||'—')},{h:'Taraf',f:r=>r.side||'—'},{h:'Değer',r:1,f:r=>money(r.value||0)},{h:'Hal',r:1,f:r=>r.hal||'—'}],lawsuits); }
+  if(kod==='TBL-0003'){ return tbl('Avukat Tanıtım Tablosu',[{h:'No',f:r=>kod2(r.no||'—')},{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'E-posta',f:r=>esc(r.email||'—')},{h:'Büro',f:r=>esc(r.buro||'—')},{h:'Uzmanlık',f:r=>esc((r.uzmanlik||[]).join(', ')||'—')},{h:'Durum',r:1,f:r=>r.approved?'Yetkili':'Onay Bekliyor'}],lawyers); }
   if(kod==='TBL-0004'){ return tbl('Sözleşmeler Tablosu',[{h:'Kod',f:r=>kod2(r.id)},{h:'Başlık',cls:'text-slate-100 font-medium',f:r=>esc(r.title)},{h:'Taraf',f:r=>esc(r.party||'—')},{h:'Risk',f:r=>r.risk||'—'},{h:'Değer',r:1,f:r=>money(r.value||0)}],contracts); }
-  if(kod==='TBL-0005'){ return tbl('Satıcı / Prim Tablosu',[{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Ekip',f:r=>esc(r.ekip)},{h:'Şirket',f:r=>esc(r.firma)},{h:'Satış',r:1,f:r=>money(r.satis)},{h:'Tahsilat',r:1,f:r=>money(r.tahsilat)}],salesReps); }
-  if(kod==='TBL-0006'){ return tbl('Projeler Tablosu',[{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Konum',f:r=>esc(r.loc)},{h:'İş Kolu',f:r=>esc(r.isKolu)},{h:'İlerleme',r:1,f:r=>'%'+r.progress}],projects); }
-  if(kod==='TBL-0007'){ return tbl('Risk Tablosu',[{h:'Risk',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Kategori',f:r=>esc(r.cat||'—')},{h:'Etki',r:1,f:r=>r.impact},{h:'Olasılık',r:1,f:r=>r.prob},{h:'Sorumlu',f:r=>esc(r.owner||'—')}],risks); }
+  if(kod==='TBL-0005'){ return tbl('Satıcı / Prim Tablosu',[{h:'No',f:r=>kod2(r.no||'—')},{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Ekip',f:r=>esc(r.ekip)},{h:'Şirket',f:r=>esc(r.firma)},{h:'Satış',r:1,f:r=>money(r.satis)},{h:'Tahsilat',r:1,f:r=>money(r.tahsilat)}],salesReps); }
+  if(kod==='TBL-0006'){ return tbl('Projeler Tablosu',[{h:'No',f:r=>kod2(r.no||'—')},{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Konum',f:r=>esc(r.loc)},{h:'İş Kolu',f:r=>esc(r.isKolu)},{h:'İlerleme',r:1,f:r=>'%'+r.progress}],projects); }
+  if(kod==='TBL-0007'){ return tbl('Risk Tablosu',[{h:'No',f:r=>kod2(r.no||'—')},{h:'Risk',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Kategori',f:r=>esc(r.cat||'—')},{h:'Etki',r:1,f:r=>r.impact},{h:'Olasılık',r:1,f:r=>r.prob},{h:'Sorumlu',f:r=>esc(r.owner||'—')}],risks); }
   if(kod==='TBL-0016'){ return tbl('Yetki Kartı Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kişi',f:r=>esc(r.kisi||'—')},{h:'Şirketler',f:r=>esc((Array.isArray(r.sirketler)&&r.sirketler.length?r.sirketler.map(yetkiSirketAd):['—']).join(', '))},{h:'Alt Modül',f:r=>`<span class="text-[12px]">${Object.values(r.altModuller||{}).reduce((a,x)=>a+(Array.isArray(x)?x.length:0),0)} seçim</span>`},{h:'Kart Yetkileri',f:r=>`<span class="text-[11px] text-slate-400">${yetkiOzet(r)}</span>`}],yetkiKartlari); }
   if(kod==='TBL-0017'){ return tbl('Yetki Ana Grup Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Grup',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.kod||'—')},{h:'Temel Rol',f:r=>esc(r.sinifAd||'—')},{h:'Varsayılan Düzey',f:r=>badge(r.duzey||'—','gold')},{h:'Modüller',f:r=>`<span class="text-[12px]">${(Array.isArray(r.moduller)?r.moduller.length:0)} modül</span>`}],yetkiGruplari); }
   if(kod==='TBL-0018'){ return tbl('Kayıt Grupları Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Grup Adı',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kart Türü',f:r=>badge(grupTurAd(r.tur),'gold')},{h:'Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.kod||'—')},{h:'Açıklama',f:r=>esc(r.aciklama||'—')}],kayitGruplari); }
@@ -6712,16 +6716,17 @@ function addLawsuit(){
   const odeme=((document.getElementById('dvOdemeTarih')||{}).value||'').trim();
   const poa=((document.getElementById('dvPoa')||{}).value||'').trim();
   const karsi=((document.getElementById('dvKarsi')||{}).value||'').trim();
-  const tur=(document.getElementById('dvTur')||{}).value||'Hukuk Davası';
+  const tip=(document.getElementById('dvTip')||{}).value||'Dava';
+  const dosyaTuru=(document.getElementById('dvTur')||{}).value||'Hukuk Davası';
+  // İcra dosyalarında tür='İcra Takibi' (mevcut filtreler bununla çalışır); ayrıntılı tür dosyaTuru'da saklanır
+  const tur = tip==='İcra' ? 'İcra Takibi' : dosyaTuru;
   const yorum=((document.getElementById('dvYorum')||{}).value||'').trim();
-  if(!konu){ toast('Dava / icra konusu girin'); return; }
-  const maxNo=lawsuits.reduce((m,l)=>{const n=parseInt((l.no.split('-')[1]||'0'),10);return n>m?n:m;},312);
-  const pref = tur==='İcra Takibi'?'ICR':tur==='Ceza'?'CEZ':'DVA';
-  const no=pref+'-'+(maxNo+1);
+  if(!konu){ toast('Dosya konusu girin'); return; }
+  const no=nextKayitNo('0002', lawsuits);
   const payments = (odeme&&gider)?[{date:odeme, amount:gider, desc:'Dosya gideri'}]:[];
   // avukat & personel & yetkiler Atama ekranlarından verilir
   const grup=((document.getElementById('dvGrup')||{}).value||'').trim();
-  lawsuits.unshift({ no, subject:konu, tur, grup, hal:'Devam Eden', side:taraf, value:tutar||0, win:50, avukat:'', karsi, avukatYorum:yorum, gider:gider||0, poa, viewers:['ceo','cfo'], onay:'bekliyor', payments });
+  lawsuits.unshift({ no, subject:konu, tip, tur, dosyaTuru, grup, hal:'Devam Eden', side:taraf, value:tutar||0, win:50, avukat:'', karsi, avukatYorum:yorum, gider:gider||0, poa, viewers:['ceo','cfo'], onay:'bekliyor', payments });
   logAction('folder-plus','amber', `${no} dosya açıldı · ${konu} (yönetici onayı bekliyor · avukat ataması bekleniyor)`);
   state.davaNew=false; render(); toast(`${no} oluşturuldu · yönetici onayına düştü`);
 }
@@ -6739,7 +6744,7 @@ function addLawyer(){
   const adres=((document.getElementById('avAdres')||{}).value||'').trim();
   const uzmanlik=((document.getElementById('avUzmanlik')||{}).value||'').split(',').map(s=>s.trim()).filter(Boolean);
   if(!ad){ toast('Avukat adı girin'); return; }
-  lawyers.push({ name:ad, email:mail||'-', tel, buro, baro, adres, uzmanlik, approved:false });
+  lawyers.push({ no:nextKayitNo('0003', lawyers), name:ad, email:mail||'-', tel, buro, baro, adres, uzmanlik, approved:false });
   logAction('user-plus','amber', `Yeni avukat tanımlandı · ${ad}${buro?' · '+buro:''} (yönetici onayı bekliyor)`);
   state.avukatNew=false; render(); toast(`${ad} tanımlandı · onay bekliyor`);
 }
