@@ -510,6 +510,18 @@ function loadState(){
 }
 const state = loadState();
 function saveState(){ try{ localStorage.setItem('kral_state', JSON.stringify(state)); }catch(e){} }
+// ---- VERİ KALICILIĞI (kayıt tabloları localStorage'da) ----
+function dataRegistry(){ try{ return {
+  vendorAccounts, lawyers, lawsuits, contracts, salesReps, projects, risks,
+  satinAlmaTalepKartlari, personelKartlari, odemeEmriKartlari, odemeSozuKartlari,
+  butceCikisKartlari, giderKartlari, yetkiKartlari, yetkiGruplari, kayitGruplari,
+  yapiSiniflari, insaatMaliyetleri, satinAlmaIslemleri, satisIslemleri, girisCikislar,
+  yapSatProjeleri, personelGorevleri, isTakvimi, odemeTalepleri, fiyatTalepleri, purchaseRequests
+}; }catch(e){ return {}; } }
+function saveData(){ try{ const reg=dataRegistry(); const out={}; for(const k in reg){ out[k]=reg[k]; } try{ out.cariTurKod=cariTurKod; }catch(e){} localStorage.setItem('kral_data', JSON.stringify(out)); }catch(e){} }
+function loadData(){ try{ const raw=localStorage.getItem('kral_data'); if(!raw) return; const obj=JSON.parse(raw); const reg=dataRegistry();
+  for(const k in reg){ if(Array.isArray(obj[k]) && Array.isArray(reg[k])){ reg[k].length=0; obj[k].forEach(it=>reg[k].push(it)); } }
+  try{ if(obj.cariTurKod) Object.assign(cariTurKod, obj.cariTurKod); }catch(e){} }catch(e){} }
 function setCompany(id){ state.company = id; if(id==='all' && state.module==='company') state.module='dashboard'; saveState(); render(); }
 function updateBrand(){
   const c = COMPANY_TABS.find(x=>x.id===state.company) || COMPANY_TABS[0];
@@ -761,6 +773,7 @@ function buildCompanyScreen(){
     </button>`).join('');
 }
 function render(){
+  try{ saveData(); }catch(e){}
   const login = document.getElementById('loginScreen');
   const companyScreen = document.getElementById('companyScreen');
   const app = document.getElementById('app');
@@ -7575,6 +7588,7 @@ document.addEventListener('keydown',(e)=>{
 /* ---------- BOOT ---------- */
 /* Erişilebilirlik: tüm dekoratif ikonlara aria-hidden ekle (ekran okuyucu atlar) */
 try{ if(window.lucide && lucide.createIcons){ const _ci=lucide.createIcons.bind(lucide); lucide.createIcons=(o={})=>_ci({attrs:{'aria-hidden':'true','focusable':'false'}, ...o}); } }catch(e){}
+try{ loadData(); }catch(e){}
 try{ seedAuditFromData(); }catch(e){}
 render();
 initCookie();
