@@ -2878,19 +2878,20 @@ function addIsTakvimToplu(){ const g=i=>document.getElementById(i); const gv=i=>
   logAction('calendar-plus','gold', `Toplu iş takvimi · ${created} görev · ${personel} · ${tekrar}`); render(); toast(created+' görev toplu oluşturuldu ✓'); }
 function viewIsTakvimi(){
   const per=currentSub()||'gun'; const perMap={gun:'Günlük',ay:'Aylık',yil:'Yıllık'}; const pl=perMap[per]||'Günlük';
-  const sel=state.takvimPersonel; const hepsi = sel==='__hepsi'; const baslik = hepsi?'Tüm Personel':sel;
-  if(!sel) return `<div class="card rounded-2xl p-8 text-center text-slate-400"><i data-lucide="users" class="h-7 w-7 mx-auto mb-3 text-gold"></i><p class="text-sm">Soldan bir personel (veya Hepsi) seçin — ${pl.toLowerCase()} iş takvimi burada görünecek.</p>${personelKartlari.length?'':'<p class="text-[11px] text-slate-500 mt-2">Önce Kayıtlar · Personel bölümünden personel tanımlayın.</p>'}</div>`;
-  const rows=isTakvimi.filter(r=>(hepsi||r.personel===sel) && r.periyot===pl);
+  const dept=state.takvimDept; const hepsi = dept==='__hepsi'; const baslik = hepsi?'Tüm Departmanlar':dept;
+  if(!dept) return `<div class="card rounded-2xl p-8 text-center text-slate-400"><i data-lucide="briefcase" class="h-7 w-7 mx-auto mb-3 text-gold"></i><p class="text-sm">Soldan bir departman (veya Hepsi) seçin — ${pl.toLowerCase()} görev listesi burada görünecek.</p></div>`;
+  const persDept=ad=>{ const p=personelKartlari.find(x=>x.ad===ad); return p?(p.bolum||''):''; };
+  const rows=isTakvimi.filter(r=>r.periyot===pl && (hepsi || persDept(r.personel)===dept));
   const dt=d=>d==='Tamamlandı'?'emer':d==='Devam Ediyor'?'amber':'slate';
   return `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
-      <span class="h-10 w-10 rounded-xl bg-navy-600 text-slate-100 border border-white/10 font-bold flex items-center justify-center">${hepsi?'<i data-lucide=\'users\' class=\'h-5 w-5 text-gold\'></i>':esc(baslik.slice(0,2).toLocaleUpperCase('tr-TR'))}</span>
+      <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="${hepsi?'users':'briefcase'}" class="h-5 w-5"></i></span>
       <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(baslik)}</p><p class="text-[11px] text-gold">${pl} İş Takvimi · ${rows.length} görev</p></div>
       <button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';setModule('admin')" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button>
     </div>
     <div class="card rounded-2xl p-5"><div class="space-y-2">
       ${rows.length?rows.map(r=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
         <span class="h-9 w-9 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center text-gold"><i data-lucide="calendar-check" class="h-4 w-4"></i></span>
-        <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${esc(r.is)}</p><p class="text-[11px] text-slate-500">${hepsi?esc(r.personel)+' · ':''}${esc(r.tarih||'—')}${r.aciklama?' · '+esc(r.aciklama):''}</p></div>
+        <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${esc(r.is)}</p><p class="text-[11px] text-slate-500">${esc(r.personel||'—')} · ${esc(r.tarih||'—')}${r.aciklama?' · '+esc(r.aciklama):''}</p></div>
         ${badge(r.durum||'Planlandı',dt(r.durum))}
       </div>`).join(''):`<p class="text-sm text-slate-500 py-6 text-center">Bu dönemde (${pl.toLowerCase()}) görev yok. "İş Ekle" ile ekleyin.</p>`}
     </div></div>`;
@@ -7284,9 +7285,10 @@ function leftSpecialSubsHtml(){
   }
   // İş Takvimi → sol barda personel listesi (seçilince o personelin takvimi sağda)
   if(state.module==='istakvim'){
-    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Personel</div>`
-      + lbtn("state.takvimPersonel='__hepsi';render()", 'users', 'Hepsi (Tüm Personel)', state.takvimPersonel==='__hepsi')
-      + (personelKartlari.length ? personelKartlari.map((p,i)=>lbtn(`state.takvimPersonel=(personelKartlari[${i}]||{}).ad;render()`, 'user', esc(p.ad), state.takvimPersonel===p.ad)).join('') : '<p class="px-3 py-1 text-[11px] text-slate-500">Personel tanımlayın (Kayıtlar · Personel)</p>')
+    const dcur=state.takvimDept;
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Departman</div>`
+      + lbtn("state.takvimDept='__hepsi';render()", 'users', 'Hepsi (Tüm Departmanlar)', dcur==='__hepsi')
+      + DEPARTMAN.map(d=>lbtn(`state.takvimDept='${d}';render()`, 'briefcase', d, dcur===d)).join('')
       + sep;
   }
   // İşler · Al-Sat → Daire ve Dükkanlar / Arsalar sol barda
