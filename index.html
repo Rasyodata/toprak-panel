@@ -6739,14 +6739,38 @@ function getSubs(){
   if(state.module==='profitability' && (state.role==='satinalma'||ROLES[state.role].kind==='external')) subs = subs.filter(s=>s.id==='satinalma');
   // Satış ekibi Finans modülünde yalnızca Satıcılar Hesabını görür
   if(state.module==='profitability' && state.role==='satisekip') subs = subs.filter(s=>s.id==='saticilar');
+  // İstekler (şirket görünümü) → yalnızca gruplu öğeler (Onaylar/İş Onay Akışı · Ödeme/Satın Alma/Fiyat Talepleri), Onaylar varsayılan
+  if(state.module==='yetkiler' && state.company!=='all'){
+    const order=['onaylar','akis','odeme','satinalma','fiyat'];
+    subs = order.map(id=>subs.find(s=>s.id===id)).filter(Boolean);
+  }
   return subs;
 }
 function currentSub(){ const subs=getSubs(); if(!subs||!subs.length) return null; const sel=state.sub&&state.sub[state.module]; return (subs.find(s=>s.id===sel)?sel:subs[0].id); }
 function setSub(id){ state.sub = state.sub||{}; state.sub[state.module]=id; state.caseView=null; state.caseEdit=false; state.davaNew=false; state.assignView=null; state.avukatNew=false; state.vendorView=null; state.cariView=null; state.cariEdit=null; state.adminUsers=false; state.adminTable=null; state.topluNakit=false; state.bcEdit=null; state.nakitCikis=false; render(); }
 function openCaseDetail(i){ state.caseView=i; state.davaOpen=true; if(typeof toggleSidebar==='function') toggleSidebar(false); render(); }
+const ISTEK_GROUPS = [
+  { id:'onaylar',  label:'Onaylar',  icon:'stamp', items:[ {id:'onaylar',label:'Onaylar',icon:'stamp'}, {id:'akis',label:'İş Onay Akışı',icon:'git-pull-request'} ] },
+  { id:'talepler', label:'Talepler', icon:'inbox', items:[ {id:'odeme',label:'Ödeme Talepleri',icon:'banknote'}, {id:'satinalma',label:'Satın Alma Talepleri',icon:'shopping-cart'}, {id:'fiyat',label:'Fiyat Talepleri',icon:'tag'} ] }
+];
+function istekGroupOf(sub){ return ISTEK_GROUPS.find(g=>g.items.some(it=>it.id===sub)) || ISTEK_GROUPS[0]; }
 function buildSubNav(){
   const bar = document.getElementById('subNav');
   if(!bar) return;
+  // İstekler modülü (şirket görünümü) → gruplu üst alt-bar: Onaylar | Talepler (+ Talep Oluştur sağda)
+  if(state.company!=='all' && state.module==='yetkiler'){
+    const cur = currentSub(); const grp = istekGroupOf(cur);
+    bar.style.display='';
+    const comp = COMPANY_TABS.find(x=>x.id===state.company);
+    const ac = ((comp && comp.accent) || '#9a7b1a').replace('#','');
+    const ar=parseInt(ac.slice(0,2),16)||154, ag=parseInt(ac.slice(2,4),16)||123, ab=parseInt(ac.slice(4,6),16)||26;
+    bar.style.setProperty('background-color', `rgba(${ar},${ag},${ab},0.09)`, 'important');
+    bar.style.setProperty('border-bottom', `1px solid rgba(${ar},${ag},${ab},0.22)`, 'important');
+    const gbtns = ISTEK_GROUPS.map(g=>`<button onclick="setSub('${g.items[0].id}')" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition ${g.id===grp.id?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}"><i data-lucide="${g.icon}" class="h-4 w-4 ${g.id===grp.id?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${g.label}</span></button>`).join('');
+    const talepBtn = isAdminUser() ? `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 ml-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>` : '';
+    bar.innerHTML = gbtns + talepBtn;
+    return;
+  }
   const allSubs = getSubs();
   // `left:true` olan alt-sekmeler sol barda gösterilir (ör. sözleşme türleri); kalanlar üst yatay alt-barda.
   const subs = allSubs ? allSubs.filter(s=>!s.left) : null;
@@ -6786,11 +6810,11 @@ function leftSpecialSubsHtml(){
       <button onclick="${onclick}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}">
         <i data-lucide="${icon}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${label}</span>
       </button>`;
-  // İstekler (yetkiler) modülü — şirket görünümünde de alt-sekmeler sol barda (Yönetim Panelindeki gibi)
+  // İstekler (yetkiler) modülü — şirket görünümünde aktif grubun öğeleri sol barda (Onaylar: Onaylar + İş Onay Akışı · Talepler: Ödeme/Satın Alma/Fiyat Talepleri)
   if(state.module==='yetkiler'){
-    const modName=(MODULES.find(m=>m.id==='yetkiler')||{}).name||'İstekler';
-    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${modName}</div>`
-      + all.map(s=>lbtn(`setSub('${s.id}')`, s.icon, s.label, s.id===active)).join('')
+    const grp = istekGroupOf(active);
+    return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${grp.label}</div>`
+      + grp.items.map(it=>lbtn(`setSub('${it.id}')`, it.icon, it.label, it.id===active)).join('')
       + sep;
   }
   // Finans · Nakit Akış → Gün / Hafta / Ay / Yıl rapor dönemi sol barda
