@@ -2646,46 +2646,48 @@ function addYetkiGrup(){ const g=i=>document.getElementById(i); const gv=i=>((g(
   yetkiGruplari.unshift({ no, ad, kod:gv('ygKod'), sinif, sinifAd:(sinif&&ROLES[sinif]?(ROLES[sinif].title||ROLES[sinif].name):''), duzey:gv('ygDuzey')||'Listede Görür', moduller:ms('ygModuller'), aciklama:gv('ygAciklama') });
   logAction('layers','gold', `Yetki ana grubu · ${no} · ${ad}`); render(); toast(no+' · grup oluşturuldu'); }
 function nextYtkNo(){ const max=yetkiKartlari.reduce((m,k)=>{const n=parseInt((String(k.no).split('-')[2]||'0'),10);return n>m?n:m;},0); return 'YTK-2026-'+String(max+1).padStart(4,'0'); }
-function addYetkiKart(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const ms=i=>{const s=g(i);return s?[...s.selectedOptions].map(o=>o.value):[];};
-  const ad=gv('ykAd'); if(!ad){toast('Yetki kartı adı girin');return;}
-  const no=nextYtkNo(); const sinif=gv('ykSinif');
-  const kartYetki={}; YETKI_KART_TURLERI.forEach(c=>{ const s=g('ykCard_'+c.k); kartYetki[c.k]= s? s.value : 'Görmez'; });
-  yetkiKartlari.unshift({ no, ad, kisi:gv('ykKisi'), sinif, sinifAd:(sinif&&ROLES[sinif]?(ROLES[sinif].title||ROLES[sinif].name):''), sirketler:ms('ykSirketler'), moduller:ms('ykModuller'), kartYetki, aciklama:gv('ykAciklama'), yetkiler:(typeof rolYetkileri==='function'?rolYetkileri(sinif):[]) });
-  logAction('shield-check','emer', `Yetki kartı · ${no} · ${ad}${sinif?(' · '+(ROLES[sinif].title||ROLES[sinif].name)):''}`); render(); toast(no+' · yetki kartı oluşturuldu'); }
+// Yetki Kartı — adım adım tıklı (kademeli) seçim taslağı
+const YK_TOP = [{id:'erp',label:'ERP & CRM',icon:'layout-grid'},{id:'ekran',label:'Toprak Ekranı',icon:'layout-dashboard'},{id:'ayarlar',label:'Ayarlar',icon:'settings'}];
+function ykAltModuller(topId){
+  if(topId==='erp') return ERP_MODULES.map(id=>({id, label:((MODULES.find(m=>m.id===id)||{}).name||id).replace(/ Yönetimi| Yönetim/,'')}));
+  if(topId==='ayarlar') return [{id:'tablolar',label:'Tablolar'},{id:'kayitlar',label:'Kayıtlar'},{id:'yetki',label:'Yetki Yönetimi'}];
+  if(topId==='ekran') return [{id:'bi',label:'İş Zekası'},{id:'analytics',label:'Analytics'},{id:'nakit',label:'Nakit Akış'},{id:'butce',label:'Bütçe'},{id:'konsolide',label:'Bilanço'}];
+  return [];
+}
+function ykDraft(){ if(!state.ykd) state.ykd={sirk:[],mod:[],alt:{},kart:{},ad:'',kisi:''}; return state.ykd; }
+function ykToggle(arrName,id){ const d=ykDraft(); const a=d[arrName]; const i=a.indexOf(id); if(i<0)a.push(id); else { a.splice(i,1); if(arrName==='mod') delete d.alt[id]; } render(); }
+function ykToggleAlt(topId,subId){ const d=ykDraft(); d.alt[topId]=d.alt[topId]||[]; const a=d.alt[topId]; const i=a.indexOf(subId); if(i<0)a.push(subId); else a.splice(i,1); render(); }
+function ykToggleKart(k,act){ const d=ykDraft(); d.kart[k]=d.kart[k]||{}; d.kart[k][act]=!d.kart[k][act]; render(); }
+function addYetkiKart(){ const d=ykDraft(); const ad=(d.ad||'').trim(); if(!ad){toast('Yetki kartı adı girin');return;} if(!d.sirk.length){toast('En az bir şirket seçin');return;}
+  const no=nextYtkNo();
+  const kartYetki={}; YETKI_KART_TURLERI.forEach(c=>{ const kv=d.kart[c.k]||{}; kartYetki[c.k]= (kv.ekle||kv.duzenle||kv.sil)?'Tam Yetki':(kv.detay?'Detay Görür':(kv.gor?'Listede Görür':'Görmez')); });
+  yetkiKartlari.unshift({ no, ad, kisi:(d.kisi||'').trim(), sirketler:d.sirk.slice(), moduller:d.mod.slice(), altModuller:JSON.parse(JSON.stringify(d.alt||{})), kartYetki, kartAksiyon:JSON.parse(JSON.stringify(d.kart||{})) });
+  logAction('shield-check','emer', `Yetki kartı · ${no} · ${ad}`); state.ykd=null; render(); toast(no+' · yetki kartı oluşturuldu'); }
 function yetkiSirketAd(id){ return id==='all'?'Konsolide':(((COMPANY_TABS.find(c=>c.id===id)||{}).firm)||((COMPANY_TABS.find(c=>c.id===id)||{}).label)||id); }
 function yetkiOzet(r){ const kv=r.kartYetki||{}; const c=l=>Object.values(kv).filter(v=>v===l).length; return `Tam ${c('Tam Yetki')} · Detay ${c('Detay Görür')} · Liste ${c('Listede Görür')} · Yok ${c('Görmez')}`; }
 function yetkiKartFormCard(){
+  const d=ykDraft();
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
   const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
-  const rolOpts=Object.keys(ROLES).filter(k=>ROLES[k].kind==='internal').map(k=>`<option value="${k}">${esc(ROLES[k].title||ROLES[k].name)}</option>`).join('');
-  const cards=YETKI_KART_TURLERI.map(c=>`<div class="flex items-center gap-2"><span class="flex-1 text-[13px] text-slate-300 truncate">${c.l}</span><select id="ykCard_${c.k}" class="${selC} shrink-0 w-36 py-1.5">${YETKI_DUZEY.map((d,i)=>`<option value="${d}" ${i===1?'selected':''}>${d}</option>`).join('')}</select></div>`).join('');
+  const chk=(on,oc,label,icon)=>`<button type="button" onclick="${oc}" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[13px] transition ${on?'bg-gold/15 border-gold/60 text-gold':'border-white/10 bg-navy-700/40 text-slate-300 hover:border-gold/40'}"><span class="h-4 w-4 rounded border flex items-center justify-center shrink-0 ${on?'bg-gold border-gold text-navy-900':'border-white/30'}">${on?'<i data-lucide=\'check\' class=\'h-3 w-3\'></i>':''}</span>${icon?`<i data-lucide="${icon}" class="h-3.5 w-3.5"></i>`:''}<span class="whitespace-nowrap">${label}</span></button>`;
+  const box=(step,title,inner)=>`<div class="rounded-xl border border-white/8 bg-navy-700/40 p-4 mb-3"><p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><span class="h-5 w-5 rounded-full bg-gold/20 text-gold text-[11px] font-bold flex items-center justify-center">${step}</span>${title}</p>${inner}</div>`;
+  const step1 = COMPANY_TABS.filter(c=>c.id!=='all').map(c=>chk(d.sirk.includes(c.id), `ykToggle('sirk','${c.id}')`, esc(c.firm||c.label), 'building-2')).join('') + chk(d.sirk.includes('all'), "ykToggle('sirk','all')", 'Tümü (Konsolide)', 'layers');
+  const step2 = YK_TOP.map(t=>chk(d.mod.includes(t.id), `ykToggle('mod','${t.id}')`, t.label, t.icon)).join('');
+  const step3 = d.mod.map(topId=>{ const alts=ykAltModuller(topId); if(!alts.length) return ''; const top=YK_TOP.find(t=>t.id===topId)||{}; return `<div class="mb-2.5"><p class="text-[11px] text-slate-400 mb-1.5">${top.label} alt modülleri</p><div class="flex flex-wrap gap-2">${alts.map(a=>chk((d.alt[topId]||[]).includes(a.id), `ykToggleAlt('${topId}','${a.id}')`, a.label)).join('')}</div></div>`; }).join('');
+  const acts=[['gor','Görür'],['detay','Detay'],['ekle','Ekler'],['duzenle','Düzenler'],['sil','Siler']];
+  const step4 = YETKI_KART_TURLERI.map(c=>{ const kv=d.kart[c.k]||{}; return `<div class="flex flex-col sm:flex-row sm:items-center gap-2 py-2 border-b border-white/5"><span class="sm:w-44 shrink-0 text-[13px] text-slate-200">${c.l}</span><div class="flex flex-wrap gap-1.5">${acts.map(([a,l])=>chk(!!kv[a], `ykToggleKart('${c.k}','${a}')`, l)).join('')}</div></div>`; }).join('');
   return `<div class="card rounded-2xl p-5">
-    ${sectionTitle('shield-check','Yetki Kartı Oluştur','Kişi · çalışacağı şirket(ler) · erişebileceği modüller · kart bazında görünürlük/detay/düzenleme')}
-    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+    ${sectionTitle('shield-check','Yetki Kartı Oluştur','Adım adım tıklı: şirket → modül → alt modül → kart/tablo yetkileri')}
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 mb-3">
       <div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Belge No (otomatik)</label><input value="${nextYtkNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div>
-      <input id="ykAd" placeholder="Yetki kartı adı / başlık" class="sm:col-span-5 ${inpC}"/>
-      <select id="ykKisi" class="sm:col-span-4 ${selC}"><option value="">Kişi (personel)…</option>${personelKartlari.map(p=>`<option>${esc(p.ad)}${p.unvan?' · '+esc(p.unvan):''}</option>`).join('')}</select>
-      <select id="ykSinif" class="sm:col-span-6 ${selC}"><option value="">Yetki Sınıfı (temel rol · modül yetkileri buradan)…</option>${rolOpts}</select>
-      <input id="ykAciklama" placeholder="Açıklama / kapsam notu" class="sm:col-span-6 ${inpC}"/>
+      <input id="ykAd" value="${esc(d.ad||'')}" oninput="ykDraft().ad=this.value" placeholder="Yetki kartı adı / başlık" class="sm:col-span-5 ${inpC}"/>
+      <select onchange="ykDraft().kisi=this.value" class="sm:col-span-4 ${selC}"><option value="">Kişi (personel)…</option>${personelKartlari.map(p=>`<option ${d.kisi===p.ad?'selected':''}>${esc(p.ad)}${p.unvan?' · '+esc(p.unvan):''}</option>`).join('')}</select>
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-      <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
-        <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="building-2" class="h-3.5 w-3.5"></i>Çalışacağı Şirketler</p>
-        <select id="ykSirketler" multiple size="4" class="w-full ${selC}"><option value="all">Tümü (Konsolide)</option>${COMPANY_TABS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${esc(c.firm||c.label)}</option>`).join('')}</select>
-        <p class="text-[10px] text-slate-500 mt-1">Ctrl/Cmd ile çoklu seçim</p>
-      </div>
-      <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4">
-        <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="layout-grid" class="h-3.5 w-3.5"></i>Erişebileceği Modüller</p>
-        <select id="ykModuller" multiple size="4" class="w-full ${selC}">${YETKI_MODULLER.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
-        <p class="text-[10px] text-slate-500 mt-1">Ctrl/Cmd ile çoklu seçim</p>
-      </div>
-    </div>
-    <div class="rounded-xl border border-white/8 bg-navy-700/40 p-4 mt-4">
-      <p class="text-[11px] uppercase tracking-wider text-gold mb-1 flex items-center gap-1.5"><i data-lucide="table-2" class="h-3.5 w-3.5"></i>Kart / Kayıt Yetkileri</p>
-      <p class="text-[10px] text-slate-500 mb-3"><b>Görmez</b> hiç erişemez · <b>Listede Görür</b> kayıt listede görünür ama detayına giremez · <b>Detay Görür</b> açıp okur, değiştiremez · <b>Tam Yetki</b> ekler/değiştirir/siler</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-5 gap-y-2.5">${cards}</div>
-    </div>
-    <div class="mt-4 flex justify-end"><button onclick="addYetkiKart()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Yetki Kartı Oluştur</button></div>
+    ${box('1','Hangi Şirket(ler)e yetki', `<div class="flex flex-wrap gap-2">${step1}</div>`)}
+    ${d.sirk.length?box('2','Hangi Modül(ler)', `<div class="flex flex-wrap gap-2">${step2}</div>`):''}
+    ${d.mod.length?box('3','Hangi Alt Modül(ler)', step3||'<p class="text-[11px] text-slate-500">Bu modülde alt modül yok.</p>'):''}
+    ${d.mod.length?box('4','Kart / Tablo Yetkileri', `<p class="text-[10px] text-slate-500 mb-2">Görür=listede görünür (detay yok) · Detay=açıp okur · Ekler/Düzenler/Siler=işlem · hiç seçilmezse görmez</p>${step4}`):''}
+    <div class="mt-4 flex justify-end gap-2"><button onclick="state.ykd=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">Temizle</button><button onclick="addYetkiKart()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Yetki Kartı Oluştur</button></div>
   </div>`;
 }
 function sayiYazi(n){ n=Math.round(Math.abs(n||0)); if(n===0) return 'Sıfır'; const b=['','Bir','İki','Üç','Dört','Beş','Altı','Yedi','Sekiz','Dokuz']; const o=['','On','Yirmi','Otuz','Kırk','Elli','Altmış','Yetmiş','Seksen','Doksan']; const gr=['','Bin','Milyon','Milyar','Trilyon'];
@@ -5703,7 +5705,7 @@ function viewAdminTable(kod){
   if(kod==='TBL-0005'){ return tbl('Satıcı / Prim Tablosu',[{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Ekip',f:r=>esc(r.ekip)},{h:'Şirket',f:r=>esc(r.firma)},{h:'Satış',r:1,f:r=>money(r.satis)},{h:'Tahsilat',r:1,f:r=>money(r.tahsilat)}],salesReps); }
   if(kod==='TBL-0006'){ return tbl('Projeler Tablosu',[{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Konum',f:r=>esc(r.loc)},{h:'İş Kolu',f:r=>esc(r.isKolu)},{h:'İlerleme',r:1,f:r=>'%'+r.progress}],projects); }
   if(kod==='TBL-0007'){ return tbl('Risk Tablosu',[{h:'Risk',cls:'text-slate-100 font-medium',f:r=>esc(r.name)},{h:'Kategori',f:r=>esc(r.cat||'—')},{h:'Etki',r:1,f:r=>r.impact},{h:'Olasılık',r:1,f:r=>r.prob},{h:'Sorumlu',f:r=>esc(r.owner||'—')}],risks); }
-  if(kod==='TBL-0016'){ return tbl('Yetki Kartı Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kişi',f:r=>esc(r.kisi||'—')},{h:'Yetki Sınıfı',f:r=>esc(r.sinifAd||'—')},{h:'Şirketler',f:r=>esc((Array.isArray(r.sirketler)&&r.sirketler.length?r.sirketler.map(yetkiSirketAd):['—']).join(', '))},{h:'Modüller',f:r=>`<span class="text-[12px]">${(Array.isArray(r.moduller)?r.moduller.length:0)} modül</span>`},{h:'Kart Yetkileri',f:r=>`<span class="text-[11px] text-slate-400">${yetkiOzet(r)}</span>`}],yetkiKartlari); }
+  if(kod==='TBL-0016'){ return tbl('Yetki Kartı Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kişi',f:r=>esc(r.kisi||'—')},{h:'Şirketler',f:r=>esc((Array.isArray(r.sirketler)&&r.sirketler.length?r.sirketler.map(yetkiSirketAd):['—']).join(', '))},{h:'Alt Modül',f:r=>`<span class="text-[12px]">${Object.values(r.altModuller||{}).reduce((a,x)=>a+(Array.isArray(x)?x.length:0),0)} seçim</span>`},{h:'Kart Yetkileri',f:r=>`<span class="text-[11px] text-slate-400">${yetkiOzet(r)}</span>`}],yetkiKartlari); }
   if(kod==='TBL-0017'){ return tbl('Yetki Ana Grup Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Grup',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.kod||'—')},{h:'Temel Rol',f:r=>esc(r.sinifAd||'—')},{h:'Varsayılan Düzey',f:r=>badge(r.duzey||'—','gold')},{h:'Modüller',f:r=>`<span class="text-[12px]">${(Array.isArray(r.moduller)?r.moduller.length:0)} modül</span>`}],yetkiGruplari); }
   if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Bölüm',f:r=>badge(r.bolum||'—','gold')},{h:'Görev Yeri',f:r=>esc(r.gorevYeri||'—')},{h:'Görevi',f:r=>esc(r.gorev||'—')},{h:'Mesleği',f:r=>esc(r.meslek||'—')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Resmi Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.resmiKod||'—')},{h:'İç Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.icKod||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')},{h:'Yetki Sınıfı',f:r=>r.yetkiSinifiAd?`<span class="text-slate-100">${esc(r.yetkiSinifiAd)}</span>${Array.isArray(r.yetkiler)&&r.yetkiler.length?`<span class="block text-[10px] text-slate-500">${esc(r.yetkiler.join(' · '))}</span>`:''}`:'—'}],personelKartlari); }
   if(kod==='TBL-0010'){
