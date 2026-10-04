@@ -2740,18 +2740,21 @@ let yapiSiniflari = [
 const YAPI_SINIF_TANIM = ['Basit','Standart Altı','Standart Konut','Lüks / Özel','Çok Lüks'];
 function fmtTL(n){ try{ return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0)+' TL'; }catch(e){ return (n||0)+' TL'; } }
 function addYapiSinif(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const grup=gv('ysGrup'); if(!grup){toast('Yapı sınıfı/grubu girin');return;} const no=nextKayitNo('0019', yapiSiniflari);
-  yapiSiniflari.unshift({ no, grup, sinif:gv('ysSinif')||'Basit', maliyet:parseInt((gv('ysMaliyet')||'0').replace(/[^0-9]/g,''),10)||0, ornek:gv('ysOrnek') });
+  yapiSiniflari.unshift({ no, grup, sinif:gv('ysSinif')||'Basit', maliyet:parseInt((gv('ysMaliyet')||'0').replace(/[^0-9]/g,''),10)||0, maliyet2027:parseInt((gv('ysMaliyet2027')||'0').replace(/[^0-9]/g,''),10)||0, ornek:gv('ysOrnek') });
   logAction('ruler','gold', `Yapı sınıfı · ${no} · ${grup} (${fmtTL(yapiSiniflari[0].maliyet)}/m²)`); render(); toast(no+' eklendi'); }
 let insaatMaliyetleri = [];
 const INSAAT_MALIYET_NOT = 'Maliyetlere KDV hariç %10 müteahhit kârı dahildir.';
 function addInsaatMaliyet(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
   const grup=gv('hesGrup'); if(!grup){toast('Yapı sınıfı seçin');return;}
-  const ys=yapiSiniflari.find(y=>y.grup===grup); const birim=ys?ys.maliyet:0;
+  const ys=yapiSiniflari.find(y=>y.grup===grup);
+  const yil=gv('hesYil')||'2026';
+  const birim = ys ? (yil==='2027' ? (ys.maliyet2027||0) : (ys.maliyet||0)) : 0;
+  if(yil==='2027' && !birim){ toast('2027 birim fiyatı henüz girilmemiş (Yapı Sınıfı tablosundan ekleyin)'); return; }
   const m2=parseFloat((gv('hesM2')||'0').replace('.','').replace(',','.'))||0; if(!m2){toast('m² girin');return;}
   const maliyet=Math.round(birim*m2);
   const no=nextKayitNo('0020', insaatMaliyetleri);
-  insaatMaliyetleri.unshift({ no, ad:gv('hesAd'), grup, sinif:ys?ys.sinif:'', birim, m2, maliyet });
-  logAction('calculator','gold', `İnşaat maliyet hesabı · ${no} · ${grup} · ${m2} m² = ${fmtTL(maliyet)}`); render(); toast(no+' · '+fmtTL(maliyet)); }
+  insaatMaliyetleri.unshift({ no, ad:gv('hesAd'), grup, sinif:ys?ys.sinif:'', yil, birim, m2, maliyet });
+  logAction('calculator','gold', `İnşaat maliyet hesabı · ${no} · ${grup} · ${yil} · ${m2} m² = ${fmtTL(maliyet)}`); render(); toast(no+' · '+fmtTL(maliyet)); }
 function nextYtkNo(){ return nextKayitNo('0016', yetkiKartlari); }
 // Yetki Kartı — adım adım tıklı (kademeli) seçim taslağı
 const YK_TOP = [{id:'erp',label:'ERP & CRM',icon:'layout-grid'},{id:'ekran',label:'Toprak Ekranı',icon:'layout-dashboard'},{id:'ayarlar',label:'Ayarlar',icon:'settings'}];
@@ -5834,13 +5837,14 @@ function tblForm(kod){
   if(kod==='TBL-0018') return wrap('Kayıt Grubu Tanımla','Kart türüne göre grup (ör. Dava → Hukuk Davaları) · kart tanımlarında bu gruplar seçilir',
       `<div class="sm:col-span-3"><label class="block text-[10px] text-slate-500 mb-0.5">Grup No (otomatik)</label><input value="${nextGrpNo()}" disabled class="w-full font-mono bg-navy-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-gold outline-none" /></div><select id="grTur" class="sm:col-span-3 ${selC}" title="Kart Türü">${GRUP_TURLERI.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select><input id="grAd" placeholder="Grup adı (ör. Hukuk Davaları)" class="sm:col-span-6 ${inpC}"/><input id="grKod" placeholder="Kısa kod" class="sm:col-span-3 font-mono ${inpC}"/><input id="grAciklama" placeholder="Açıklama" class="sm:col-span-9 ${inpC}"/>`,
       btn('addKayitGrup()','Kayıt Grubu Oluştur'));
-  if(kod==='TBL-0019') return wrap('Yapı Sınıfı / Grup Tanımla','İnşaat yapı sınıfı · 2026 birim maliyet (TL/m²) · yaygın yapı türü örnekleri',
-      `<input id="ysGrup" placeholder="Yapı Sınıfı ve Grubu (ör. 3.A Grubu)" class="sm:col-span-4 ${inpC}"/><select id="ysSinif" class="sm:col-span-4 ${selC}">${YAPI_SINIF_TANIM.map(t=>`<option>${t}</option>`).join('')}</select><input id="ysMaliyet" type="number" placeholder="2026 Birim Maliyet (TL/m²)" class="sm:col-span-4 ${inpC}"/><input id="ysOrnek" placeholder="Yaygın yapı türü örnekleri (detaylar)" class="sm:col-span-12 ${inpC}"/>`,
+  if(kod==='TBL-0019') return wrap('Yapı Sınıfı / Grup Tanımla','İnşaat yapı sınıfı · birim maliyet (TL/m²) yıllara göre · yaygın yapı türü örnekleri',
+      `<input id="ysGrup" placeholder="Yapı Sınıfı ve Grubu (ör. 3.A Grubu)" class="sm:col-span-4 ${inpC}"/><select id="ysSinif" class="sm:col-span-4 ${selC}">${YAPI_SINIF_TANIM.map(t=>`<option>${t}</option>`).join('')}</select><input id="ysMaliyet" type="number" placeholder="2026 Birim Maliyet (TL/m²)" class="sm:col-span-2 ${inpC}"/><input id="ysMaliyet2027" type="number" placeholder="2027 (boş bırakılabilir)" class="sm:col-span-2 ${inpC}"/><input id="ysOrnek" placeholder="Yaygın yapı türü örnekleri (detaylar)" class="sm:col-span-12 ${inpC}"/>`,
       btn('addYapiSinif()','Yapı Sınıfı Ekle'));
   if(kod==='TBL-0020') return `<div class="card rounded-2xl p-5 mb-4">${sectionTitle('calculator','İnşaat Maliyet Hesapla','Yapı sınıfı × m² = tahmini maliyet (2026 birim maliyetinden)')}
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-      <input id="hesAd" placeholder="İş / proje açıklaması (opsiyonel)" class="sm:col-span-5 ${inpC}"/>
-      <select id="hesGrup" class="sm:col-span-4 ${selC}"><option value="">Yapı Sınıfı seç…</option>${yapiSiniflari.map(y=>`<option value="${esc(y.grup)}">${esc(y.grup)} · ${esc(y.sinif)} · ${fmtTL(y.maliyet)}/m²</option>`).join('')}</select>
+      <input id="hesAd" placeholder="İş / proje açıklaması (opsiyonel)" class="sm:col-span-4 ${inpC}"/>
+      <select id="hesGrup" class="sm:col-span-3 ${selC}"><option value="">Yapı Sınıfı seç…</option>${yapiSiniflari.map(y=>`<option value="${esc(y.grup)}">${esc(y.grup)} · ${esc(y.sinif)} · ${fmtTL(y.maliyet)}/m²</option>`).join('')}</select>
+      <select id="hesYil" class="sm:col-span-2 ${selC}" title="Birim Fiyat Yılı"><option value="2026">2026 Fiyatı</option><option value="2027">2027 Fiyatı</option></select>
       <input id="hesM2" type="number" step="0.01" placeholder="İnşaat alanı (m²)" class="sm:col-span-3 ${inpC}"/>
     </div>
     <div class="mt-3 flex items-center justify-between gap-2 flex-wrap">
@@ -5869,8 +5873,8 @@ function viewAdminTable(kod){
   if(kod==='TBL-0016'){ return tbl('Yetki Kartı Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Ad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kişi',f:r=>esc(r.kisi||'—')},{h:'Şirketler',f:r=>esc((Array.isArray(r.sirketler)&&r.sirketler.length?r.sirketler.map(yetkiSirketAd):['—']).join(', '))},{h:'Alt Modül',f:r=>`<span class="text-[12px]">${Object.values(r.altModuller||{}).reduce((a,x)=>a+(Array.isArray(x)?x.length:0),0)} seçim</span>`},{h:'Kart Yetkileri',f:r=>`<span class="text-[11px] text-slate-400">${yetkiOzet(r)}</span>`}],yetkiKartlari); }
   if(kod==='TBL-0017'){ return tbl('Yetki Ana Grup Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Grup',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.kod||'—')},{h:'Temel Rol',f:r=>esc(r.sinifAd||'—')},{h:'Varsayılan Düzey',f:r=>badge(r.duzey||'—','gold')},{h:'Modüller',f:r=>`<span class="text-[12px]">${(Array.isArray(r.moduller)?r.moduller.length:0)} modül</span>`}],yetkiGruplari); }
   if(kod==='TBL-0018'){ return tbl('Kayıt Grupları Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Grup Adı',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Kart Türü',f:r=>badge(grupTurAd(r.tur),'gold')},{h:'Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.kod||'—')},{h:'Açıklama',f:r=>esc(r.aciklama||'—')}],kayitGruplari); }
-  if(kod==='TBL-0019'){ return tbl('İnşaat Yapı Sınıfı ve Grup Tablosu',[{h:'Yapı Sınıfı / Grubu',cls:'text-slate-100 font-medium',f:r=>esc(r.grup)},{h:'Sınıf Tanımı',f:r=>badge('('+(r.sinif||'—')+')', r.sinif==='Çok Lüks'?'red':r.sinif==='Lüks / Özel'?'amber':r.sinif==='Standart Konut'?'emer':'gold')},{h:'2026 Birim Maliyeti (TL/m²)',r:1,cls:'text-gold font-medium',f:r=>fmtTL(r.maliyet)},{h:'Yaygın Yapı Türü Örnekleri',f:r=>esc(r.ornek||'—')}],yapiSiniflari); }
-  if(kod==='TBL-0020'){ return tbl('İnşaat Maliyet Hesaplama Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'İş / Açıklama',cls:'text-slate-100 font-medium',f:r=>esc(r.ad||'—')},{h:'Yapı Sınıfı',f:r=>esc(r.grup)+(r.sinif?' ('+esc(r.sinif)+')':'')},{h:'Birim (TL/m²)',r:1,f:r=>fmtTL(r.birim)},{h:'m²',r:1,f:r=>new Intl.NumberFormat('tr-TR').format(r.m2||0)},{h:'Maliyet',r:1,cls:'text-gold font-bold',f:r=>fmtTL(r.maliyet)}],insaatMaliyetleri); }
+  if(kod==='TBL-0019'){ return tbl('İnşaat Yapı Sınıfı ve Grup Tablosu',[{h:'Yapı Sınıfı / Grubu',cls:'text-slate-100 font-medium',f:r=>esc(r.grup)},{h:'Sınıf Tanımı',f:r=>badge('('+(r.sinif||'—')+')', r.sinif==='Çok Lüks'?'red':r.sinif==='Lüks / Özel'?'amber':r.sinif==='Standart Konut'?'emer':'gold')},{h:'2026 Birim (TL/m²)',r:1,cls:'text-gold font-medium',f:r=>fmtTL(r.maliyet)},{h:'2027 Birim (TL/m²)',r:1,cls:'text-slate-400',f:r=>r.maliyet2027?fmtTL(r.maliyet2027):'—'},{h:'Yaygın Yapı Türü Örnekleri',f:r=>esc(r.ornek||'—')}],yapiSiniflari); }
+  if(kod==='TBL-0020'){ return tbl('İnşaat Maliyet Hesaplama Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'İş / Açıklama',cls:'text-slate-100 font-medium',f:r=>esc(r.ad||'—')},{h:'Yapı Sınıfı',f:r=>esc(r.grup)+(r.sinif?' ('+esc(r.sinif)+')':'')},{h:'Yıl',f:r=>badge(r.yil||'2026','gold')},{h:'Birim (TL/m²)',r:1,f:r=>fmtTL(r.birim)},{h:'m²',r:1,f:r=>new Intl.NumberFormat('tr-TR').format(r.m2||0)},{h:'Maliyet',r:1,cls:'text-gold font-bold',f:r=>fmtTL(r.maliyet)}],insaatMaliyetleri); }
   if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Bölüm',f:r=>badge(r.bolum||'—','gold')},{h:'Görev Yeri',f:r=>esc(r.gorevYeri||'—')},{h:'Görevi',f:r=>esc(r.gorev||'—')},{h:'Mesleği',f:r=>esc(r.meslek||'—')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Resmi Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.resmiKod||'—')},{h:'İç Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.icKod||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')},{h:'Yetki Sınıfı',f:r=>r.yetkiSinifiAd?`<span class="text-slate-100">${esc(r.yetkiSinifiAd)}</span>${Array.isArray(r.yetkiler)&&r.yetkiler.length?`<span class="block text-[10px] text-slate-500">${esc(r.yetkiler.join(' · '))}</span>`:''}`:'—'}],personelKartlari); }
   if(kod==='TBL-0010'){
     const durumTone=d=>d==='Sipariş Verildi'?'emer':d==='Reddedildi'?'red':d==='Teklif Toplanıyor'?'gold':'amber';
