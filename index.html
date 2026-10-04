@@ -893,7 +893,7 @@ function modDisplayName(m){
   return m.name;
 }
 function buildNav(){
-  const LEFT_IDS = ['news','access']; // solda kalacak modüller (Patron Ekranı üst bara taşındı)
+  const LEFT_IDS = ['news']; // solda kalacak modüller (Erişim/Yetki Yönetimi Ayarlar alt barına taşındı)
   const mainNav = document.getElementById('mainNav');
   const nav = document.getElementById('navMenu');
   // ÜST YATAY BAR — operasyonel modüller
@@ -5721,6 +5721,7 @@ function viewKayitlar(){
 }
 function viewAdmin(){
   if(!isAdminUser() && !state.viewAs) return viewUnauthorized({name:'Sistem Yöneticisi'});
+  if(state.adminMode==='yetki') return viewAccess();
   if(state.adminMode==='liste') return viewKayitlar();
   if(state.adminTable) return viewAdminTable(state.adminTable);
   if(!state.adminUsers) return viewAdminRecords();
@@ -6814,12 +6815,13 @@ function buildSubNav(){
       bar.innerHTML = mods.map(m=>abtn(m.id===state.module, `setModule('${m.id}')`, m.icon, m.name.replace(/ Yönetimi| Yönetim/,''))).join('') + (isAdminUser()?talepGold:'');
       return;
     }
-    // Ayarlar (admin) → üst bar: Kayıt Ekle · Kayıtlar
+    // Ayarlar (admin) → üst bar: Tablolar · Kayıtlar · Yetki Yönetimi
     if(state.module==='admin'){
       bar.style.display=''; tint();
-      const ekle = state.adminMode!=='liste';
-      bar.innerHTML = abtn(ekle, "state.adminMode='ekle';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'table', 'Tablolar')
-        + abtn(!ekle, "state.adminMode='liste';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'database', 'Kayıtlar');
+      const mode = state.adminMode==='liste'?'liste':(state.adminMode==='yetki'?'yetki':'ekle');
+      bar.innerHTML = abtn(mode==='ekle', "state.adminMode='ekle';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'table', 'Tablolar')
+        + abtn(mode==='liste', "state.adminMode='liste';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'database', 'Kayıtlar')
+        + abtn(mode==='yetki', "state.adminMode='yetki';state.adminUsers=false;state.adminTable=null;setModule('admin')", 'shield-check', 'Yetki Yönetimi');
       return;
     }
     // Toprak Ekranı (dashboard) → alt bar gizli
@@ -6920,6 +6922,7 @@ function subTabsLeftHtml(){
   const active = currentSub();
   const modName = (MODULES.find(m=>m.id===state.module)||{}).name || (state.module==='admin'?'Sistem Yöneticisi':'');
   const kartMenu = state.module==='admin' ? (()=>{
+    if(state.adminMode==='yetki') return '';
     // Kayıtlar modu → oluşturulan kart türleri (Cari/Personel/Avukat/Dava/İcra/Sözleşme Kartları)
     if(state.adminMode==='liste'){
       const cur = state.kayitCat || 'cari';
