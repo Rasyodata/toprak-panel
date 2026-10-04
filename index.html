@@ -876,22 +876,26 @@ function buildNav(){
   // ÜST YATAY BAR — operasyonel modüller
   const topMods = MODULES.filter(m=>m.group==='category' && can(m) && !LEFT_IDS.includes(m.id) && !(m.id==='company' && state.company==='all'));
   mainNav.style.display = topMods.length ? '' : 'none';
+  // Aktif modülün alt zemini — bulunduğumuz şirketin vurgu renginde; alt bardan gezinince üst barda değişir
+  const navAccent = ((COMPANY_TABS.find(x=>x.id===state.company)||{}).accent) || '#d4af37';
+  const activeStrip = `<span class="absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="background:${navAccent}"></span>`;
   mainNav.innerHTML = topMods.map(m=>{
     const active = m.id===state.module;
     const pend = modulePending(m.id);
     return `
     <button onclick="setModule('${m.id}')"
-      class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition relative
+      class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition relative overflow-hidden
              ${active?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}">
       <i data-lucide="${m.icon}" class="h-4 w-4 ${active?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${m.name.replace(/ Yönetimi| Yönetim/,'')}</span>
       ${pend>0?`<span class="min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">${pend}</span>`:''}
+      ${active?activeStrip:''}
     </button>`;
   }).join('')
   + (isAdminUser() ? (()=>{ const a=state.module==='admin';
       return `<button onclick="setModule('admin')"
-        class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition
+        class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition relative overflow-hidden
                ${a?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}">
-        <i data-lucide="shield-check" class="h-4 w-4 ${a?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">Sistem Yöneticisi</span></button>`; })() : '')
+        <i data-lucide="shield-check" class="h-4 w-4 ${a?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">Sistem Yöneticisi</span>${a?activeStrip:''}</button>`; })() : '')
   + ((isAdminUser() && state.company==='all') ? `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>` : '');
 
   // SOL BAR — aktif modülün alt-sekmeleri + Patron Ekranı · Duyurular · Erişim + Şirket Seçimi + Sistem Yöneticisi
