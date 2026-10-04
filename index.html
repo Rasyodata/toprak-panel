@@ -6847,9 +6847,16 @@ function subTabsLeftHtml(){
   const active = currentSub();
   const modName = (MODULES.find(m=>m.id===state.module)||{}).name || (state.module==='admin'?'Sistem Yöneticisi':'');
   const kartMenu = state.module==='admin' ? (()=>{
-    const KARTLAR=[['TBL-0010','Satın Alma Talep Kartı','clipboard-list'],['TBL-0012','Ödeme Emri Kartı','receipt-text'],['TBL-0013','Ödeme Sözü Kartı','handshake'],['TBL-0014','Tahminlenen Bütçe Çıkış Kartı','trending-down'],['TBL-0015','Gider Kartı','repeat']];
-    return `<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">Belge Kartları</div>`
-      + KARTLAR.map(([k,l,ic])=>`<button onclick="state.adminUsers=false;state.adminTable='${k}';setModule('admin')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${state.adminTable===k?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${ic}" class="h-[18px] w-[18px] ${state.adminTable===k?'text-[#f0a58a]':''}"></i><span class="truncate">${l}</span></button>`).join('')
+    const KARTLAR=[
+      ['TBL-0001','Cari Kart Oluştur','id-card'],['TBL-0011','Personel Oluştur','users'],['TBL-0003','Avukat Tanımla','scale'],
+      ['TBL-0002','Dava & İcra','gavel'],['TBL-0004','Sözleşme','file-signature'],['TBL-0005','Satıcı / Prim','badge-dollar-sign'],
+      ['TBL-0006','Proje','hard-hat'],['TBL-0007','Risk','shield-alert'],['TBL-0009','Cari Tür Kodları','hash'],
+      ['TBL-0010','Satın Alma Talep','clipboard-list'],['TBL-0012','Ödeme Emri','receipt-text'],['TBL-0013','Ödeme Sözü','handshake'],
+      ['TBL-0014','Bütçe Çıkış','trending-down'],['TBL-0015','Gider','repeat'],['TBL-0008','Kullanıcılar','user-cog']
+    ];
+    return `<div class="px-2 pb-1 pt-1 text-[10px] uppercase tracking-[.2em] text-gold">Kayıt Tabloları</div>`
+      + KARTLAR.map(([k,l,ic])=>{ const on = k==='TBL-0008' ? !!state.adminUsers : (state.adminTable===k); const oc = k==='TBL-0008' ? "state.adminTable=null;state.adminUsers=true;setModule('admin')" : `state.adminUsers=false;state.adminTable='${k}';setModule('admin')`;
+        return `<button onclick="${oc}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border border-[#b4532f]/60':'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}"><i data-lucide="${ic}" class="h-[18px] w-[18px] ${on?'text-[#f0a58a]':''}"></i><span class="truncate">${l}</span></button>`; }).join('')
       + '<div class="my-2 border-t border-white/5"></div>';
   })() : '';
   return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${modName}</div>`
