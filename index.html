@@ -825,6 +825,8 @@ function render(){
   }
   companyScreen.classList.add('hidden');
   app.style.display = '';
+  // Personel girişi: yalnızca kişisel modüller — başka modül kalmışsa Panelim'e dön
+  if(isPersonelUser() && !PERSONEL_MODULES.includes(state.module)){ state.module='panelim'; }
   updateBrand();
   buildUserUI();
   buildNav();
