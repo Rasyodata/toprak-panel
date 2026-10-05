@@ -207,43 +207,43 @@
       <!-- ŞİRKET EKRANI (yalnızca şirket görünümünde · yazıcının sağında, canlı renkle) -->
       <button id="ekranBtn" onclick="setModule('dashboard')" title="Şirket Ekranı" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="layout-dashboard" class="h-4 w-4"></i><span id="ekranBtnLbl" class="whitespace-nowrap">Ekranı</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+        <i data-lucide="layout-dashboard" class="h-4 w-4"></i><span id="ekranBtnLbl" class="whitespace-nowrap hidden lg:inline">Ekranı</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
 
       <!-- ERP & CRM (şirket görünümünde · Ekranı'nın sağında · operasyonel modül grubu) -->
       <button id="erpBtn" onclick="openErp()" title="ERP & CRM" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="layout-grid" class="h-4 w-4"></i><span class="whitespace-nowrap">ERP &amp; CRM</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+        <i data-lucide="layout-grid" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">ERP &amp; CRM</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
 
       <!-- İŞ TAKVİMİ (şirket görünümünde · Ayarlar'ın solunda · üst modül) -->
       <button id="takvimBtn" onclick="setModule('istakvim')" title="İş Takvimi" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="calendar-clock" class="h-4 w-4"></i><span class="whitespace-nowrap">İş Takvimi</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+        <i data-lucide="calendar-clock" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">İş Takvimi</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
 
       <!-- AYARLAR (şirket görünümünde · Ekranı'nın sağında · şirketin vurgu/alt renginde · Sistem Yöneticisi) -->
       <button id="ayarlarBtn" onclick="setModule('admin')" title="Ayarlar · Sistem Yöneticisi" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="settings" class="h-4 w-4"></i><span class="whitespace-nowrap">Ayarlar</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+        <i data-lucide="settings" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">Ayarlar</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
 
       <!-- PERSONEL PANELİ (yalnızca personel girişlerinde · üst bar modülleri) -->
       <button id="pnlBtn" onclick="setModule('panelim')" title="Panelim" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="id-card" class="h-4 w-4"></i><span class="whitespace-nowrap">Panelim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+        <i data-lucide="id-card" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">Panelim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
       <button id="gtkBtn" onclick="setModule('gorevtakvimim')" title="Görev Takvimim" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="calendar-days" class="h-4 w-4"></i><span class="whitespace-nowrap">Görev Takvimim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+        <i data-lucide="calendar-days" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">Görev Takvimim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
       <button id="gorBtn" onclick="setModule('gorevlerim')" title="Görevlerim" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="list-checks" class="h-4 w-4"></i><span class="whitespace-nowrap">Görevlerim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+        <i data-lucide="list-checks" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">Görevlerim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
       <button id="defterBtn" onclick="setModule('kayitdefteri')" title="Kayıt Defteri" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="notebook-pen" class="h-4 w-4"></i><span class="whitespace-nowrap">Kayıt Defteri</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+        <i data-lucide="notebook-pen" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">Kayıt Defteri</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
 
       <!-- USER SWITCHER -->
