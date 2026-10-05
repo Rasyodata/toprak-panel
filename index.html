@@ -3020,11 +3020,12 @@ function viewIsTakvimi(opts){
   const dept=state.takvimDept||'__hepsi'; const hepsi = kisi? false : (dept==='__hepsi'); const baslik = kisi? kisi : (hepsi?'Tüm Departmanlar':dept);
   const persDept=ad=>{ const p=personelKartlari.find(x=>x.ad===ad); return p?(p.bolum||''):''; };
   const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '2026-01-01';}})();
+  const AYTAM=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
   let matchDate, donemEtiket;
-  if(per==='gun'){ const d=state.takvimTarih||today; matchDate=t=>t===d; donemEtiket=d; }
-  else if(per==='ay'){ const m=state.takvimAy||today.slice(0,7); matchDate=t=>(t||'').slice(0,7)===m; donemEtiket=m; }
-  else if(per==='yil'){ const y=String(state.takvimYil||today.slice(0,4)); matchDate=t=>(t||'').slice(0,4)===y; donemEtiket=y; }
-  else { const d=state.takvimTarih||today; let s=d,e=d; try{ const b=new Date(d); const off=(b.getDay()+6)%7; const st=new Date(b); st.setDate(b.getDate()-off); const en=new Date(st); en.setDate(st.getDate()+6); s=st.toISOString().slice(0,10); e=en.toISOString().slice(0,10); }catch(x){} matchDate=t=>t>=s&&t<=e; donemEtiket=isoHaftaNo(d)+'. hafta ('+s+' – '+e+')'; }
+  if(per==='gun'){ const d=state.takvimTarih||today; matchDate=t=>t===d; const gunAd=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi']; let lab=d; try{ const dd=new Date(d); lab=dd.getDate()+' '+AYTAM[dd.getMonth()]+' '+dd.getFullYear()+', '+gunAd[dd.getDay()]; }catch(x){} donemEtiket=lab; }
+  else if(per==='ay'){ const m=state.takvimAy||today.slice(0,7); matchDate=t=>(t||'').slice(0,7)===m; const mo=+m.slice(5,7); donemEtiket=(AYTAM[mo-1]||'')+' '+m.slice(0,4)+' ayı'; }
+  else if(per==='yil'){ const y=String(state.takvimYil||today.slice(0,4)); matchDate=t=>(t||'').slice(0,4)===y; donemEtiket=y+' yılı'; }
+  else { const d=state.takvimTarih||today; let s=d,e=d; try{ const b=new Date(d); const off=(b.getDay()+6)%7; const st=new Date(b); st.setDate(b.getDate()-off); const en=new Date(st); en.setDate(st.getDate()+6); s=st.toISOString().slice(0,10); e=en.toISOString().slice(0,10); }catch(x){} matchDate=t=>t>=s&&t<=e; const wk=isoHaftaNo(d); const yr=(state.takvimHaftaYil)||s.slice(0,4); const fmt=x=>x.slice(8,10)+'.'+x.slice(5,7); donemEtiket=wk+'. Hafta · '+yr+' ('+fmt(s)+' – '+fmt(e)+')'; }
   const rows=isTakvimi.filter(r=>(kisi? (r.personel===kisi) : (hepsi || persDept(r.personel)===dept)) && matchDate(r.tarih||''));
   const dt=d=>d==='Tamamlandı'?'emer':d==='Devam Ediyor'?'amber':'slate';
   if(listeOnly) per='liste';
@@ -3053,7 +3054,7 @@ function viewIsTakvimi(opts){
         <button onclick="takvimBugun()" title="Bugüne dön" class="h-8 px-2.5 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white text-[12px] font-medium">Bugün</button>
         <button onclick="takvimNav(1)" title="Sonraki ${pl.toLowerCase()}" class="h-8 w-8 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white flex items-center justify-center"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
       </div>
-      <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(baslik)}</p><p class="text-[11px] text-gold">${listeOnly?'Görevlerim':pl} · ${esc(donemEtiket)} · ${rows.length} görev</p></div>
+      <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(baslik)} · <span class="text-gold">${esc(donemEtiket)}</span></p><p class="text-[11px] text-slate-400">${listeOnly?'Görevlerim':pl} görünümü · ${rows.length} görev</p></div>
       <button onclick="pdfIsTakvimi(${kisi?("'"+String(kisi).replace(/'/g,"\\'")+"'"):''})" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="file-down" class="h-4 w-4"></i>PDF</button>
       ${ekleBtn}
     </div>
