@@ -2963,7 +2963,20 @@ function addIsTakvim(){ const g=i=>document.getElementById(i); const gv=i=>((g(i
   isTakvimi.unshift({ no, personel, tur, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), saat, is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') });
   logAction('calendar-clock','gold', `İş takvimi · ${no} · ${personel} · ${tur} · ${is}`); render(); toast(no+' · iş takvimine eklendi');
   captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); } }); }
-const TAKVIM_TUR=['Görev','Gelen Kişi','Kargo','Ziyaretçi','Toplantı','Telefon','İzin','Ofise Giriş','Ofisten Çıkış','Diğer'];
+const TAKVIM_TUR=['Görev','Gelen Kişi','Gelen Telefon','Gelen Evrak','Telefon ile İstek','Kargo','Ziyaretçi','Toplantı','Telefon','İzin','Ofise Giriş','Ofisten Çıkış','Diğer'];
+const KAYIT_DEFTER_TUR=['Gelen Kişi','Gelen Telefon','Gelen Evrak','Telefon ile İstek','Diğer'];
+function defterToggle(){ state.defterOpen=!state.defterOpen; render(); setTimeout(function(){var e=document.getElementById('dfKisi'); if(e)e.focus();},70); }
+function addDefterKayit(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const personel=myName();
+  const tur=gv('dfTur')||'Gelen Kişi'; const kisi=gv('dfKisi'); const aciklama=gv('dfAciklama'); const saat=gv('dfSaat')||'';
+  if(!kisi && !aciklama){ toast('Kişi/kurum veya açıklama girin'); return; }
+  let tarih=''; try{ tarih=new Date().toISOString().slice(0,10); }catch(e){}
+  const stsaat = saat || (()=>{try{const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}catch(e){return '';}})();
+  const is = kisi ? (kisi + (aciklama?(' · '+aciklama):'')) : aciklama;
+  const no=nextKayitNo('0026',isTakvimi);
+  isTakvimi.unshift({ no, personel, tur, periyot:'Günlük', tarih, saat:stsaat, is, durum:'Tamamlandı', aciklama, defter:true, kisi });
+  itYetkiVer(personel); state.defterOpen=false;
+  logAction('notebook-pen','gold', 'Kayıt defteri · '+tur+' · '+personel+' · '+(kisi||aciklama)); render(); toast(tur+' kaydedildi ✓ · ziyaretçi takvimine işlendi');
+  captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); } }); }
 function itYetkiVer(personel){ if(!personel) return; const p=personelKartlari.find(x=>x.ad===personel); const dep=p?(p.bolum||''):'';
   let yk=yetkiKartlari.find(r=>r.oto==='istakvim' && r.kisi===personel);
   if(yk){ yk.moduller=yk.moduller||[]; if(yk.moduller.indexOf('istakvim')<0) yk.moduller.push('istakvim'); yk.altModuller=yk.altModuller||{}; yk.altModuller.istakvim=yk.altModuller.istakvim||[]; if(dep&&yk.altModuller.istakvim.indexOf(dep)<0) yk.altModuller.istakvim.push(dep); }
@@ -3026,7 +3039,45 @@ function takvimNav(dir){ const per=currentSub()||'gun'; const today=(()=>{try{re
   render();
 }
 function takvimBugun(){ try{ const iso=new Date().toISOString().slice(0,10); state.takvimTarih=iso; state.takvimAy=iso.slice(0,7); state.takvimYil=iso.slice(0,4); state.takvimHaftaYil=+iso.slice(0,4); }catch(e){} render(); }
+function viewKayitDefteri(){
+  const nm=myName();
+  const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-gold/50';
+  const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
+  const kayitlar=isTakvimi.filter(t=>t.defter && t.personel===nm).sort((a,b)=>String((b.tarih||'')+(b.saat||'')).localeCompare(String((a.tarih||'')+(a.saat||''))));
+  const bugun=kayitlar.filter(t=>t.tarih===today);
+  const turRenk=t=>({'Gelen Kişi':'emer','Gelen Telefon':'gold','Gelen Evrak':'amber','Telefon ile İstek':'gold','Diğer':'slate'})[t]||'slate';
+  const turIc=t=>({'Gelen Kişi':'user-check','Gelen Telefon':'phone-incoming','Gelen Evrak':'file-text','Telefon ile İstek':'phone-call','Diğer':'sticky-note'})[t]||'dot';
+  const pre=state.defterOpen;
+  const form = pre ? `<div class="card rounded-2xl p-4 mb-4 border border-gold/30">
+      <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="notebook-pen" class="h-3.5 w-3.5"></i>Yeni Kayıt · ${esc(nm)}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+        <select id="dfTur" class="sm:col-span-4 ${selC}" title="Kayıt türü">${KAYIT_DEFTER_TUR.map(t=>`<option>${t}</option>`).join('')}</select>
+        <input id="dfKisi" placeholder="Kişi / Kurum (ör. Delta Yapı · Ahmet Bey)" class="sm:col-span-5 ${inpC}"/>
+        ${saatSelect('dfSaat', (()=>{try{const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+(n.getMinutes()<30?'00':'30');}catch(e){return '09:00';}})(), 'sm:col-span-3 '+selC, 'title="Saat"')}
+        <input id="dfAciklama" placeholder="Açıklama / talep / not" class="sm:col-span-12 ${inpC}"/>
+      </div>
+      <div class="mt-2 flex justify-end gap-2"><button onclick="state.defterOpen=false;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button><button onclick="addDefterKayit()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Kayda Al</button></div>
+      <p class="text-[10px] text-slate-500 mt-1 flex items-center gap-1"><i data-lucide="map-pin" class="h-3 w-3"></i>Konum otomatik işlenir · kayıt ziyaretçi takvimine düşer.</p>
+    </div>` : '';
+  const sayac=(t)=>bugun.filter(x=>x.tur===t).length;
+  const rowHtml=t=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
+      <span class="h-9 w-9 shrink-0 rounded-lg bg-${turRenk(t.tur)}/15 text-${turRenk(t.tur)}-light border border-${turRenk(t.tur)}/30 flex items-center justify-center"><i data-lucide="${turIc(t.tur)}" class="h-4 w-4"></i></span>
+      <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate"><span class="text-[10px] px-1.5 py-0.5 rounded bg-${turRenk(t.tur)}/15 text-${turRenk(t.tur)}-light mr-1.5">${esc(t.tur)}</span>${esc(t.is||'')}</p><p class="text-[11px] text-slate-500">${esc(t.tarih||'')} · ${esc(t.saat||'')}${t.konum?(' · 📍 '+esc(t.konum)):''}</p></div>
+      ${isAdminUser()?`<button onclick="delIsTakvim('${t.no}')" class="shrink-0 h-7 w-7 rounded-lg bg-rose-600 text-white hover:bg-rose-700 flex items-center justify-center" title="Sil"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>`:''}
+    </div>`;
+  return form + `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
+      <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="notebook-pen" class="h-5 w-5"></i></span>
+      <div class="min-w-0"><p class="text-base font-bold text-gold leading-tight">Günlük Kayıt Defteri</p><p class="text-[11px] text-slate-400">${esc(nm)} · bugün ${bugun.length} kayıt · toplam ${kayitlar.length}</p></div>
+      <button onclick="defterToggle()" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Kayıt Oluştur</button>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">${KAYIT_DEFTER_TUR.map(t=>`<div class="card rounded-xl p-3 text-center"><p class="text-xl font-bold text-slate-100">${sayac(t)}</p><p class="text-[10px] text-slate-500 mt-0.5">${esc(t)}</p></div>`).join('')}</div>
+    <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-gold mb-2">Bugün</p><div class="space-y-2">${bugun.length?bugun.map(rowHtml).join(''):'<p class="text-sm text-slate-500 py-4 text-center">Bugün kayıt yok. "Kayıt Oluştur" ile ekleyin.</p>'}</div>
+    ${kayitlar.length>bugun.length?`<p class="text-[11px] uppercase tracking-wider text-gold mt-4 mb-2">Önceki Kayıtlar</p><div class="space-y-2">${kayitlar.filter(t=>t.tarih!==today).slice(0,30).map(rowHtml).join('')}</div>`:''}
+    </div>`;
+}
 function viewPanelim(){
+  if(currentSub()==='defter') return viewKayitDefteri();
   const r=ROLES[state.role]||{}; const nm=myName();
   const p=personelKartlari.find(x=>x.ad===nm)||{};
   const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
@@ -7563,7 +7614,7 @@ const SUBTABS = {
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'personel',label:'Personeller',icon:'contact'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}],
   istakvim:      [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
-  panelim:       [{id:'bilgiler',label:'Kişisel Bilgiler',icon:'id-card'}],
+  panelim:       [{id:'bilgiler',label:'Kişisel Bilgiler',icon:'id-card'},{id:'defter',label:'Kayıt Defteri',icon:'notebook-pen'}],
   gorevtakvimim: [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   gorevlerim:    [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   admin:         [{id:'kayitlar',label:'Kayıtlar',icon:'database'}]
@@ -7660,10 +7711,12 @@ function leftSpecialSubsHtml(){
       + g.items.map(it=>lbtn(`setSub('${it.id}')`, it.icon, it.label, it.id===active)).join('')).join('')
       + sep;
   }
-  // Panelim → Kişisel Bilgiler
+  // Panelim → Kişisel Bilgiler · Kayıt Defteri
   if(state.module==='panelim'){
+    const a=currentSub()||'bilgiler';
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Panelim</div>`
-      + lbtn("setSub('bilgiler')",'id-card','Kişisel Bilgiler', true) + sep;
+      + lbtn("setSub('bilgiler')",'id-card','Kişisel Bilgiler', a==='bilgiler')
+      + lbtn("setSub('defter')",'notebook-pen','Kayıt Defteri · Ziyaretçi', a==='defter') + sep;
   }
   // İş Takvimi / Görev Takvimim / Görevlerim → sol barda Gün/Hafta/Ay/Yıl dönem seçimi
   if(state.module==='istakvim' || state.module==='gorevtakvimim' || state.module==='gorevlerim'){
