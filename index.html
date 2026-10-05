@@ -204,6 +204,8 @@
         <i data-lucide="printer" class="h-5 w-5"></i>
       </button>
 
+      <!-- MODÜL BUTONLARI (sağa yaslı) -->
+      <div class="flex items-center gap-2 ml-auto">
       <!-- ŞİRKET EKRANI (yalnızca şirket görünümünde · yazıcının sağında, canlı renkle) -->
       <button id="ekranBtn" onclick="setModule('dashboard')" title="Şirket Ekranı" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
@@ -245,20 +247,12 @@
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
         <i data-lucide="notebook-pen" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">Kayıt Defteri</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
+      </div>
 
-      <!-- USER SWITCHER -->
-      <div class="relative ml-auto">
-        <button onclick="toggleUserMenu()" id="userBtn"
-          class="flex items-center gap-2.5 pl-2 pr-2 sm:pr-3 py-1.5 rounded-xl border border-white/10 bg-navy-700/70 hover:border-gold/40 transition">
-          <span id="userAvatar" class="h-8 w-8 rounded-lg bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 font-bold flex items-center justify-center text-sm"></span>
-          <span class="hidden sm:block text-left leading-tight">
-            <span id="userName" class="block text-sm font-medium text-slate-100"></span>
-            <span id="userRole" class="block text-[10px] text-gold"></span>
-          </span>
-          <i data-lucide="chevrons-up-down" class="h-4 w-4 text-slate-400"></i>
-        </button>
-
-        <div id="userMenu" class="hidden absolute right-0 mt-2 w-72 card rounded-2xl shadow-exec p-2 fade-in">
+      <!-- USER SWITCHER (üst-sağdan kaldırıldı · sol bardan 'Kullanıcı Değiştir' ile açılır) -->
+      <div class="hidden"><span id="userAvatar"></span><span id="userName"></span><span id="userRole"></span></div>
+      <div>
+        <div id="userMenu" class="hidden fixed top-16 right-4 z-50 w-72 card rounded-2xl shadow-exec p-2 fade-in">
           <p class="px-3 pt-2 pb-1 text-[10px] uppercase tracking-[.2em] text-slate-500">Kullanıcı Değiştir (Simülasyon)</p>
           <div id="userList" class="space-y-1"></div>
           <div class="mt-2 pt-2 border-t border-white/5 space-y-1">
@@ -966,7 +960,8 @@ function buildNav(){
     const setP=(id,mod)=>{ const b=document.getElementById(id); if(!b) return; b.style.display=''; const on=state.module===mod; b.classList.toggle('ring-2',on); b.classList.toggle('ring-white/50',on); b.style.boxShadow=on?'0 4px 16px -4px #d4af37':'none'; const st=b.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; };
     setP('pnlBtn','panelim'); setP('gtkBtn','gorevtakvimim'); setP('gorBtn','gorevlerim'); setP('defterBtn','kayitdefteri');
     mainNav.style.display='none';
-    if(nav) nav.innerHTML = leftSpecialSubsHtml();
+    if(nav) nav.innerHTML = leftSpecialSubsHtml()
+      + `<div class="my-2 border-t border-white/5"></div><button data-userswitch onclick="toggleUserMenu()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-200 border border-white/10 bg-navy-700/50 hover:border-gold/40 transition"><span class="h-7 w-7 rounded-lg bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 font-bold flex items-center justify-center text-[11px]">${ROLES[state.role].short}</span><span class="min-w-0 text-left leading-tight"><span class="block text-[12px] font-medium text-slate-100 truncate">${esc(ROLES[state.role].name)}</span><span class="block text-[10px] text-gold truncate">Kullanıcı Değiştir</span></span><i data-lucide="chevrons-up-down" class="h-4 w-4 ml-auto text-slate-400"></i></button>`;
     const bn=document.getElementById('bottomNav'); if(bn) bn.innerHTML=[['panelim','id-card','Panelim'],['gorevtakvimim','calendar-days','Takvimim'],['gorevlerim','list-checks','Görevlerim'],['kayitdefteri','notebook-pen','Defter']].map(([m,ic,l])=>`<button onclick="setModule('${m}')" class="flex flex-col items-center justify-center gap-1 flex-1 py-1.5 rounded-xl ${state.module===m?'text-gold':'text-slate-400'}"><i data-lucide="${ic}" class="h-5 w-5"></i><span class="text-[10px] leading-none">${l}</span></button>`).join('');
     return;
   } else { ['pnlBtn','gtkBtn','gorBtn','defterBtn'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.display='none'; b.classList.remove('ring-2','ring-white/50'); } }); }
@@ -1031,7 +1026,14 @@ function buildNav(){
       <i data-lucide="replace" class="h-[18px] w-[18px]"></i>
       <span class="truncate">Şirket Seçimine Geç</span>
       <i data-lucide="chevron-right" class="h-4 w-4 ml-auto"></i>
-    </button>` : '');
+    </button>` : '')
+  + `<div class="my-2 border-t border-white/5"></div>
+    <button data-userswitch onclick="toggleUserMenu()"
+      class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-200 border border-white/10 bg-navy-700/50 hover:border-gold/40 transition">
+      <span class="h-7 w-7 rounded-lg bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 font-bold flex items-center justify-center text-[11px]">${ROLES[state.role].short}</span>
+      <span class="min-w-0 text-left leading-tight"><span class="block text-[12px] font-medium text-slate-100 truncate">${esc(ROLES[state.role].name)}</span><span class="block text-[10px] text-gold truncate">Kullanıcı Değiştir</span></span>
+      <i data-lucide="chevrons-up-down" class="h-4 w-4 ml-auto text-slate-400"></i>
+    </button>`;
 
   // Emlakçı → sol bar: Profilim / Daire Satışı / Randevularım
   if(ROLES[state.role].realtor){
@@ -8153,9 +8155,8 @@ function patronAct(kind,id,action){
   toast(action==='approved' ? `${id} · PATRON ONAYI verildi ✓` : `${id} patron tarafından reddedildi`);
 }
 document.addEventListener('click',(e)=>{
-  const wrap = document.getElementById('userBtn');
   const menu = document.getElementById('userMenu');
-  if(!menu.classList.contains('hidden') && !wrap.contains(e.target) && !menu.contains(e.target)){
+  if(menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && !(e.target.closest&&e.target.closest('[data-userswitch]'))){
     menu.classList.add('hidden');
   }
   const nWrap = document.getElementById('notifWrap');
