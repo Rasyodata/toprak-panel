@@ -2901,7 +2901,7 @@ function gorevTakvimeEkle(){
   const tekrar=d.tekrar||'Her Gün'; const saat=d.saat||'09:00';
   const kez=Math.max(1,Math.min(365,parseInt(d.kez||'30',10)||30));
   const perMap={'Saatlik':'Günlük','Her Gün':'Günlük','Her Hafta':'Haftalık','Her Ay':'Aylık'}; const periyot=perMap[tekrar]||'Günlük';
-  const pad=n=>String(n).padStart(2,'0'); const fmtD=dt=>{try{return dt.toISOString().slice(0,10);}catch(e){return '';}};
+  const pad=n=>String(n).padStart(2,'0'); const fmtD=dt=>{try{return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());}catch(e){return '';}};
   let base; try{ base=new Date(); }catch(e){ base=new Date(); } base.setHours(0,0,0,0);
   let created=0;
   for(let i=0;i<kez;i++){
@@ -3023,7 +3023,7 @@ function addIsTakvimToplu(){ const g=i=>document.getElementById(i); const gv=i=>
   const haftaGun=gv('itHaftaGun')||'Pazartesi'; const ayGun=Math.max(1,Math.min(31,parseInt(gv('itAyGun')||'1',10)||1));
   let base; try{ base = gv('itTarih') ? new Date(gv('itTarih')) : new Date(); }catch(e){ base=new Date(); }
   const perMap={Saatlik:'Günlük','Her Gün':'Günlük','Her Hafta':'Haftalık','Her Ay':'Aylık','Yıllık':'Yıllık'}; const periyot=perMap[tekrar]||'Günlük';
-  const pad=n=>String(n).padStart(2,'0'); const fmtD=d=>{try{return d.toISOString().slice(0,10);}catch(e){return gv('itTarih')||'';}};
+  const pad=n=>String(n).padStart(2,'0'); const fmtD=d=>{try{return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}catch(e){return gv('itTarih')||'';}};
   // Her Hafta: base'ten itibaren seçilen ilk gün
   let haftaBase=new Date(base); if(tekrar==='Her Hafta'){ const want=TAKVIM_GUNLER.indexOf(haftaGun); for(let k=0;k<7;k++){ if(((haftaBase.getDay()+6)%7)===want) break; haftaBase.setDate(haftaBase.getDate()+1); } }
   let created=0;
@@ -6357,8 +6357,9 @@ function addOdemeSozuToplu(){ const g=i=>document.getElementById(i)||{}; const g
   const hak=gv('osbHak'); if(!hak){ toast('Hak sahibi girin'); return; }
   const tutar=parseInt(gv('osbTutar')||'0',10)||0; const tekrar=gv('osbTekrar')||'Her Ay';
   const ayGun=Math.max(1,Math.min(31,parseInt(gv('osbAyGun')||'15',10)||15)); const kez=Math.max(1,Math.min(120,parseInt(gv('osbKez')||'12',10)||12));
-  let base; try{ base=gv('osbBaslangic')?new Date(gv('osbBaslangic')):new Date(); }catch(e){ base=new Date(); }
-  const fmtD=d=>{try{return d.toISOString().slice(0,10);}catch(e){return '';}}; const bugun=fmtD(new Date());
+  const fmtD=d=>{ try{ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e){ return ''; } };
+  let base; try{ if(gv('osbBaslangic')){ const p=gv('osbBaslangic').split('-'); base=new Date(+p[0], (+p[1]||1)-1, +p[2]||1); } else base=new Date(); }catch(e){ base=new Date(); }
+  const bugun=fmtD(new Date());
   let created=0;
   for(let i=0;i<kez;i++){ let vade;
     if(tekrar==='Her Gün'){ const d=new Date(base); d.setDate(d.getDate()+i); vade=fmtD(d); }
