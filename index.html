@@ -241,6 +241,10 @@
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
         <i data-lucide="list-checks" class="h-4 w-4"></i><span class="whitespace-nowrap">Görevlerim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
+      <button id="defterBtn" onclick="setModule('kayitdefteri')" title="Kayıt Defteri" style="display:none"
+        class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
+        <i data-lucide="notebook-pen" class="h-4 w-4"></i><span class="whitespace-nowrap">Kayıt Defteri</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+      </button>
 
       <!-- USER SWITCHER -->
       <div class="relative ml-auto">
@@ -613,7 +617,7 @@ const isAdminUser = () => state.role==='ceo' || !!ROLES[state.role].sysadmin;
 const myName = () => (ROLES[state.role]||{}).name||'';
 const PERSONEL_ROLES = ['muhasebe','satisekip','satinalma'];
 const isPersonelUser = () => PERSONEL_ROLES.includes(state.role);
-const PERSONEL_MODULES = ['panelim','gorevtakvimim','gorevlerim'];
+const PERSONEL_MODULES = ['panelim','gorevtakvimim','gorevlerim','kayitdefteri'];
 // Sekreter / asistan tespiti (ziyaretçi takvimi erişimi için)
 function isSecretary(){ const p=personelKartlari.find(x=>x.ad===myName()); const metin=((p&&p.bolum)||'')+' '+((p&&p.gorev)||'')+' '+((p&&p.meslek)||'')+' '+((ROLES[state.role]||{}).title||''); return /B[üu]ro|Sekreter|Asistan|Ön Büro/i.test(metin); }
 // İş Takvimi sekmesi (odeme/personel/ziyaretci) erişimi
@@ -960,12 +964,12 @@ function buildNav(){
   if(isPersonelUser()){
     ['ekranBtn','erpBtn','takvimBtn','ayarlarBtn'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.display='none'; b.classList.remove('ring-2','ring-white/50'); } });
     const setP=(id,mod)=>{ const b=document.getElementById(id); if(!b) return; b.style.display=''; const on=state.module===mod; b.classList.toggle('ring-2',on); b.classList.toggle('ring-white/50',on); b.style.boxShadow=on?'0 4px 16px -4px #d4af37':'none'; const st=b.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; };
-    setP('pnlBtn','panelim'); setP('gtkBtn','gorevtakvimim'); setP('gorBtn','gorevlerim');
+    setP('pnlBtn','panelim'); setP('gtkBtn','gorevtakvimim'); setP('gorBtn','gorevlerim'); setP('defterBtn','kayitdefteri');
     mainNav.style.display='none';
     if(nav) nav.innerHTML = leftSpecialSubsHtml();
-    const bn=document.getElementById('bottomNav'); if(bn) bn.innerHTML=[['panelim','id-card','Panelim'],['gorevtakvimim','calendar-days','Takvimim'],['gorevlerim','list-checks','Görevlerim']].map(([m,ic,l])=>`<button onclick="setModule('${m}')" class="flex flex-col items-center justify-center gap-1 flex-1 py-1.5 rounded-xl ${state.module===m?'text-gold':'text-slate-400'}"><i data-lucide="${ic}" class="h-5 w-5"></i><span class="text-[10px] leading-none">${l}</span></button>`).join('');
+    const bn=document.getElementById('bottomNav'); if(bn) bn.innerHTML=[['panelim','id-card','Panelim'],['gorevtakvimim','calendar-days','Takvimim'],['gorevlerim','list-checks','Görevlerim'],['kayitdefteri','notebook-pen','Defter']].map(([m,ic,l])=>`<button onclick="setModule('${m}')" class="flex flex-col items-center justify-center gap-1 flex-1 py-1.5 rounded-xl ${state.module===m?'text-gold':'text-slate-400'}"><i data-lucide="${ic}" class="h-5 w-5"></i><span class="text-[10px] leading-none">${l}</span></button>`).join('');
     return;
-  } else { ['pnlBtn','gtkBtn','gorBtn'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.display='none'; b.classList.remove('ring-2','ring-white/50'); } }); }
+  } else { ['pnlBtn','gtkBtn','gorBtn','defterBtn'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.display='none'; b.classList.remove('ring-2','ring-white/50'); } }); }
   // ÜST YATAY BAR — operasyonel modüller
   // Şirket görünümünde Patron Ekranı üst bardan kalkar → yazıcının yanındaki canlı "Ekranı" butonuna taşınır
   const ekBtn=document.getElementById('ekranBtn');
@@ -6261,7 +6265,8 @@ function sysTables(){
     { kod:'TBL-0023', ad:'Giriş / Çıkış Tablosu',    aciklama:'Daire/arsa giriş-çıkış takibi · giriş tipi (müşteri/yap-sat/kat karşılığı) · proje', sayi:girisCikislar.length,  git:"state.adminTable='TBL-0023';render()" },
     { kod:'TBL-0024', ad:'Proje Tablosu',             aciklama:'Proje tipi (Yap-Sat/Kat Karşılığı) · künye · il/ilçe · arsa/inşaat/satılabilir m² · daire/dükkan · hedef maliyet · alınan arsalar', sayi:yapSatProjeleri.length, git:"state.adminTable='TBL-0024';render()" },
     { kod:'TBL-0025', ad:'Personel Görev Tablosu',    aciklama:'Departman/göreve göre standart görevler (ör. Büro Asistanı) + karta iş ekleme', sayi:personelGorevleri.length,       git:"state.adminTable='TBL-0025';render()" },
-    { kod:'TBL-0026', ad:'İş Takvimi Tablosu',        aciklama:'Her personelin günlük/haftalık/aylık işleri · durum takibi', sayi:isTakvimi.length,                          git:"state.adminTable='TBL-0026';render()" }
+    { kod:'TBL-0026', ad:'İş Takvimi Tablosu',        aciklama:'Her personelin günlük/haftalık/aylık işleri · durum takibi', sayi:isTakvimi.length,                          git:"state.adminTable='TBL-0026';render()" },
+    { kod:'TBL-0027', ad:'Kayıt Defteri Tablosu',     aciklama:'Sekreter/asistan günlük kayıt defteri · gelen kişi/telefon/evrak/istek · ofise giriş-çıkış · konum', sayi:isTakvimi.filter(t=>t.defter).length,       git:"state.adminTable='TBL-0027';render()" }
   ];
 }
 function viewAdminRecords(){
@@ -6642,6 +6647,12 @@ function viewAdminTable(kod){
   if(kod==='TBL-0023'){ return tbl('Giriş / Çıkış Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Hareket',f:r=>badge(r.hareket||'—',r.hareket==='Çıkış'?'red':'emer')},{h:'Giriş Tipi',f:r=>esc(r.girisTipi||'—')},{h:'Varlık',f:r=>esc(r.varlik||'—')},{h:'Proje',f:r=>esc(r.proje||'—')},{h:'Adet/m²',r:1,f:r=>r.adet||'—'},{h:'Tutar',r:1,f:r=>money(r.tutar||0)}],girisCikislar); }
   if(kod==='TBL-0025'){ return tbl('Personel Görev Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Personel',cls:'text-slate-100 font-medium',f:r=>esc(r.personel||'—')},{h:'Departman / Görev',f:r=>badge(r.rol||'—','gold')},{h:'Görev Sayısı',r:1,f:r=>gorevSayi(r)},{h:'Eklenen İş',f:r=>esc(((r.ekstra||[]).join(' · '))||'—')}],personelGorevleri); }
   if(kod==='TBL-0026'){ return tbl('İş Takvimi Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Personel',cls:'text-slate-100 font-medium',f:r=>esc(r.personel)},{h:'Periyot',f:r=>badge(r.periyot||'Günlük', r.periyot==='Aylık'?'emer':r.periyot==='Haftalık'?'amber':'gold')},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Saat',f:r=>esc(r.saat||'—')},{h:'Tür',f:r=>esc(r.tur||'Görev')},{h:'İş / Görev',f:r=>esc(r.is||'—')},{h:'Durum',f:r=>badge(r.durum||'Planlandı', r.durum==='Tamamlandı'?'emer':r.durum==='Devam Ediyor'?'amber':'slate')},{h:'Konum',f:r=>r.konum?`<span class="inline-flex items-center gap-1 text-[11px] text-emer-light"><i data-lucide="map-pin" class="h-3 w-3"></i>${esc(r.konum)}</span>`:'<span class="text-slate-600">—</span>'},{h:'Düzenle',f:r=>`<button onclick="state.itEdit='${r.no}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button>`}],isTakvimi); }
+  if(kod==='TBL-0027'){
+    const dd=d=>d==='Tamamlandı'?'emer':'slate'; const rows=isTakvimi.filter(t=>t.defter).sort((a,b)=>String((b.tarih||'')+(b.saat||'')).localeCompare(String((a.tarih||'')+(a.saat||''))));
+    return `${back}<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3"><span class="font-mono text-sm text-gold">TBL-0027</span><span class="text-lg font-bold text-white">Kayıt Defteri Tablosu</span><span class="text-[11px] text-slate-400 ml-auto">${rows.length} kayıt · sekreter/asistan günlük defteri + puantaj</span></div>
+    <div class="card rounded-2xl p-5"><div class="overflow-x-auto"><table class="w-full text-sm min-w-[820px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">No</th><th class="text-left font-medium">Personel</th><th class="text-left font-medium">Tarih</th><th class="text-left font-medium">Saat</th><th class="text-left font-medium">Tür</th><th class="text-left font-medium">Kişi / Kayıt</th><th class="text-left font-medium">Konum</th>${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
+    <tbody>${rows.length?rows.map(r=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.personel||'—')}</td><td class="text-slate-400 text-[12px]">${esc(r.tarih||'—')}</td><td class="text-slate-400 text-[12px]">${esc(r.saat||'—')}</td><td>${badge(r.tur||'Kayıt','gold')}</td><td class="text-slate-200">${esc(r.kisi||r.is||'—')}</td><td>${r.konum?`<span class="inline-flex items-center gap-1 text-[11px] text-emer-light"><i data-lucide="map-pin" class="h-3 w-3"></i>${esc(r.konum)}</span>`:'<span class="text-slate-600">—</span>'}</td>${canDel?`<td class="text-right"><button onclick="delIsTakvim('${r.no}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${canDel?8:7}" class="text-center text-slate-500 py-6">Kayıt defteri boş.</td></tr>`}</tbody></table></div></div>`;
+  }
   if(kod==='TBL-0024'){ return tbl('Proje Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Proje',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Tipi',f:r=>badge(r.projeTipi||'Yap-Sat', r.projeTipi==='Kat Karşılığı'?'emer':'gold')},{h:'İl / İlçe',f:r=>esc((r.il||'—')+(r.ilce?' / '+r.ilce:''))},{h:'Arsa Alanı',r:1,f:r=>fmtM2(r.arsaM2)},{h:'KAKS',r:1,f:r=>r.kaks||'—'},{h:'İnşaat (Brüt)',r:1,f:r=>fmtM2(r.insaatM2)},{h:'Satılabilir',r:1,f:r=>fmtM2(r.satilabilirM2)},{h:'Daire/Dükkan',f:r=>`${r.daire||0} / ${r.dukkan||0}`},{h:'Hedef Maliyet',r:1,cls:'text-gold font-bold',f:r=>money(r.hedefMaliyet||yapSatHedefMaliyet(r))},{h:'Paylaşım',f:r=>esc(r.paylasim||'—')},{h:'Arsa Bedeli',r:1,cls:'text-amber-300',f:r=>money(r.arsaBedel||0)},{h:'Alınan Arsalar',r:1,f:r=>{const o=arsaGirisOzet(r.ad);return o.adet?`${o.adet} arsa · ${fmtM2(o.m2)}`:'—';}},{h:'Düzenle',f:r=>`<button onclick="state.yspEdit='${r.no}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button>`}],yapSatProjeleri); }
   if(kod==='TBL-0020'){ return tbl('İnşaat Maliyet Hesaplama Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'İş / Açıklama',cls:'text-slate-100 font-medium',f:r=>esc(r.ad||'—')},{h:'Yapı Sınıfı',f:r=>esc(r.grup)+(r.sinif?' ('+esc(r.sinif)+')':'')},{h:'Yıl',f:r=>badge(r.yil||'2026','gold')},{h:'Birim (TL/m²)',r:1,f:r=>fmtTL(r.birim)},{h:'m²',r:1,f:r=>new Intl.NumberFormat('tr-TR').format(r.m2||0)},{h:'Maliyet',r:1,cls:'text-gold font-bold',f:r=>fmtTL(r.maliyet)}],insaatMaliyetleri); }
   if(kod==='TBL-0011'){ return tbl('Personel Tanıtım Kartı',[{h:'No',f:r=>kod2(r.no)},{h:'Ad Soyad',cls:'text-slate-100 font-medium',f:r=>esc(r.ad)},{h:'Departman',f:r=>badge(r.bolum||'—','gold')+(r.projeTuru?' '+badge(r.projeTuru,'emer'):'')},{h:'Görev Yeri',f:r=>esc(r.gorevYeri||'—')},{h:'Görevi',f:r=>esc(r.gorev||'—')},{h:'Mesleği',f:r=>esc(r.meslek||'—')},{h:'Ünvan',f:r=>esc(r.unvan||'—')},{h:'İletişim',f:r=>esc(r.tel||'—')},{h:'Resmi Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.resmiKod||'—')},{h:'İç Kod',cls:'font-mono text-[12px] text-gold',f:r=>esc(r.icKod||'—')},{h:'Şirket',f:r=>esc(r.sirket||'—')},{h:'Yetki Sınıfı',f:r=>r.yetkiSinifiAd?`<span class="text-slate-100">${esc(r.yetkiSinifiAd)}</span>${Array.isArray(r.yetkiler)&&r.yetkiler.length?`<span class="block text-[10px] text-slate-500">${esc(r.yetkiler.join(' · '))}</span>`:''}`:'—'}],personelKartlari); }
@@ -7329,6 +7340,7 @@ const VIEWS = {
   panelim: ()=>viewPanelim(),
   gorevtakvimim: ()=>viewIsTakvimi({kisi:myName()}),
   gorevlerim: ()=>viewIsTakvimi({kisi:myName(), mode:'liste'}),
+  kayitdefteri: ()=>viewKayitDefteri(),
   news: viewNews,
   access: viewAccess
 };
@@ -7780,7 +7792,8 @@ const SUBTABS = {
   partnership:   [{id:'hisse',label:'Hisse & Temettü',icon:'pie-chart'},{id:'kurul',label:'Kurul Kararları',icon:'clipboard-list'}],
   hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'personel',label:'Personeller',icon:'contact'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}],
   istakvim:      [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
-  panelim:       [{id:'bilgiler',label:'Kişisel Bilgiler',icon:'id-card'},{id:'defter',label:'Kayıt Defteri',icon:'notebook-pen'}],
+  panelim:       [{id:'bilgiler',label:'Kişisel Bilgiler',icon:'id-card'}],
+  kayitdefteri:  [{id:'defter',label:'Kayıt Defteri',icon:'notebook-pen'}],
   gorevtakvimim: [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   gorevlerim:    [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   admin:         [{id:'kayitlar',label:'Kayıtlar',icon:'database'}]
@@ -7885,12 +7898,10 @@ function leftSpecialSubsHtml(){
       + g.items.map(it=>lbtn(`setSub('${it.id}')`, it.icon, it.label, it.id===active)).join('')).join('')
       + sep;
   }
-  // Panelim → Kişisel Bilgiler · Kayıt Defteri
+  // Panelim → Kişisel Bilgiler
   if(state.module==='panelim'){
-    const a=currentSub()||'bilgiler';
     return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Panelim</div>`
-      + lbtn("setSub('bilgiler')",'id-card','Kişisel Bilgiler', a==='bilgiler')
-      + lbtn("setSub('defter')",'notebook-pen','Kayıt Defteri · Ziyaretçi', a==='defter') + sep;
+      + lbtn("setSub('bilgiler')",'id-card','Kişisel Bilgiler', true) + sep;
   }
   // İş Takvimi / Görev Takvimim / Görevlerim → sol barda Gün/Hafta/Ay/Yıl dönem seçimi
   if(state.module==='istakvim' || state.module==='gorevtakvimim' || state.module==='gorevlerim'){
