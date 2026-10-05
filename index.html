@@ -87,6 +87,13 @@
   @keyframes pulseDot{ 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.3; transform:scale(.7);} }
   .live-dot{ animation:pulseDot 1.3s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce){ .ticker-track{ animation:none; } .live-dot{ animation:none; } }
+  /* Mobilde yalnızca büyük başlık/rakam fontlarını küçült (gövde metni aynı) */
+  @media (max-width:640px){
+    .text-3xl{ font-size:1.4rem !important; line-height:1.75rem !important; }
+    .text-2xl{ font-size:1.2rem !important; line-height:1.6rem !important; }
+    .text-xl{ font-size:1.05rem !important; line-height:1.45rem !important; }
+    .md\:text-lg{ font-size:1rem !important; }
+  }
   /* Dashboard canlandırma: grafik çizimi + kart girişi */
   @keyframes drawLine{ from{ stroke-dashoffset:1400; } to{ stroke-dashoffset:0; } }
   .draw-line{ stroke-dasharray:1400; animation:drawLine 1.5s cubic-bezier(.22,1,.36,1) forwards; }
