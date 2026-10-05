@@ -2000,6 +2000,17 @@ function viewBI(){
     </div>
   </div>
 
+  <!-- CANLI PERSONEL HAREKETLERİ ŞERİDİ (bugün) -->
+  ${(()=>{ const bg=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
+    const hrk=isTakvimi.filter(t=>(t.tarih||'')===bg && (t.puantaj || t.durum==='Tamamlandı' || t.tur==='Gelen Kişi' || t.tur==='Kargo' || t.tur==='Ziyaretçi')).sort((a,b)=>String(b.saat).localeCompare(String(a.saat)));
+    const msgOf=t=>{ if(t.puantaj==='giris') return (t.personel||'')+' ofise giriş yaptı'; if(t.puantaj==='cikis') return (t.personel||'')+' ofisten çıkış yaptı'; if(t.tur==='Kargo') return (t.personel||'')+' · kargo: '+(t.is||''); if(t.tur==='Gelen Kişi'||t.tur==='Ziyaretçi') return (t.personel||'')+' · '+(t.tur)+': '+(t.is||''); if(t.durum==='Tamamlandı') return (t.personel||'')+' · '+(t.is||'')+' ✓ tamamladı'; return (t.personel||'')+' · '+(t.is||''); };
+    const it=t=>`<span class="inline-flex items-center gap-2 px-5 border-r border-white/10"><span class="text-[12px] text-gold font-semibold">${esc(t.saat||'')}</span><span class="text-slate-200 text-[13px]">${esc(msgOf(t))}</span>${t.konum?'<span class="text-[11px] text-emer-light" title="'+esc(t.konum)+'">📍</span>':''}</span>`;
+    const h=hrk.length?hrk.map(it).join(''):`<span class="px-5 text-slate-500 text-[13px]">Bugün personel hareketi yok — puantaj/görev oldukça burada akar</span>`;
+    return `<div data-sub="bi" class="card rounded-xl mb-5 flex items-stretch overflow-hidden">
+    <div class="flex items-center gap-2 px-4 shrink-0 bg-navy-700 text-gold border-r border-white/10"><span class="h-2 w-2 rounded-full bg-gold live-dot"></span><i data-lucide="users-round" class="h-3.5 w-3.5"></i><span class="text-xs font-bold tracking-wider">PERSONEL</span></div>
+    <div class="ticker-mask flex-1 py-2.5 text-sm"><div class="ticker-track" style="animation-duration:36s">${h}${h}</div></div>
+  </div>`; })()}
+
   <!-- İŞ ZEKASI · KPI -->
   <div data-sub="bi" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
     ${kpi('landmark','Konsolide Ciro', money(totCiro), '%'+ach+' hedef','true','gold')}
