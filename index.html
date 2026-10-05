@@ -950,6 +950,17 @@ function modDisplayName(m){
   if(m && m.id==='dashboard' && state.company!=='all'){ const f=(COMPANY_TABS.find(x=>x.id===state.company)||{}).firm||''; return (f.split(' ')[0]||'Patron')+' Ekranı'; }
   return m.name;
 }
+function companyModsVertical(){
+  if(state.company==='all') return '';
+  const btn=(oc,icon,label,active)=>`<button onclick="${oc}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm mb-1.5 transition ${active?'bg-gold text-navy-900 font-semibold border border-gold shadow-[0_4px_14px_-4px_rgba(212,175,55,.6)]':'text-slate-200 border border-white/10 bg-navy-700/50 hover:border-gold/50'}"><i data-lucide="${icon}" class="h-[18px] w-[18px]"></i><span class="truncate">${label}</span></button>`;
+  const dm=MODULES.find(m=>m.id==='dashboard');
+  let h=`<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Modüller</div>`;
+  h+=btn("setModule('dashboard')",'layout-dashboard', modDisplayName(dm), state.module==='dashboard');
+  h+=btn("openErp()",'layout-grid','ERP & CRM', isErpModule(state.module));
+  h+=btn("setModule('istakvim')",'calendar-clock','İş Takvimi', state.module==='istakvim');
+  if(isAdminUser()) h+=btn("setModule('admin')",'settings','Ayarlar', state.module==='admin');
+  return h+'<div class="my-2 border-t border-white/5"></div>';
+}
 function buildNav(){
   const LEFT_IDS = ['news']; // solda kalacak modüller (Erişim/Yetki Yönetimi Ayarlar alt barına taşındı)
   const mainNav = document.getElementById('mainNav');
@@ -966,17 +977,8 @@ function buildNav(){
     return;
   } else { ['pnlBtn','gtkBtn','gorBtn','defterBtn'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.display='none'; b.classList.remove('ring-2','ring-white/50'); } }); }
   // ÜST YATAY BAR — operasyonel modüller
-  // Şirket görünümünde Patron Ekranı üst bardan kalkar → yazıcının yanındaki canlı "Ekranı" butonuna taşınır
-  const ekBtn=document.getElementById('ekranBtn');
-  if(ekBtn){ if(state.company!=='all'){ ekBtn.style.display=''; const dm=MODULES.find(m=>m.id==='dashboard'); const lbl=ekBtn.querySelector('#ekranBtnLbl'); if(lbl) lbl.textContent=modDisplayName(dm); const acc='#d4af37'; ekBtn.style.backgroundColor=acc; ekBtn.style.borderColor=acc; const on=state.module==='dashboard'; ekBtn.classList.toggle('ring-2',on); ekBtn.classList.toggle('ring-white/50',on); ekBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; const st=ekBtn.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; } else { ekBtn.style.display='none'; ekBtn.classList.remove('ring-2','ring-white/50'); } }
-  // Ayarlar (Sistem Yöneticisi) — şirket görünümünde Ekranı'nın sağında, şirketin vurgu (alt) renginde
-  const ayBtn=document.getElementById('ayarlarBtn');
-  if(ayBtn){ if(state.company!=='all' && isAdminUser()){ ayBtn.style.display=''; const acc='#d4af37'; ayBtn.style.backgroundColor=acc; ayBtn.style.borderColor=acc; const on=state.module==='admin'; ayBtn.classList.toggle('ring-2',on); ayBtn.classList.toggle('ring-white/50',on); ayBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; const st=ayBtn.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; } else { ayBtn.style.display='none'; ayBtn.classList.remove('ring-2','ring-white/50'); } }
-  // ERP & CRM — şirket görünümünde Ekranı'nın sağında (operasyonel modül grubu; aktifken modüller alt barda)
-  const erpBtn=document.getElementById('erpBtn');
-  if(erpBtn){ if(state.company!=='all'){ erpBtn.style.display=''; const acc='#d4af37'; erpBtn.style.backgroundColor=acc; erpBtn.style.borderColor=acc; const on=isErpModule(state.module); erpBtn.classList.toggle('ring-2',on); erpBtn.classList.toggle('ring-white/50',on); erpBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; const st=erpBtn.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; } else { erpBtn.style.display='none'; erpBtn.classList.remove('ring-2','ring-white/50'); } }
-  const tkBtn=document.getElementById('takvimBtn');
-  if(tkBtn){ if(state.company!=='all'){ tkBtn.style.display=''; const acc='#d4af37'; tkBtn.style.backgroundColor=acc; tkBtn.style.borderColor=acc; const on=state.module==='istakvim'; tkBtn.classList.toggle('ring-2',on); tkBtn.classList.toggle('ring-white/50',on); tkBtn.style.boxShadow=on?('0 4px 16px -4px '+acc):'none'; const st=tkBtn.querySelector('.hdrStrip'); if(st) st.style.display=on?'':'none'; } else { tkBtn.style.display='none'; tkBtn.classList.remove('ring-2','ring-white/50'); } }
+  // Modül butonları (Toprak Ekranı/ERP&CRM/İş Takvimi/Ayarlar) üst bardan kaldırıldı → sol barda dikey
+  ['ekranBtn','ayarlarBtn','erpBtn','takvimBtn'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.display='none'; b.classList.remove('ring-2','ring-white/50'); } });
   const topMods = MODULES.filter(m=>m.group==='category' && can(m) && !LEFT_IDS.includes(m.id) && !(m.id==='company' && state.company==='all') && !(m.id==='dashboard' && state.company!=='all'));
   // Şirket görünümünde üst modül barı gizli (modüller ERP & CRM alt barına taşındı); konsolidede görünür
   mainNav.style.display = (topMods.length && state.company==='all') ? '' : 'none';
@@ -1009,7 +1011,7 @@ function buildNav(){
     : (state.company!=='all'
         ? ((state.module==='yetkiler'||state.module==='projects'||state.module==='istakvim') ? leftSpecialSubsHtml() : (subTabsLeftHtml() + leftSpecialSubsHtml()))
         : subTabsLeftHtml());
-  nav.innerHTML = leftCore + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
+  nav.innerHTML = companyModsVertical() + leftCore + MODULES.filter(m=>m.group==='category' && can(m) && LEFT_IDS.includes(m.id)).map(m=>{
     const active = m.id===state.module;
     return `
     <button onclick="setModule('${m.id}')"
