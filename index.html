@@ -3051,10 +3051,10 @@ function viewIsTakvimi(opts){
       <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="${kisi?'user':(hepsi?'users':'briefcase')}" class="h-5 w-5"></i></span>
       <div class="flex items-center gap-1">
         <button onclick="takvimNav(-1)" title="Önceki ${pl.toLowerCase()}" class="h-8 w-8 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white flex items-center justify-center"><i data-lucide="chevron-left" class="h-4 w-4"></i></button>
-        <button onclick="takvimBugun()" title="Bugüne dön" class="h-8 px-2.5 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white text-[12px] font-medium">Bugün</button>
+        <button onclick="takvimBugun()" title="Bugüne / bu döneme dön" class="h-8 w-8 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white flex items-center justify-center"><i data-lucide="locate-fixed" class="h-4 w-4"></i></button>
         <button onclick="takvimNav(1)" title="Sonraki ${pl.toLowerCase()}" class="h-8 w-8 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white flex items-center justify-center"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
       </div>
-      <div class="min-w-0"><p class="text-sm font-semibold text-slate-100 truncate">${esc(baslik)} · <span class="text-gold">${esc(donemEtiket)}</span></p><p class="text-[11px] text-slate-400">${listeOnly?'Görevlerim':pl} görünümü · ${rows.length} görev</p></div>
+      <div class="min-w-0"><p class="text-base font-bold text-gold leading-tight">${esc(donemEtiket)}</p><p class="text-[11px] text-slate-400 truncate">${esc(baslik)} · ${listeOnly?'Görevlerim':pl} görünümü · ${rows.length} görev</p></div>
       <button onclick="pdfIsTakvimi(${kisi?("'"+String(kisi).replace(/'/g,"\\'")+"'"):''})" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="file-down" class="h-4 w-4"></i>PDF</button>
       ${ekleBtn}
     </div>
