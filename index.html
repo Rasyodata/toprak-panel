@@ -3076,12 +3076,16 @@ function viewIsTakvimi(opts){
       if(per==='gun'){ const d=state.takvimTarih||today; const dr=rows.slice().sort(sortSaat);
         const toMin=s=>{ const p=String(s||'').split(':'); return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0); };
         const bucket=s=>Math.floor(toMin(s)/10)*10;  // 10 dk'lık dilime yuvarla
-        const slots=[]; for(let h=TAKVIM_SAAT_BAS;h<=TAKVIM_SAAT_SON;h++){ for(let m=0;m<60;m+=10){ if(h===TAKVIM_SAAT_SON&&m>0) break; slots.push(h*60+m); } }
+        const hours=[]; for(let h=TAKVIM_SAAT_BAS;h<=TAKVIM_SAAT_SON;h++) hours.push(h);
+        const dak=[0,10,20,30,40,50];
         const gunAd=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi']; let gad=''; try{ gad=gunAd[new Date(d).getDay()]; }catch(x){}
-        return `<div class="card rounded-2xl p-3"><p class="text-[11px] text-slate-400 mb-2 px-1"><span class="text-gold font-semibold">${gad}</span> · ${d} · ${TAKVIM_SAAT_BAS}:00–${TAKVIM_SAAT_SON}:00 · 10 dk dilimler</p><div>
-        ${slots.map(sm=>{ const hh=String(Math.floor(sm/60)).padStart(2,'0'); const mm=String(sm%60).padStart(2,'0'); const tam=sm%60===0; const hr=dr.filter(r=>bucket(r.saat)===sm);
-          return `<div class="group flex gap-3 ${tam?'border-t border-white/10':'border-t border-white/[.03]'} py-1 ${tam?'min-h-[30px]':'min-h-[22px]'}"><div class="w-14 shrink-0 text-right pt-0.5 ${tam?'text-[12px] font-semibold text-gold':'text-[10px] text-slate-500'}">${tam?hh+':00':':'+mm}</div><div class="flex-1 space-y-1">${hr.map(miniCard).join('')}<button onclick="itEkle('${d}','${hh}:${mm}')" class="opacity-0 group-hover:opacity-100 transition rounded border border-dashed border-white/15 text-slate-500 hover:border-gold/40 hover:text-gold text-[10px] px-2 py-0.5 flex items-center gap-0.5" title="${hh}:${mm}'a kayıt ekle"><i data-lucide="plus" class="h-3 w-3"></i>Ekle</button></div></div>`; }).join('')}
-        ${dr.filter(r=>{ const h=parseInt(String(r.saat||'').slice(0,2),10); return !(h>=TAKVIM_SAAT_BAS&&h<=TAKVIM_SAAT_SON); }).map(r=>`<div class="flex gap-3 border-t border-white/8 py-1.5"><div class="w-14 shrink-0 text-right text-[11px] text-slate-500 pt-0.5">${esc(String(r.saat||'').slice(0,5)||'—')}</div><div class="flex-1 space-y-1">${miniCard(r)}</div></div>`).join('')}
+        return `<div class="card rounded-2xl p-3 overflow-x-auto"><p class="text-[11px] text-slate-400 mb-2 px-1"><span class="text-gold font-semibold">${gad}</span> · ${d} · ${TAKVIM_SAAT_BAS}:00–${TAKVIM_SAAT_SON}:00 · her saat 10 dk dilimler (yatay)</p><div class="min-w-[760px]">
+        ${hours.map(h=>{ const hh=String(h).padStart(2,'0'); const mins = h===TAKVIM_SAAT_SON?[0]:dak;
+          return `<div class="flex gap-2 border-t border-white/10 py-1.5"><div class="w-14 shrink-0 text-right pt-0.5 text-[13px] font-semibold text-gold">${hh}:00</div><div class="flex-1 grid gap-1" style="grid-template-columns:repeat(${mins.length},minmax(0,1fr))">
+            ${mins.map(m=>{ const mm=String(m).padStart(2,'0'); const sm=h*60+m; const hr=dr.filter(r=>bucket(r.saat)===sm);
+              return `<div class="group rounded-lg border border-white/[.05] bg-navy-700/20 p-1 min-h-[52px]"><p class="text-[9px] text-slate-500 mb-0.5 text-center">:${mm}</p><div class="space-y-1">${hr.map(miniCard).join('')}<button onclick="itEkle('${d}','${hh}:${mm}')" class="opacity-0 group-hover:opacity-100 transition w-full rounded border border-dashed border-white/15 text-slate-500 hover:border-gold/40 hover:text-gold text-[10px] py-0.5 flex items-center justify-center" title="${hh}:${mm}'a ekle"><i data-lucide="plus" class="h-3 w-3"></i></button></div></div>`; }).join('')}
+          </div></div>`; }).join('')}
+        ${dr.filter(r=>{ const h=parseInt(String(r.saat||'').slice(0,2),10); return !(h>=TAKVIM_SAAT_BAS&&h<=TAKVIM_SAAT_SON); }).map(r=>`<div class="flex gap-2 border-t border-white/8 py-1.5"><div class="w-14 shrink-0 text-right text-[11px] text-slate-500 pt-0.5">${esc(String(r.saat||'').slice(0,5)||'—')}</div><div class="flex-1 space-y-1">${miniCard(r)}</div></div>`).join('')}
         </div></div>`;
       }
       if(per==='ay'){ const m=state.takvimAy||today.slice(0,7); const yy=+m.slice(0,4), mm=+m.slice(5,7);
