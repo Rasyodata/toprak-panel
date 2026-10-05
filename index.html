@@ -614,6 +614,19 @@ const myName = () => (ROLES[state.role]||{}).name||'';
 const PERSONEL_ROLES = ['muhasebe','satisekip','satinalma'];
 const isPersonelUser = () => PERSONEL_ROLES.includes(state.role);
 const PERSONEL_MODULES = ['panelim','gorevtakvimim','gorevlerim'];
+// Sekreter / asistan tespiti (ziyaretçi takvimi erişimi için)
+function isSecretary(){ const p=personelKartlari.find(x=>x.ad===myName()); const metin=((p&&p.bolum)||'')+' '+((p&&p.gorev)||'')+' '+((p&&p.meslek)||'')+' '+((ROLES[state.role]||{}).title||''); return /B[üu]ro|Sekreter|Asistan|Ön Büro/i.test(metin); }
+// İş Takvimi sekmesi (odeme/personel/ziyaretci) erişimi
+function takvimYetkili(tab){ const nm=myName(); return yetkiKartlari.some(y=> y.kisi===nm && y.altModuller && Array.isArray(y.altModuller.istakvim) && y.altModuller.istakvim.indexOf(tab)>=0 ); }
+function takvimTabCan(tab){
+  if(isAdminUser() || state.role==='ceo') return true;
+  if(tab==='odeme')    return state.role==='cfo' || takvimYetkili('odeme');
+  if(tab==='ziyaretci')return state.role==='cfo' || isSecretary() || takvimYetkili('ziyaretci');
+  if(tab==='personel') return true; // herkes görür, admin değilse yalnızca kendi takvimi
+  return false;
+}
+function takvimTabsIzinli(){ return ['odeme','personel','ziyaretci'].filter(takvimTabCan); }
+function takvimViewResolve(){ const izin=takvimTabsIzinli(); let v=state.takvimView||'personel'; if(izin.indexOf(v)<0) v=(izin[0]||'personel'); state.takvimView=v; return v; }
 const winColor = (w) => w>=70?'emer':w>=50?'gold':w>=40?'amber':'red';
 const fmt = (n) => new Intl.NumberFormat('tr-TR').format(n);
 const money = (n) => {
@@ -3146,9 +3159,12 @@ function viewPanelim(){
   </div>`;
 }
 function viewIsTakvimi(opts){
-  opts=opts||{}; const kisi=opts.kisi||null; const listeOnly = opts.mode==='liste';
+  opts=opts||{}; let kisi=opts.kisi||null; const listeOnly = opts.mode==='liste';
+  if(!kisi && state.module==='istakvim'){ takvimViewResolve(); }
   const ziyaret = !kisi && state.module==='istakvim' && state.takvimView==='ziyaretci';
   const odeme = !kisi && state.module==='istakvim' && state.takvimView==='odeme';
+  // Personel Takvimi: admin/ceo/cfo değilse yalnızca kendi takvimini görür
+  if(!kisi && state.module==='istakvim' && state.takvimView==='personel' && !(isAdminUser()||state.role==='ceo'||state.role==='cfo')){ kisi=myName(); }
   let per=currentSub()||'gun'; const perMap={gun:'Gün',hafta:'Hafta',ay:'Ay',yil:'Yıl'}; const pl=perMap[per]||'Gün';
   const dept=state.takvimDept||'__hepsi'; const hepsi = kisi? false : (dept==='__hepsi'); const baslik = kisi? kisi : (odeme?'Ödeme Takvimi':(ziyaret?'Ziyaretçi Takvimi':(hepsi?'Tüm Departmanlar':dept)));
   const persDept=ad=>{ const p=personelKartlari.find(x=>x.ad===ad); return p?(p.bolum||''):''; };
@@ -3305,7 +3321,7 @@ function ykAltModuller(topId){
   if(topId==='erp') return ERP_MODULES.map(id=>({id, label:((MODULES.find(m=>m.id===id)||{}).name||id).replace(/ Yönetimi| Yönetim/,'')}));
   if(topId==='ayarlar') return [{id:'tablolar',label:'Tablolar'},{id:'kayitlar',label:'Kayıtlar'},{id:'yetki',label:'Yetki Yönetimi'}];
   if(topId==='ekran') return [{id:'bi',label:'İş Zekası'},{id:'analytics',label:'Analytics'},{id:'nakit',label:'Nakit Akış'},{id:'butce',label:'Bütçe'},{id:'konsolide',label:'Bilanço'}];
-  if(topId==='istakvim') return DEPARTMAN.map(d=>({id:d,label:d}));
+  if(topId==='istakvim') return [{id:'odeme',label:'Ödeme Takvimi'},{id:'personel',label:'Personel Takvimi'},{id:'ziyaretci',label:'Ziyaretçi Takvimi'}];
   return [];
 }
 function ykDraft(){ if(!state.ykd) state.ykd={sirk:[],mod:[],alt:{},kart:{},ad:'',kisi:''}; return state.ykd; }
@@ -7729,10 +7745,9 @@ function buildSubNav(){
     // İş Takvimi → üst bar: Personel Takvimi · Ziyaretçi Takvimi (Gün/Hafta/Ay/Yıl sol barda)
     if(state.module==='istakvim'){
       bar.style.display=''; tint();
-      const tv=state.takvimView||'personel';
-      const tabRow = abtn(tv==='odeme', "state.takvimView='odeme';render()", 'wallet', 'Ödeme Takvimi')
-        + abtn(tv==='personel', "state.takvimView='personel';render()", 'users-round', 'Personel Takvimi')
-        + abtn(tv==='ziyaretci', "state.takvimView='ziyaretci';render()", 'contact', 'Ziyaretçi Takvimi');
+      const tv=takvimViewResolve(); const izin=takvimTabsIzinli();
+      const tabDefs={odeme:['wallet','Ödeme Takvimi'], personel:['users-round','Personel Takvimi'], ziyaretci:['contact','Ziyaretçi Takvimi']};
+      const tabRow = izin.map(id=>abtn(tv===id, `state.takvimView='${id}';render()`, tabDefs[id][0], tabDefs[id][1])).join('');
       if(tv==='personel'){
         const dcur=state.takvimDept||'__hepsi';
         const depRow = abtn(dcur==='__hepsi', "state.takvimDept='__hepsi';render()", 'users', 'Hepsi')
