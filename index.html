@@ -3004,6 +3004,8 @@ function addOdemeKayit(){ const g=i=>document.getElementById(i); const gv=i=>((g
 function odemeOde(no){ const r=isTakvimi.find(x=>x.no===no); if(!r) return; r.durum='Tamamlandı'; logAction('check-circle-2','emer','Ödeme yapıldı · '+no+' · '+money(r.tutar||0)+' · '+(r.kime||'')); try{saveData();}catch(e){} render(); toast('Ödendi olarak işaretlendi ✓'); }
 const KAYIT_DEFTER_TUR=['Gelen Kişi','Gelen Telefon','Gelen Evrak','Telefon ile İstek','Diğer'];
 function defterToggle(){ state.defterOpen=!state.defterOpen; render(); setTimeout(function(){var e=document.getElementById('dfKisi'); if(e)e.focus();},70); }
+function defterSetPer(p){ state.defterPer=p; state.defterOfset=0; render(); }
+function defterNav(d){ state.defterOfset=(state.defterOfset||0)+d; render(); }
 function addDefterKayit(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim(); const personel=myName();
   const tur=gv('dfTur')||'Gelen Kişi'; const kisi=gv('dfKisi'); const aciklama=gv('dfAciklama'); const saat=gv('dfSaat')||'';
   if(!kisi && !aciklama){ toast('Kişi/kurum veya açıklama girin'); return; }
@@ -3114,8 +3116,26 @@ function viewKayitDefteri(){
       const h=bugun.length?bugun.map(it).join(''):`<span class="px-5 text-slate-500 text-[13px]">Bugün ziyaretçi/kayıt hareketi yok — kayıt oldukça burada akar</span>`;
       return `<div class="card rounded-xl mb-4 flex items-stretch overflow-hidden"><div class="flex items-center gap-2 px-4 shrink-0 bg-gold text-navy-900"><span class="h-2 w-2 rounded-full bg-navy-900 live-dot"></span><span class="text-xs font-bold tracking-wider">ZİYARETÇİ</span></div><div class="ticker-mask flex-1 py-2.5 text-sm"><div class="ticker-track" style="animation-duration:34s">${h}${h}</div></div></div>`; })()}
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">${KAYIT_DEFTER_TUR.map(t=>`<div class="card rounded-xl p-3 text-center"><p class="text-xl font-bold text-slate-100">${sayac(t)}</p><p class="text-[10px] text-slate-500 mt-0.5">${esc(t)}</p></div>`).join('')}</div>
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
     <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-gold mb-2">Bugün</p><div class="space-y-2">${bugun.length?bugun.map(rowHtml).join(''):'<p class="text-sm text-slate-500 py-4 text-center">Bugün kayıt yok. "Kayıt Oluştur" ile ekleyin.</p>'}</div>
     ${kayitlar.length>bugun.length?`<p class="text-[11px] uppercase tracking-wider text-gold mt-4 mb-2">Önceki Kayıtlar</p><div class="space-y-2">${kayitlar.filter(t=>t.tarih!==today).slice(0,30).map(rowHtml).join('')}</div>`:''}
+    </div>
+    ${(()=>{ const AYT=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']; const GUN=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+      const per=state.defterPer||'2gun'; const ofs=state.defterOfset||0;
+      const addDays=(iso,n)=>{ try{ const p=iso.split('-'); const dt=new Date(+p[0],(+p[1])-1,+p[2]); dt.setDate(dt.getDate()+n); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }catch(e){ return iso; } };
+      let days=[], rangeLabel='';
+      if(per==='2gun'){ const start=addDays(today, ofs*2); days=[start, addDays(start,1)]; rangeLabel = ofs===0?'Bugün · Yarın':(start.slice(8,10)+'.'+start.slice(5,7)+' – '+days[1].slice(8,10)+'.'+days[1].slice(5,7)); }
+      else if(per==='hafta'){ let b; try{ const p=today.split('-'); const dt=new Date(+p[0],(+p[1])-1,+p[2]); const off=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-off+ofs*7); b=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }catch(e){ b=today; } days=[...Array(7)].map((_,k)=>addDays(b,k)); rangeLabel=days[0].slice(8,10)+'.'+days[0].slice(5,7)+' – '+days[6].slice(8,10)+'.'+days[6].slice(5,7); }
+      else { let y=+today.slice(0,4), m=(+today.slice(5,7))-1+ofs; while(m<0){m+=12;y--;} while(m>11){m-=12;y++;} const dim=new Date(y,m+1,0).getDate(); days=[...Array(dim)].map((_,k)=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(k+1).padStart(2,'0')); rangeLabel=AYT[m]+' '+y; }
+      const recOf=d=>kayitlar.filter(t=>(t.tarih||'')===d).sort((a,b)=>String(a.saat).localeCompare(String(b.saat)));
+      const satir=t=>`<div class="flex items-center gap-2 text-[12px] py-1 border-b border-white/5 last:border-0"><span class="text-gold font-semibold w-10 shrink-0">${esc(t.saat||'')}</span><span class="text-[9px] px-1 rounded bg-${turRenk(t.tur)}/15 text-${turRenk(t.tur)}-light shrink-0">${esc(t.tur)}</span><span class="text-slate-200 truncate">${esc(t.kisi||t.is||'')}</span></div>`;
+      const dayBlock=d=>{ const rs=recOf(d); if(per==='ay' && !rs.length) return ''; let gun=''; try{ const p=d.split('-'); gun=GUN[new Date(+p[0],(+p[1])-1,+p[2]).getDay()]; }catch(e){} const isToday=d===today;
+        return `<div class="rounded-xl border ${isToday?'border-gold/40 bg-gold/5':'border-white/8 bg-navy-700/30'} p-2.5"><p class="text-[11px] font-semibold ${isToday?'text-gold':'text-slate-300'} mb-1">${d.slice(8,10)}.${d.slice(5,7)} · ${gun}${isToday?' · Bugün':''} <span class="text-slate-500 font-normal">(${rs.length})</span></p>${rs.length?rs.map(satir).join(''):'<p class="text-[11px] text-slate-600">—</p>'}</div>`; };
+      const pb=(v,l)=>`<button onclick="defterSetPer('${v}')" class="px-2.5 py-1 rounded-lg text-[12px] border ${per===v?'bg-gold text-navy-900 border-gold font-semibold':'border-white/15 text-slate-300 hover:border-gold/40'}">${l}</button>`;
+      const gov = per==='ay'? days.filter(d=>recOf(d).length).map(dayBlock).join('') : days.map(dayBlock).join('');
+      return `<div class="card rounded-2xl p-4"><div class="flex items-center gap-2 mb-3"><i data-lucide="book-open" class="h-4 w-4 text-gold"></i><p class="text-sm font-bold text-gold flex-1">Defter · ${esc(rangeLabel)}</p><button onclick="defterNav(-1)" title="Geri" class="h-7 w-7 rounded-lg border border-white/15 text-slate-200 hover:border-gold/40 flex items-center justify-center"><i data-lucide="chevron-left" class="h-4 w-4"></i></button><button onclick="state.defterOfset=0;render()" title="Bugün" class="h-7 w-7 rounded-lg border border-white/15 text-slate-200 hover:border-gold/40 flex items-center justify-center"><i data-lucide="locate-fixed" class="h-3.5 w-3.5"></i></button><button onclick="defterNav(1)" title="İleri" class="h-7 w-7 rounded-lg border border-white/15 text-slate-200 hover:border-gold/40 flex items-center justify-center"><i data-lucide="chevron-right" class="h-4 w-4"></i></button></div>
+      <div class="flex gap-1.5 mb-3">${pb('2gun','2 Gün')}${pb('hafta','Hafta')}${pb('ay','Ay')}</div>
+      <div class="space-y-2 max-h-[560px] overflow-y-auto pr-1">${gov|| '<p class="text-sm text-slate-500 py-4 text-center">Bu dönemde kayıt yok</p>'}</div></div>`; })()}
     </div>`;
 }
 function viewPanelim(){
@@ -3361,9 +3381,11 @@ function ykGrupGG(gk,v){ const d=ykDraft(); d.grup=d.grup||{}; d.grup[gk]= d.gru
 function ykKartGG(ck,v){ const d=ykDraft(); d.kart[ck]=d.kart[ck]||{}; d.kart[ck].gg= d.kart[ck].gg===v?null:v; render(); }
 function ykKayitGG(ck,rk,v){ const d=ykDraft(); d.kayit=d.kayit||{}; d.kayit[ck]=d.kayit[ck]||{}; d.kayit[ck][rk]= d.kayit[ck][rk]===v?null:v; render(); }
 function addYetkiKart(){ const d=ykDraft(); const ad=(d.ad||'').trim(); if(!ad){toast('Yetki kartı adı girin');return;} if(!d.sirk.length){toast('En az bir şirket seçin');return;}
-  const no=nextYtkNo();
   const kartYetki={}; YK_GRUPLAR.forEach(g=>{ const kv=(d.kart||{})[g.k]||{}; kartYetki[g.k]= kv.gg==='gormez'?'Görmez':((kv.tam||kv.sil)?'Tam Yetki':(kv.duzenle?'Düzenler':(kv.ekle?'Ekler':(kv.detay?'Detay Görür':(kv.gg==='gor'?'Listede Görür':'Görmez'))))); });
-  yetkiKartlari.unshift({ no, ad, kisi:(d.kisi||'').trim(), sirketler:d.sirk.slice(), moduller:d.mod.slice(), altModuller:JSON.parse(JSON.stringify(d.alt||{})), gruplar:JSON.parse(JSON.stringify(d.grup||{})), kartYetki, kartAksiyon:JSON.parse(JSON.stringify(d.kart||{})), kayitYetki:JSON.parse(JSON.stringify(d.kayit||{})) });
+  const payload={ ad, kisi:(d.kisi||'').trim(), sirketler:d.sirk.slice(), moduller:d.mod.slice(), altModuller:JSON.parse(JSON.stringify(d.alt||{})), gruplar:JSON.parse(JSON.stringify(d.grup||{})), kartYetki, kartAksiyon:JSON.parse(JSON.stringify(d.kart||{})), kayitYetki:JSON.parse(JSON.stringify(d.kayit||{})) };
+  if(d.editNo){ const ex=yetkiKartlari.find(x=>x.no===d.editNo); if(ex){ Object.assign(ex, payload); logAction('shield-check','gold', `Yetki kartı güncellendi · ${d.editNo} · ${ad}`); state.ykd=null; try{saveData();}catch(e){} render(); toast(d.editNo+' güncellendi ✓'); return; } }
+  const no=nextYtkNo();
+  yetkiKartlari.unshift(Object.assign({no}, payload));
   logAction('shield-check','emer', `Yetki kartı · ${no} · ${ad}`); state.ykd=null; render(); toast(no+' · yetki kartı oluşturuldu'); }
 function yetkiSirketAd(id){ return id==='all'?'Konsolide':(((COMPANY_TABS.find(c=>c.id===id)||{}).firm)||((COMPANY_TABS.find(c=>c.id===id)||{}).label)||id); }
 function yetkiOzet(r){ const kv=r.kartYetki||{}; const c=l=>Object.values(kv).filter(v=>v===l).length; return `Tam ${c('Tam Yetki')} · Detay ${c('Detay Görür')} · Liste ${c('Listede Görür')} · Yok ${c('Görmez')}`; }
@@ -3405,7 +3427,8 @@ function yetkiKartFormCard(){
     ${d.sirk.length?box('2','Hangi Modül(ler)', `<div class="flex flex-wrap gap-2">${step2}</div>`):''}
     ${d.mod.length?box('3','Hangi Alt Modül(ler)', step3||'<p class="text-[11px] text-slate-500">Bu modülde alt modül yok.</p>'):''}
     ${d.mod.length?box('4','Grup / Kart / Kayıt Yetkileri', `<p class="text-[10px] text-slate-500 mb-2">Ana grubu <b>Görür</b> seçince kart yetkileri açılır · kartı <b>Görür</b> seçince gruptaki kayıtlar tek tek görür/görmez olarak açılır · Detay=açıp okur · Ekler/Düzenler/Siler=işlem</p><div class="flex gap-2 mb-3"><button type="button" onclick="ykTumGor('gor')" class="px-2.5 py-1 rounded-lg border border-emer/40 text-emer-light text-[11px] hover:bg-emer/10 inline-flex items-center gap-1"><i data-lucide="eye" class="h-3 w-3"></i>Tümünü Görür</button><button type="button" onclick="ykTumGor('gormez')" class="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 inline-flex items-center gap-1"><i data-lucide="eye-off" class="h-3 w-3"></i>Tümünü Görmez</button></div>${step4}`):''}
-    <div class="mt-4 flex justify-end gap-2"><button onclick="state.ykd=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">Temizle</button><button onclick="addYetkiKart()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Yetki Kartı Oluştur</button></div>
+    ${d.editNo?`<div class="mt-3 mb-1 text-[11px] text-gold flex items-center gap-1.5"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzenleme modu · ${esc(d.editNo)} — kademeli yetkileri güncelleyip kaydedin</div>`:''}
+    <div class="mt-4 flex justify-end gap-2"><button onclick="state.ykd=null;render()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">${d.editNo?'İptal':'Temizle'}</button><button onclick="addYetkiKart()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="${d.editNo?'save':'plus'}" class="h-4 w-4"></i> ${d.editNo?('Güncelle · '+d.editNo):'Yetki Kartı Oluştur'}</button></div>
   </div>`;
 }
 function sayiYazi(n){ n=Math.round(Math.abs(n||0)); if(n===0) return 'Sıfır'; const b=['','Bir','İki','Üç','Dört','Beş','Altı','Yedi','Sekiz','Dokuz']; const o=['','On','Yirmi','Otuz','Kırk','Elli','Altmış','Yetmiş','Seksen','Doksan']; const gr=['','Bin','Milyon','Milyar','Trilyon'];
@@ -6240,7 +6263,9 @@ function rowArrFor(kod){
   return map[kod]||null;
 }
 const ROW_EDIT_LABELS={ad:'Ad / Unvan',no:'No',name:'Ad',tarih:'Tarih',saat:'Saat',tutar:'Tutar ₺',durum:'Durum',bolum:'Departman',gorev:'Görevi',meslek:'Mesleği',unvan:'Ünvanı',tel:'Telefon',email:'E-posta',is:'İş / Görev',tur:'Tür',aciklama:'Açıklama',personel:'Personel',konum:'Konum',subject:'Konu',title:'Başlık',loc:'Konum',type:'Tip'};
-function editRow(kod,i){ if(!isAdminUser()){ toast('Düzenleme yetkiniz yok'); return; } state.rowEdit={kod,i}; render(); setTimeout(()=>{ try{ const e=document.querySelector('#rowEditForm input,#rowEditForm select,#rowEditForm textarea'); if(e)e.focus(); }catch(x){} },60); }
+function editRow(kod,i){ if(!isAdminUser()){ toast('Düzenleme yetkiniz yok'); return; }
+  if(kod==='TBL-0016'){ const r=yetkiKartlari[i]; if(r){ state.ykd={ sirk:(r.sirketler||[]).slice(), mod:(r.moduller||[]).slice(), alt:JSON.parse(JSON.stringify(r.altModuller||{})), grup:JSON.parse(JSON.stringify(r.gruplar||{})), kart:JSON.parse(JSON.stringify(r.kartAksiyon||{})), kayit:JSON.parse(JSON.stringify(r.kayitYetki||{})), ad:r.ad||'', kisi:r.kisi||'', editNo:r.no }; state.rowEdit=null; render(); setTimeout(()=>{ try{ const e=document.getElementById('ykAd'); if(e){ e.scrollIntoView({behavior:'smooth',block:'center'}); e.focus(); } }catch(x){} },80); toast(r.no+' düzenleniyor — kademeli yetkileri güncelleyin'); } return; }
+  state.rowEdit={kod,i}; render(); setTimeout(()=>{ try{ const e=document.querySelector('#rowEditForm input,#rowEditForm select,#rowEditForm textarea'); if(e)e.focus(); }catch(x){} },60); }
 function rowEditFormHtml(kod){
   if(!state.rowEdit || state.rowEdit.kod!==kod) return '';
   const arr=rowArrFor(kod); if(!arr) return ''; const rec=arr[state.rowEdit.i]; if(!rec) return '';
