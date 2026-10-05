@@ -476,6 +476,7 @@ const ROLES = {
   // Sistem Yöneticisi (her şeyi görür)
   sysadmin:{ name:'Sistem Yöneticisi', short:'SY', title:'Sistem Yöneticisi', tag:'ADMIN', kind:'internal', email:'admin@toprakyatirim.com', pass:'1234', desc:'Tüm sistem · tam erişim', sysadmin:true },
   // Kurumsal (iç)
+  chairman: { name:'Mustafa Toprak', short:'MT', title:'Yönetim Kurulu Başkanı', tag:'BAŞKAN', kind:'internal', email:'baskan@toprakyatirim.com', pass:'1234', desc:'Yönetim Kurulu Başkanı · tam yetki (tüm modüller & şirketler)', sysadmin:true, chairman:true },
   ceo:   { name:'Ahmet Yıldız', short:'AY', title:'Genel Müdür (CEO)',           tag:'CEO',      kind:'internal', email:'ceo@toprakyatirim.com',    pass:'1234', desc:'Tüm modüller · Tam yetki' },
   cfo:   { name:'Selin Demir',  short:'SD', title:'Mali İşler Direktörü (CFO)',  tag:'CFO',      kind:'internal', email:'cfo@toprakyatirim.com',    pass:'1234', desc:'Mali, Finans, Satın Alma, Hukuk, Ortaklık' },
   sales: { name:'Burak Yılmaz', short:'BY', title:'Proje / Satış Müdürü',        tag:'MÜDÜR',    kind:'internal', email:'satis@toprakyatirim.com',  pass:'1234', desc:'Satış & Proje' },
@@ -571,6 +572,7 @@ function hexLuminance(hex){
 }
 function needsCompanyChoice(role){ return ROLES[role].kind==='internal' && !ROLES[role].sysadmin && !PERSONEL_ROLES.includes(role); } // yalnızca kurumsal yöneticiler şirket seçer (personel kadrosu kendi panelini görür)
 function landingModule(role){
+  if(ROLES[role].chairman) return 'dashboard';
   if(ROLES[role].sysadmin) return 'admin';
   if(ROLES[role].lawyer) return 'avukat';
   if(ROLES[role].realtor) return 'realtor';
