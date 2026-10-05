@@ -2964,7 +2964,7 @@ function addIsTakvim(){ const g=i=>document.getElementById(i); const gv=i=>((g(i
   isTakvimi.unshift({ no, personel, tur, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), saat, is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') });
   logAction('calendar-clock','gold', `İş takvimi · ${no} · ${personel} · ${tur} · ${is}`); render(); toast(no+' · iş takvimine eklendi');
   captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); } }); }
-const TAKVIM_TUR=['Görev','Gelen Kişi','Gelen Telefon','Gelen Evrak','Telefon ile İstek','Kargo','Ziyaretçi','Toplantı','Telefon','İzin','Ödeme','Ödeme Sözü','Ofise Giriş','Ofisten Çıkış','Diğer'];
+const TAKVIM_TUR=['Görev','Gelen Kişi','Gelen Telefon','Gelen Evrak','Telefon ile İstek','Kargo','Ziyaretçi','Toplantı','Telefon','İzin','Ödeme','Ödeme Sözü','Bütçe Gideri','Ofise Giriş','Ofisten Çıkış','Diğer'];
 function odemeFormToggle(){ state.odemeFormOpen=!state.odemeFormOpen; render(); setTimeout(function(){var e=document.getElementById('odKime'); if(e)e.focus();},70); }
 function addOdemeKayit(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
   const kime=gv('odKime'); const tutar=parseFloat(gv('odTutar'))||0; const tarih=gv('odTarih'); const saat=gv('odSaat')||''; const aciklama=gv('odAciklama');
@@ -3163,7 +3163,8 @@ function viewIsTakvimi(opts){
   if(odeme){
     const emri = odemeEmriKartlari.filter(c=>matchDate(c.tarih||'')).map(c=>{ const tutar=c.net||c.brut||0; return { no:c.no, tarih:c.tarih, saat:c.saat||'', is:money(tutar)+' · '+(c.hakSahibi||''), tur:'Ödeme', durum:(c.durum==='Ödendi'||c.durum==='Tamamlandı')?'Tamamlandı':(c.durum||'Hazırlandı'), tutar, _odeme12:true }; });
     const sozu = odemeSozuKartlari.filter(c=>matchDate(c.vade||c.sozTarih||'')).map(c=>{ const tutar=c.tutar||0; return { no:c.no, tarih:(c.vade||c.sozTarih), saat:'', is:money(tutar)+' · '+(c.hakSahibi||'')+' (söz)', tur:'Ödeme Sözü', durum:(c.durum==='Ödendi'||c.durum==='Tamamlandı')?'Tamamlandı':(c.durum||'Söz Verildi'), tutar, _soz13:true }; });
-    rows = emri.concat(sozu);
+    const butce = butceCikisKartlari.filter(c=>matchDate(c.tarih||'')).map(c=>{ const tutar=c.tutar||0; return { no:c.no, tarih:c.tarih, saat:'', is:money(tutar)+' · '+(c.kalem||''), tur:'Bütçe Gideri', durum:(c.durum==='Ödendi'||c.durum==='Tamamlandı')?'Tamamlandı':(c.durum||'Planlandı'), tutar, _butce14:true }; });
+    rows = emri.concat(sozu).concat(butce);
   } else {
     rows = isTakvimi.filter(r=>(kisi? (r.personel===kisi && !r.odeme) : (ziyaret? !!r.defter : (!r.odeme && (hepsi || persDept(r.personel)===dept)))) && matchDate(r.tarih||''));
   }
@@ -3198,7 +3199,7 @@ function viewIsTakvimi(opts){
   const ekleBtn = kisi
     ? `<button onclick="itFormToggle()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Görev Ekle</button>`
     : odeme
-    ? `<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0013';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="handshake" class="h-4 w-4"></i>Ödeme Sözü Ekle</button><button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0012';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Ödeme Ekle</button>`
+    ? `<button onclick="state.odemeTbl='TBL-0014';render()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg ${state.odemeTbl==='TBL-0014'?'ring-2 ring-white/50 ':''}bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="file-minus" class="h-4 w-4"></i>Bütçe Gideri Ekle</button><button onclick="state.odemeTbl='TBL-0013';render()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg ${state.odemeTbl==='TBL-0013'?'ring-2 ring-white/50 ':''}bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="handshake" class="h-4 w-4"></i>Ödeme Sözü Ekle</button><button onclick="state.odemeTbl='TBL-0012';render()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg ${state.odemeTbl==='TBL-0012'?'ring-2 ring-white/50 ':''}bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Ödeme Ekle</button>`
     : `<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button>`;
   return inlineForm + odemeForm + `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
       <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="${kisi?'user':(odeme?'wallet':(ziyaret?'contact':(hepsi?'users':'briefcase')))}" class="h-5 w-5"></i></span>
@@ -3211,6 +3212,7 @@ function viewIsTakvimi(opts){
       <button onclick="pdfIsTakvimi(${kisi?("'"+String(kisi).replace(/'/g,"\\'")+"'"):''})" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="file-down" class="h-4 w-4"></i>PDF</button>
       ${ekleBtn}
     </div>
+    ${(odeme && state.odemeTbl) ? `<div class="card rounded-2xl p-3 mb-4 flex items-center gap-2 border border-gold/30"><i data-lucide="table" class="h-4 w-4 text-gold"></i><span class="text-sm font-semibold text-slate-100">${state.odemeTbl==='TBL-0012'?'Ödeme Emri':state.odemeTbl==='TBL-0013'?'Ödeme Sözü':'Bütçe Gideri'} · yerinde kayıt (${state.odemeTbl})</span><button onclick="state.odemeTbl=null;render()" class="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 text-slate-200 text-sm hover:text-white hover:border-gold/40"><i data-lucide="x" class="h-4 w-4"></i>Kapat</button></div>${(function(){ try{ return viewAdminTable(state.odemeTbl).replace(/<button onclick="state\.adminTable=null;render\(\)"[\s\S]*?Kayıtlara Dön<\/button>/,''); }catch(e){ return ''; } })()}` : ''}
     ${(()=>{
       const turRozet=r=>(r.tur&&r.tur!=='Görev')?`<span class="inline-block text-[9px] px-1 rounded bg-gold/20 text-gold mr-1 align-middle">${esc(r.tur)}</span>`:'';
       const konumHtml=r=>r.konum?`<p class="text-[9px] text-emer-light flex items-center gap-0.5 mt-0.5"><i data-lucide="map-pin" class="h-2.5 w-2.5"></i>${esc(r.konum)}</p>`:'';
