@@ -625,6 +625,9 @@ function takvimTabCan(tab){
   return false;
 }
 function takvimTabsIzinli(){ return ['odeme','personel','ziyaretci','defter'].filter(takvimTabCan); }
+function takvimDeptToggle(d){ state.takvimDeptler=state.takvimDeptler||[]; const i=state.takvimDeptler.indexOf(d); if(i<0) state.takvimDeptler.push(d); else state.takvimDeptler.splice(i,1); render(); }
+function takvimPersonelToggle(ad){ state.takvimPersoneller=state.takvimPersoneller||[]; const i=state.takvimPersoneller.indexOf(ad); if(i<0) state.takvimPersoneller.push(ad); else state.takvimPersoneller.splice(i,1); render(); }
+function takvimDeptHepsi(){ state.takvimDeptler=[]; state.takvimPersoneller=[]; render(); }
 function takvimViewResolve(){ const izin=takvimTabsIzinli(); let v=state.takvimView||'personel'; if(izin.indexOf(v)<0) v=(izin[0]||'personel'); state.takvimView=v; return v; }
 const winColor = (w) => w>=70?'emer':w>=50?'gold':w>=40?'amber':'red';
 const fmt = (n) => new Intl.NumberFormat('tr-TR').format(n);
@@ -3261,7 +3264,10 @@ function viewIsTakvimi(opts){
   // Personel Takvimi: admin/ceo/cfo değilse yalnızca kendi takvimini görür
   if(!kisi && state.module==='istakvim' && state.takvimView==='personel' && !(isAdminUser()||state.role==='ceo'||state.role==='cfo')){ kisi=myName(); }
   let per=currentSub()||'gun'; const perMap={gun:'Gün',hafta:'Hafta',ay:'Ay',yil:'Yıl'}; const pl=perMap[per]||'Gün';
-  const dept=state.takvimDept||'__hepsi'; const hepsi = kisi? false : (dept==='__hepsi'); const baslik = kisi? kisi : (odeme?'Ödeme Takvimi':(ziyaret?'Ziyaretçi Takvimi':(hepsi?'Tüm Departmanlar':dept)));
+  const _dsel=state.takvimDeptler||[]; const _psel=state.takvimPersoneller||[];
+  const hepsi = kisi? false : (odeme||ziyaret? false : (!_dsel.length && !_psel.length));
+  const persMatch = r => _psel.length? (_psel.indexOf(r.personel)>=0) : (_dsel.length? (_dsel.indexOf(((personelKartlari.find(x=>x.ad===r.personel)||{}).bolum)||'')>=0) : true);
+  const baslik = kisi? kisi : (odeme?'Ödeme Takvimi':(ziyaret?'Ziyaretçi Takvimi':(_psel.length?(_psel.length+' personel'):(_dsel.length?_dsel.join(', '):'Tüm Departmanlar'))));
   const persDept=ad=>{ const p=personelKartlari.find(x=>x.ad===ad); return p?(p.bolum||''):''; };
   const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '2026-01-01';}})();
   const AYTAM=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
@@ -3277,7 +3283,7 @@ function viewIsTakvimi(opts){
     const butce = butceCikisKartlari.filter(c=>matchDate(c.tarih||'')).map(c=>{ const tutar=c.tutar||0; return { no:c.no, tarih:c.tarih, saat:'', is:money(tutar)+' · '+(c.kalem||''), tur:'Bütçe Gideri', durum:(c.durum==='Ödendi'||c.durum==='Tamamlandı')?'Tamamlandı':(c.durum||'Planlandı'), tutar, _butce14:true }; });
     rows = emri.concat(sozu).concat(butce);
   } else {
-    rows = isTakvimi.filter(r=>(kisi? (r.personel===kisi && !r.odeme) : (ziyaret? !!r.defter : (!r.odeme && (hepsi || persDept(r.personel)===dept)))) && matchDate(r.tarih||''));
+    rows = isTakvimi.filter(r=>(kisi? (r.personel===kisi && !r.odeme) : (ziyaret? !!r.defter : (!r.odeme && persMatch(r)))) && matchDate(r.tarih||''));
   }
   const dt=d=>d==='Tamamlandı'?'emer':d==='Devam Ediyor'?'amber':'slate';
   if(listeOnly) per='liste';
@@ -3379,15 +3385,17 @@ function viewIsTakvimi(opts){
 }
 function pdfIsTakvimi(kisi){
   const per=currentSub()||'gun'; const perMap={gun:'Gün',hafta:'Hafta',ay:'Ay',yil:'Yıl'}; const pl=perMap[per]||'Gün';
-  const dept=state.takvimDept||'__hepsi'; const hepsi= kisi? false : (dept==='__hepsi'); const baslik= kisi? kisi : (hepsi?'Tüm Departmanlar':dept);
+  const _dsel=state.takvimDeptler||[]; const _psel=state.takvimPersoneller||[];
+  const baslik= kisi? kisi : (_psel.length?(_psel.length+' personel'):(_dsel.length?_dsel.join(', '):'Tüm Departmanlar'));
   const persDept=ad=>{ const p=personelKartlari.find(x=>x.ad===ad); return p?(p.bolum||''):''; };
+  const persMatch = r => _psel.length? (_psel.indexOf(r.personel)>=0) : (_dsel.length? (_dsel.indexOf(persDept(r.personel))>=0) : true);
   const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '2026-01-01';}})();
   let matchDate, donem;
   if(per==='gun'){ const d=state.takvimTarih||today; matchDate=t=>t===d; donem=d; }
   else if(per==='ay'){ const m=state.takvimAy||today.slice(0,7); matchDate=t=>(t||'').slice(0,7)===m; donem=m; }
   else if(per==='yil'){ const y=String(state.takvimYil||today.slice(0,4)); matchDate=t=>(t||'').slice(0,4)===y; donem=y; }
   else { const d=state.takvimTarih||today; let s=d,e=d; try{ const b=new Date(d); const off=(b.getDay()+6)%7; const st=new Date(b); st.setDate(b.getDate()-off); const en=new Date(st); en.setDate(st.getDate()+6); s=st.toISOString().slice(0,10); e=en.toISOString().slice(0,10); }catch(x){} matchDate=t=>t>=s&&t<=e; donem=isoHaftaNo(d)+'. hafta ('+s+' – '+e+')'; }
-  const rows=isTakvimi.filter(r=>(kisi? (r.personel===kisi) : (hepsi||persDept(r.personel)===dept))&&matchDate(r.tarih||'')).sort((a,b)=>String((a.tarih||'')+(a.saat||'')).localeCompare(String((b.tarih||'')+(b.saat||''))));
+  const rows=isTakvimi.filter(r=>(kisi? (r.personel===kisi) : persMatch(r))&&matchDate(r.tarih||'')).sort((a,b)=>String((a.tarih||'')+(a.saat||'')).localeCompare(String((b.tarih||'')+(b.saat||''))));
   const esc2=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const trs=rows.length?rows.map(r=>`<tr><td>${esc2(r.tarih||'—')}</td><td>${esc2(r.saat||'—')}</td><td>${esc2(r.personel||'—')}</td><td>${esc2(r.tur||'Görev')}</td><td>${esc2(r.is||'')}</td><td>${esc2(r.durum||'Planlandı')}</td><td>${esc2(r.konum||'—')}</td><td>${esc2(r.aciklama||'')}</td></tr>`).join(''):`<tr><td colspan="8" style="text-align:center;color:#888;padding:18px">Kayıt yok</td></tr>`;
   const html=`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>İş Takvimi — ${esc2(baslik)}</title><style>
@@ -5839,7 +5847,7 @@ function viewHrPersonel(){
         <span class="h-10 w-10 shrink-0 rounded-full bg-navy-600 border border-gold/30 text-gold flex items-center justify-center text-[13px] font-bold">${esc((p.ad||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase())}</span>
         <div class="min-w-0 flex-1"><p class="text-sm font-semibold text-slate-100 truncate">${esc(p.ad)}</p><p class="text-[11px] text-slate-500 truncate">${[p.gorev,p.meslek,p.unvan].filter(Boolean).map(esc).join(' · ')||'—'}${p.gorevYeri?' · <span class=\"text-slate-400\">'+esc(p.gorevYeri)+'</span>':''}</p>${(p.tel||p.email)?`<p class="text-[10px] text-slate-500">${[p.tel,p.email].filter(Boolean).map(esc).join(' · ')}</p>`:''}</div>
         <span class="shrink-0 text-[10px] px-2 py-1 rounded-lg bg-navy-600/70 border border-white/10 text-slate-300">${esc(p.bolum||'—')}</span>
-        <button onclick="state.takvimDept='${(p.bolum||'').replace(/'/g,"\\'")}';setModule('istakvim')" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gold/40 text-gold text-[11px] hover:bg-gold/10 transition" title="İş Takvimi"><i data-lucide="calendar-days" class="h-3.5 w-3.5"></i>Takvim</button>
+        <button onclick="state.takvimView='personel';state.takvimPersoneller=['${(p.ad||'').replace(/'/g,"\\'")}'];state.takvimDeptler=[];state.takvimPersonelAcik=true;setModule('istakvim')" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gold/40 text-gold text-[11px] hover:bg-gold/10 transition" title="İş Takvimi"><i data-lucide="calendar-days" class="h-3.5 w-3.5"></i>Takvim</button>
       </div>`).join(''):`<p class="text-sm text-slate-500 py-6 text-center">${sel==='__hepsi'?'Henüz personel kaydı yok.':'Bu departmanda personel yok.'} ${addable?'"Personel Ekle" ile ekleyin.':''}</p>`}
     </div></div>`;
 }
@@ -7859,10 +7867,14 @@ function buildSubNav(){
       const tabDefs={odeme:['wallet','Ödeme Takvimi'], personel:['users-round','Personel Takvimi'], ziyaretci:['contact','Ziyaretçi Takvimi'], defter:['book-open','Günlük Kayıt Defteri']};
       const tabRow = izin.map(id=>abtn(tv===id, `state.takvimView='${id}';render()`, tabDefs[id][0], tabDefs[id][1])).join('');
       if(tv==='personel'){
-        const dcur=state.takvimDept||'__hepsi';
-        const depRow = abtn(dcur==='__hepsi', "state.takvimDept='__hepsi';render()", 'users', 'Hepsi')
-          + DEPARTMAN.map(d=>abtn(dcur===d, `state.takvimDept='${d}';render()`, 'briefcase', d)).join('');
-        bar.innerHTML = `<div class="flex flex-col gap-2 w-full"><div class="flex gap-2 overflow-x-auto">${tabRow}</div><div class="flex gap-2 overflow-x-auto pt-2 border-t border-white/10">${depRow}</div></div>`;
+        const dsel=state.takvimDeptler||[]; const psel=state.takvimPersoneller||[]; const hepsi=!dsel.length&&!psel.length;
+        const depRow = abtn(hepsi, "takvimDeptHepsi()", 'users', 'Hepsi')
+          + DEPARTMAN.map(d=>abtn(dsel.indexOf(d)>=0, `takvimDeptToggle('${d.replace(/'/g,"\\'")}')`, 'briefcase', d)).join('')
+          + abtn(!!state.takvimPersonelAcik, "state.takvimPersonelAcik=!state.takvimPersonelAcik;render()", 'user-check', 'Personeller'+(psel.length?(' ('+psel.length+')'):''));
+        let persRow='';
+        if(state.takvimPersonelAcik){ const pool = dsel.length? personelKartlari.filter(p=>dsel.indexOf(p.bolum||'')>=0) : personelKartlari;
+          persRow = `<div class="flex gap-2 overflow-x-auto pt-2 border-t border-white/10">`+(pool.length? pool.map(p=>abtn(psel.indexOf(p.ad)>=0, `takvimPersonelToggle('${(p.ad||'').replace(/'/g,"\\'")}')`, 'user', p.ad)).join('') : '<span class="text-[12px] text-slate-500 px-2 py-1.5">Seçili departmanda personel kartı yok</span>')+`</div>`; }
+        bar.innerHTML = `<div class="flex flex-col gap-2 w-full"><div class="flex gap-2 overflow-x-auto">${tabRow}</div><div class="flex gap-2 overflow-x-auto pt-2 border-t border-white/10">${depRow}</div>${persRow}</div>`;
       } else {
         bar.innerHTML = tabRow;
       }
