@@ -1002,7 +1002,7 @@ function buildNav(){
     setP('pnlBtn','panelim'); setP('gtkBtn','gorevtakvimim'); setP('gorBtn','gorevlerim'); setP('defterBtn','kayitdefteri');
     mainNav.style.display='none';
     if(nav) nav.innerHTML = leftSpecialSubsHtml()
-      + `<div class="my-2 border-t border-white/5"></div><button data-userswitch onclick="toggleUserMenu()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-200 border border-white/10 bg-navy-700/50 hover:border-gold/40 transition"><span class="h-7 w-7 rounded-lg bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 font-bold flex items-center justify-center text-[11px]">${ROLES[state.role].short}</span><span class="min-w-0 text-left leading-tight"><span class="block text-[12px] font-medium text-slate-100 truncate">${esc(ROLES[state.role].name)}</span><span class="block text-[10px] text-gold truncate">Kullanıcı Değiştir</span></span><i data-lucide="chevrons-up-down" class="h-4 w-4 ml-auto text-slate-400"></i></button>`;
+      + `<div class="my-2 border-t border-white/5"></div><button data-userswitch onclick="openUserPicker()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-200 border border-white/10 bg-navy-700/50 hover:border-gold/40 transition"><span class="h-7 w-7 rounded-lg bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 font-bold flex items-center justify-center text-[11px]">${ROLES[state.role].short}</span><span class="min-w-0 text-left leading-tight"><span class="block text-[12px] font-medium text-slate-100 truncate">${esc(ROLES[state.role].name)}</span><span class="block text-[10px] text-gold truncate">Kullanıcı Değiştir</span></span><i data-lucide="chevrons-up-down" class="h-4 w-4 ml-auto text-slate-400"></i></button>`;
     const bn=document.getElementById('bottomNav'); if(bn) bn.innerHTML=[['panelim','id-card','Panelim'],['gorevtakvimim','calendar-days','Takvimim'],['gorevlerim','list-checks','Görevlerim'],['kayitdefteri','notebook-pen','Defter']].map(([m,ic,l])=>`<button onclick="setModule('${m}')" class="flex flex-col items-center justify-center gap-1 flex-1 py-1.5 rounded-xl ${state.module===m?'text-gold':'text-slate-400'}"><i data-lucide="${ic}" class="h-5 w-5"></i><span class="text-[10px] leading-none">${l}</span></button>`).join('');
     return;
   } else { ['pnlBtn','gtkBtn','gorBtn','defterBtn'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.display='none'; b.classList.remove('ring-2','ring-white/50'); } }); }
@@ -1054,7 +1054,7 @@ function buildNav(){
   }).join('')
   + ''
   + `<div class="my-2 border-t border-white/5"></div>
-    <button data-userswitch onclick="toggleUserMenu()"
+    <button data-userswitch onclick="openUserPicker()"
       class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-200 border border-white/10 bg-navy-700/50 hover:border-gold/40 transition">
       <span class="h-7 w-7 rounded-lg bg-gradient-to-br from-gold-light to-gold-dark text-navy-900 font-bold flex items-center justify-center text-[11px]">${ROLES[state.role].short}</span>
       <span class="min-w-0 text-left leading-tight"><span class="block text-[12px] font-medium text-slate-100 truncate">${esc(ROLES[state.role].name)}</span><span class="block text-[10px] text-gold truncate">Kullanıcı Değiştir</span></span>
@@ -7579,6 +7579,11 @@ function saveFirmInfo(name){
   toast(name+' künyesi kaydedildi ✓');
 }
 function companyPickerFromHeader(){ if(!state.authed) return; if(needsCompanyChoice(state.role) || ROLES[state.role].sysadmin){ openCompanyPicker(); } else { toast('Şirket değiştirme yetkiniz yok'); } }
+function openUserPicker(){ try{if(typeof toggleSidebar==='function')toggleSidebar(false);}catch(e){}
+  const body = `<div class="space-y-1.5 max-h-[58vh] overflow-y-auto pr-1">`+Object.entries(ROLES).map(([k,v])=>`<button onclick="setRole('${k}');closeInfo()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left border transition ${k===state.role?'border-gold bg-gold/10':'border-white/10 bg-navy-700/40 hover:border-gold/40'}"><span class="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center font-bold text-sm ${k===state.role?'bg-gradient-to-br from-gold-light to-gold-dark text-navy-900':'bg-navy-600 text-slate-300'}">${v.short}</span><span class="min-w-0 flex-1"><span class="block text-sm font-medium text-slate-100 truncate">${esc(v.name)}</span><span class="block text-[11px] text-slate-400 truncate">${esc(v.title)}</span></span>${k===state.role?'<i data-lucide="check" class="h-4 w-4 text-gold shrink-0"></i>':''}</button>`).join('')
+    +`</div><div class="mt-3 pt-3 border-t border-white/5 flex gap-2"><button onclick="openProfile()" class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 text-sm"><i data-lucide="user" class="h-4 w-4"></i>Profilim</button><button onclick="logout();closeInfo()" class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 text-sm"><i data-lucide="log-out" class="h-4 w-4"></i>Çıkış Yap</button></div>`;
+  openInfo('users','Kullanıcı Değiştir','Simülasyon · görüntülenecek rol/kullanıcıyı seçin', body);
+}
 function openCompanyPicker(){
   toggleSidebar(false);
   openInfo('replace','Şirket Seçimi','Görüntülenecek kapsamı seçin', `
