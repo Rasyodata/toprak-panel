@@ -7783,43 +7783,47 @@ function filterSearch(q){
 /* ---------- NOTIFICATIONS / APPROVAL CENTER ---------- */
 function buildNotif(){
   const canAct = (isAdminUser()||state.role==='ceo') || state.role==='cfo';
+  const yonetici = canAct;
   const badge = document.getElementById('notifBadge');
   const menu  = document.getElementById('notifMenu');
   const items = [];
-
-  if(canAct){
-    purchaseRequests.filter(p=>p.status==='pending').forEach(p=>items.push({
-      icon:'shopping-cart', mod:'purchase', title:p.item,
-      meta:`${p.id} · ${p.firm} · ${money(p.amount)}`, urgent:p.urgent }));
-    contracts.filter(c=>c.status==='pending').forEach(c=>items.push({
-      icon:'file-signature', mod:'legal', title:c.title,
-      meta:`${c.id} · ${c.party} · ${money(c.value)}`, urgent:c.risk==='Yüksek' }));
+  const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
+  const me=(typeof myName==='function')?myName():'';
+  const esc2=s=>esc(String(s==null?'':s));
+  // 1) GÖREVLER & TAKVİM — bugün (ve geçmiş) tamamlanmamış görevler (personel: kendi · yönetici: tümü)
+  try{
+    const gorevler = isTakvimi.filter(t=>!t.odeme && !t.defter && t.durum!=='Tamamlandı' && (t.tarih||'')<=today && (t.tarih||'')>='' && (t.tarih||'')!=='' && (yonetici? true : t.personel===me));
+    gorevler.sort((a,b)=>String((b.tarih||'')+(b.saat||'')).localeCompare(String((a.tarih||'')+(a.saat||'')))).slice(0,6).forEach(t=>{
+      const gec=(t.tarih||'')<today; const mod=isPersonelUser()?'gorevlerim':'istakvim';
+      items.push({ icon:'calendar-check', oc:`setModule('${mod}');toggleNotif()`, title:(t.tur&&t.tur!=='Görev'?(t.tur+': '):'')+esc2(t.is||'Görev'), meta:esc2(t.personel||'')+' · '+esc2(t.saat||'')+' · '+(gec?('gecikmiş · '+esc2(t.tarih)):'bugün'), urgent:gec, grup:'Görevler & Takvim' });
+    });
+  }catch(e){}
+  // 2) DUYURULAR & İLANLAR — herkese
+  try{
+    (announcements||[]).slice(0,5).forEach(a=>{ const canNews = (MODULES.find(m=>m.id==='news')&&can(MODULES.find(m=>m.id==='news')));
+      items.push({ icon:'megaphone', oc: canNews?`setModule('news');toggleNotif()`:`toggleNotif();openInfo('megaphone','${esc2(a.title).replace(/'/g,"\\'")}','${esc2(a.date||'')}','<p class=&quot;text-sm text-slate-300&quot;>${esc2(a.title).replace(/'/g,"\\'")}</p>')`, title:esc2(a.title), meta:'Duyuru · '+esc2(a.date||'')+(a.audience?(' · '+esc2(a.audience)):''), urgent:!!a.pin, grup:'Duyurular & İlanlar' }); });
+  }catch(e){}
+  // 3) ONAYLAR — yöneticiler
+  if(yonetici){
+    purchaseRequests.filter(p=>p.status==='pending').forEach(p=>items.push({ icon:'shopping-cart', oc:"setModule('purchase');toggleNotif()", title:esc2(p.item), meta:`${esc2(p.id)} · ${esc2(p.firm)} · ${money(p.amount)}`, urgent:p.urgent, grup:'Onaylar' }));
+    contracts.filter(c=>c.status==='pending').forEach(c=>items.push({ icon:'file-signature', oc:"setModule('legal');toggleNotif()", title:esc2(c.title), meta:`${esc2(c.id)} · ${esc2(c.party)} · ${money(c.value)}`, urgent:c.risk==='Yüksek', grup:'Onaylar' }));
   }
 
-  if(items.length>0){ badge.textContent = items.length; badge.classList.remove('hidden'); }
+  if(items.length>0){ badge.textContent = items.length>99?'99+':items.length; badge.classList.remove('hidden'); }
   else { badge.classList.add('hidden'); }
 
+  const gruplar=['Görevler & Takvim','Duyurular & İlanlar','Onaylar'];
+  const row=it=>`<button onclick="${it.oc}" class="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5 transition">
+      <span class="h-8 w-8 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center ${it.urgent?'text-rose-400':'text-gold'}"><i data-lucide="${it.icon}" class="h-4 w-4"></i></span>
+      <span class="min-w-0 flex-1"><span class="block text-sm text-slate-100 truncate">${it.title}</span><span class="block text-[11px] text-slate-500 truncate">${it.meta}</span></span>
+      ${it.urgent?'<span class="text-[9px] text-rose-300 border border-rose-400/30 bg-rose-500/10 rounded-full px-1.5 py-0.5 shrink-0">!</span>':''}</button>`;
   menu.innerHTML = `
     <div class="flex items-center justify-between px-3 pt-2 pb-1">
-      <p class="text-[10px] uppercase tracking-[.2em] text-slate-500">Onay Merkezi</p>
-      ${items.length?`<span class="text-[10px] text-rose-300">${items.length} bekliyor</span>`:''}
+      <p class="text-[10px] uppercase tracking-[.2em] text-slate-500">Bildirimler</p>
+      ${items.length?`<span class="text-[10px] text-gold">${items.length}</span>`:''}
     </div>
-    ${items.length ? items.map(it=>`
-      <button onclick="setModule('${it.mod}');toggleNotif();"
-        class="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5 transition">
-        <span class="h-8 w-8 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center ${it.urgent?'text-rose-400':'text-gold'}">
-          <i data-lucide="${it.icon}" class="h-4 w-4"></i>
-        </span>
-        <span class="min-w-0 flex-1">
-          <span class="block text-sm text-slate-100 truncate">${it.title}</span>
-          <span class="block text-[11px] text-slate-500 truncate">${it.meta}</span>
-        </span>
-        ${it.urgent?'<span class="text-[9px] text-rose-300 border border-rose-400/30 bg-rose-500/10 rounded-full px-1.5 py-0.5 shrink-0">ACİL</span>':''}
-      </button>`).join('')
-    : `<div class="px-3 py-8 text-center text-sm text-slate-500">
-         <i data-lucide="check-circle-2" class="h-8 w-8 mx-auto text-emer/60 mb-2"></i>
-         ${canAct?'Bekleyen onay yok':'Bu rol için onay bildirimi bulunmuyor'}
-       </div>`}`;
+    ${items.length ? gruplar.map(g=>{ const gi=items.filter(x=>x.grup===g); if(!gi.length) return ''; return `<p class="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-gold">${g} · ${gi.length}</p>`+gi.map(row).join(''); }).join('')
+    : `<div class="px-3 py-8 text-center text-sm text-slate-500"><i data-lucide="bell-off" class="h-8 w-8 mx-auto text-slate-600 mb-2"></i>Bildirim yok</div>`}`;
 }
 function toggleNotif(){
   const m = document.getElementById('notifMenu');
