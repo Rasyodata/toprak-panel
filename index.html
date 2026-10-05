@@ -2876,14 +2876,39 @@ let personelGorevleri = [];
 const GOREV_SABLON = {"Büro Asistanı": [{"grup": "İletişim ve Karşılama Yönetimi", "items": ["Telefon ve e-posta trafiğini yanıtlamak, filtrelemek ve ilgili kişilere yönlendirmek", "Ofise gelen misafir, müşteri ve iş ortaklarını güler yüzle karşılamak ve ağırlamak", "Yöneticiye gelen önemli not ve mesajları eksiksiz iletmek"]}, {"grup": "Evrak ve Doküman Yönetimi", "items": ["Gelen-giden evrak girişi, kaydı ve arşivleme", "Dosyalama ve doküman takibi", "Kargo / posta giriş-çıkış takibi"]}, {"grup": "Randevu ve Takvim", "items": ["Yönetici randevu ve takvim yönetimi", "Toplantı organizasyonu ve salon hazırlığı"]}, {"grup": "Ofis Operasyonları", "items": ["Kırtasiye ve sarf malzeme takibi", "Ofis düzeni ve tedarik koordinasyonu"]}], "Yönetici Asistanı": [{"grup": "Yönetici Destek", "items": ["Yöneticinin gündem ve takvimini yönetmek", "Seyahat ve konaklama organizasyonu", "Toplantı notları ve aksiyon takibi"]}, {"grup": "Koordinasyon", "items": ["Departmanlar arası bilgi akışını sağlamak", "Üst düzey yazışmaları hazırlamak"]}], "Muhasebe": [{"grup": "Fatura ve Cari İşlemler", "items": ["Alış/satış faturalarının kaydı", "Cari hesap mutabakatları", "Tahsilat ve ödeme takibi"]}, {"grup": "Banka ve Kasa", "items": ["Banka hareketlerinin işlenmesi", "Kasa defteri ve nakit takibi", "Çek / senet takibi"]}, {"grup": "Beyanname ve Vergi", "items": ["KDV / muhtasar beyanname hazırlığı", "Geçici ve kurumlar vergisi takibi", "E-defter / e-fatura işlemleri"]}, {"grup": "Bordro ve SGK", "items": ["Personel bordro hazırlığı", "SGK bildirgeleri", "Özlük işlemleri koordinasyonu"]}], "Satın Alma": [{"grup": "Tedarik Yönetimi", "items": ["Teklif toplama ve fiyat karşılaştırma", "Tedarikçi değerlendirme ve seçimi", "Sipariş ve sözleşme takibi"]}, {"grup": "Lojistik ve Stok", "items": ["Teslimat ve irsaliye takibi", "Stok seviyesi ve ihtiyaç planlama"]}], "İnsan Kaynakları": [{"grup": "İşe Alım", "items": ["İlan, aday havuzu ve mülakat koordinasyonu", "Oryantasyon süreçleri"]}, {"grup": "Özlük ve Bordro", "items": ["Özlük dosyası ve sözleşme yönetimi", "İzin / devamsızlık takibi", "Bordro ve SGK koordinasyonu"]}, {"grup": "Performans ve Eğitim", "items": ["Performans değerlendirme süreçleri", "Eğitim planlama"]}], "Şantiye Şefi": [{"grup": "Saha Yönetimi", "items": ["İş programı ve imalat takibi", "Taşeron ve ekip koordinasyonu", "Malzeme ve ekipman planlama"]}, {"grup": "Kalite ve İSG", "items": ["Kalite kontrol ve hakediş hazırlığı", "İş sağlığı ve güvenliği denetimi"]}], "Satış & Pazarlama": [{"grup": "Satış", "items": ["Müşteri görüşmeleri ve teklif hazırlama", "Satış sözleşmesi ve tahsilat takibi", "CRM / pipeline yönetimi"]}, {"grup": "Pazarlama", "items": ["Kampanya ve tanıtım organizasyonu", "Dijital kanal ve ilan yönetimi"]}]};
 function gorevEkleIs(){ const el=document.getElementById('gvYeniIs'); const v=((el&&el.value)||'').trim(); if(!v){toast('İş girin');return;} state.gd=state.gd||{ekstra:[]}; state.gd.ekstra=state.gd.ekstra||[]; state.gd.ekstra.push(v); render(); setTimeout(function(){var e=document.getElementById('gvYeniIs');if(e)e.focus();},40); }
 function addPersonelGorev(){ const d=state.gd||{}; if(!d.rol){toast('Departman/görev seçin');return;} const no=nextKayitNo('0025',personelGorevleri);
-  personelGorevleri.unshift({ no, personel:((d.personel||'')+'').trim(), rol:d.rol, sablon:(GOREV_SABLON[d.rol]||[]), ekstra:((d.ekstra||[]).slice()) });
+  personelGorevleri.unshift({ no, personel:((d.personel||'')+'').trim(), rol:d.rol, sablon:(GOREV_SABLON[d.rol]||[]), ekstra:((d.ekstra||[]).slice()), takvimGorev:(d.gorev||''), tekrar:(d.tekrar||''), saat:(d.saat||''), kez:(d.kez||'') });
   logAction('clipboard-list','emer', 'Personel görev kartı · '+no+' · '+d.rol+(d.personel?(' · '+d.personel):'')); state.gd=null; render(); toast(no+' · görev kartı oluşturuldu'); }
 function gorevSayi(r){ return (r.sablon||[]).reduce(function(a,g){return a+((g.items&&g.items.length)||0);},0)+((r.ekstra&&r.ekstra.length)||0); }
+// Görev tanımından seçilen görevi personelin İş Takvimine (Görevlerim/Görev Takvimim) tekrarlı ekle
+function gorevTakvimeEkle(){
+  const d=state.gd||{}; const personel=((d.personel||'')+'').trim();
+  if(!personel){ toast('Personel (ad soyad) girin'); return; }
+  const gorev=(d.gorev||'').trim(); if(!gorev){ toast('Görev seçin'); return; }
+  const tekrar=d.tekrar||'Her Gün'; const saat=d.saat||'09:00';
+  const kez=Math.max(1,Math.min(365,parseInt(d.kez||'30',10)||30));
+  const perMap={'Saatlik':'Günlük','Her Gün':'Günlük','Her Hafta':'Haftalık','Her Ay':'Aylık'}; const periyot=perMap[tekrar]||'Günlük';
+  const pad=n=>String(n).padStart(2,'0'); const fmtD=dt=>{try{return dt.toISOString().slice(0,10);}catch(e){return '';}};
+  let base; try{ base=new Date(); }catch(e){ base=new Date(); } base.setHours(0,0,0,0);
+  let created=0;
+  for(let i=0;i<kez;i++){
+    let tarih=fmtD(base), st=saat;
+    if(tekrar==='Saatlik'){ st=pad((parseInt(saat.split(':')[0]||'9',10)+i)%24)+':00'; }
+    else if(tekrar==='Her Gün'){ const x=new Date(base); x.setDate(x.getDate()+i); tarih=fmtD(x); }
+    else if(tekrar==='Her Hafta'){ const x=new Date(base); x.setDate(x.getDate()+i*7); tarih=fmtD(x); }
+    else if(tekrar==='Her Ay'){ const x=new Date(base.getFullYear(), base.getMonth()+i, base.getDate()); tarih=fmtD(x); }
+    isTakvimi.unshift({ no:nextKayitNo('0026',isTakvimi), personel, tur:'Görev', periyot, tarih, saat:st, is:gorev, durum:'Planlandı', aciklama:'Görev tanımından · '+tekrar, toplu:true });
+    created++;
+  }
+  itYetkiVer(personel);
+  logAction('calendar-plus','gold','Görev takvime eklendi · '+personel+' · '+gorev+' · '+tekrar+' ('+created+')');
+  render(); toast(created+' görev "'+personel+'" takvimine eklendi ✓');
+}
 function gorevFormCard(){
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
   const selC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none';
   const d=state.gd||(state.gd={personel:'',rol:'',ekstra:[]});
   const roller=Object.keys(GOREV_SABLON); const sb=GOREV_SABLON[d.rol]||[];
+  const gorevOpts=[]; sb.forEach(function(g){(g.items||[]).forEach(function(it){gorevOpts.push(it);});}); (d.ekstra||[]).forEach(function(it){gorevOpts.push(it);});
   return '<div class="card rounded-2xl p-5 mb-4">'
     + sectionTitle('clipboard-list','Personel Görev Tanımı','Departman/görev seçince standart görevler gelir · karta iş ekleyebilirsiniz')
     + '<div class="grid grid-cols-1 sm:grid-cols-12 gap-2">'
@@ -2895,7 +2920,19 @@ function gorevFormCard(){
         + '</div>'
         + ((d.ekstra&&d.ekstra.length)?('<div class="mt-3 pt-3 border-t border-white/5"><p class="text-[11px] uppercase tracking-wider text-gold mb-1">Eklenen İşler</p><ul class="space-y-1">'+d.ekstra.map(function(it,i){return '<li class="text-[13px] text-slate-200 flex items-center gap-1.5"><i data-lucide="plus-circle" class="h-3.5 w-3.5 text-gold"></i>'+esc(it)+' <button onclick="state.gd.ekstra.splice('+i+',1);render()" class="ml-1 text-rose-300 text-[11px]">kaldır</button></li>';}).join('')+'</ul></div>'):'')
         + '<div class="mt-3 flex gap-2"><input id="gvYeniIs" placeholder="Karta iş ekle…" onkeydown="if(event.key===&quot;Enter&quot;)gorevEkleIs()" class="flex-1 '+inpC+'"/><button onclick="gorevEkleIs()" class="px-3 py-2 rounded-lg bg-navy-600 text-slate-100 text-sm border border-white/10 hover:border-gold/40 inline-flex items-center gap-1"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button></div>'
-        + '</div><div class="mt-3 flex justify-end"><button onclick="addPersonelGorev()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="save" class="h-4 w-4"></i>Görev Kartı Oluştur</button></div>') : '')
+        + '</div>'
+        + '<div class="mt-4 rounded-xl border border-gold/25 bg-gold/5 p-4">'
+          + '<p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="calendar-plus" class="h-3.5 w-3.5"></i>Görevi Takvime / Görevlerime Ekle (tekrarlı)</p>'
+          + '<div class="grid grid-cols-1 sm:grid-cols-12 gap-2">'
+          + '<select onchange="state.gd.gorev=this.value" class="sm:col-span-5 '+selC+'"><option value="">Görev seç…</option>'+gorevOpts.map(function(it){return '<option '+(d.gorev===it?'selected':'')+'>'+esc(it)+'</option>';}).join('')+'</select>'
+          + '<select onchange="state.gd.tekrar=this.value" class="sm:col-span-3 '+selC+'" title="Tekrar">'+['Her Gün','Her Hafta','Her Ay','Saatlik'].map(function(t){return '<option '+((d.tekrar||'Her Gün')===t?'selected':'')+'>'+t+'</option>';}).join('')+'</select>'
+          + saatSelect('gvSaat', d.saat||'09:00', 'sm:col-span-2 '+selC, 'onchange="state.gd.saat=this.value" title="Saat"')
+          + '<input type="number" min="1" max="365" value="'+(d.kez||30)+'" oninput="state.gd.kez=this.value" placeholder="Kez" title="Kaç kez" class="sm:col-span-2 '+inpC+'"/>'
+          + '</div>'
+          + '<p class="text-[10px] text-slate-500 mt-1">Örn: Görev=&quot;İşe başlangıç&quot; · <b>Her Gün · 09:00 · 30</b> → 30 günlük görev. Personel &quot;Tamamla&quot;ya basınca o anki konum otomatik işlenir.</p>'
+          + '<div class="mt-2 flex justify-end"><button onclick="gorevTakvimeEkle()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gold/50 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="calendar-plus" class="h-4 w-4"></i>Takvime Ekle</button></div>'
+        + '</div>'
+        + '<div class="mt-3 flex justify-end"><button onclick="addPersonelGorev()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="save" class="h-4 w-4"></i>Görev Kartı Oluştur</button></div>') : '')
     + '</div>';
 }
 // İş Takvimi (her personelin günlük/haftalık/aylık işleri)
