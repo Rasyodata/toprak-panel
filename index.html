@@ -3139,8 +3139,9 @@ function viewPanelim(){
 }
 function viewIsTakvimi(opts){
   opts=opts||{}; const kisi=opts.kisi||null; const listeOnly = opts.mode==='liste';
+  const ziyaret = !kisi && state.module==='istakvim' && state.takvimView==='ziyaretci';
   let per=currentSub()||'gun'; const perMap={gun:'Gün',hafta:'Hafta',ay:'Ay',yil:'Yıl'}; const pl=perMap[per]||'Gün';
-  const dept=state.takvimDept||'__hepsi'; const hepsi = kisi? false : (dept==='__hepsi'); const baslik = kisi? kisi : (hepsi?'Tüm Departmanlar':dept);
+  const dept=state.takvimDept||'__hepsi'; const hepsi = kisi? false : (dept==='__hepsi'); const baslik = kisi? kisi : (ziyaret?'Ziyaretçi Takvimi':(hepsi?'Tüm Departmanlar':dept));
   const persDept=ad=>{ const p=personelKartlari.find(x=>x.ad===ad); return p?(p.bolum||''):''; };
   const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '2026-01-01';}})();
   const AYTAM=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
@@ -3149,7 +3150,7 @@ function viewIsTakvimi(opts){
   else if(per==='ay'){ const m=state.takvimAy||today.slice(0,7); matchDate=t=>(t||'').slice(0,7)===m; const mo=+m.slice(5,7); donemEtiket=(AYTAM[mo-1]||'')+' '+m.slice(0,4)+' ayı'; }
   else if(per==='yil'){ const y=String(state.takvimYil||today.slice(0,4)); matchDate=t=>(t||'').slice(0,4)===y; donemEtiket=y+' yılı'; }
   else { const d=state.takvimTarih||today; let s=d,e=d; try{ const b=new Date(d); const off=(b.getDay()+6)%7; const st=new Date(b); st.setDate(b.getDate()-off); const en=new Date(st); en.setDate(st.getDate()+6); s=st.toISOString().slice(0,10); e=en.toISOString().slice(0,10); }catch(x){} matchDate=t=>t>=s&&t<=e; const wk=isoHaftaNo(d); const yr=(state.takvimHaftaYil)||s.slice(0,4); const fmt=x=>x.slice(8,10)+'.'+x.slice(5,7); donemEtiket=wk+'. Hafta · '+yr+' ('+fmt(s)+' – '+fmt(e)+')'; }
-  const rows=isTakvimi.filter(r=>(kisi? (r.personel===kisi) : (hepsi || persDept(r.personel)===dept)) && matchDate(r.tarih||''));
+  const rows=isTakvimi.filter(r=>(kisi? (r.personel===kisi) : (ziyaret? !!r.defter : (hepsi || persDept(r.personel)===dept))) && matchDate(r.tarih||''));
   const dt=d=>d==='Tamamlandı'?'emer':d==='Devam Ediyor'?'amber':'slate';
   if(listeOnly) per='liste';
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
@@ -7662,12 +7663,20 @@ function buildSubNav(){
   const abtn = (on,oc,icon,label)=>`<button onclick="${oc}" class="shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border transition ${on?'bg-gradient-to-r from-[#8a2a1a] to-[#5c1810] text-white border-[#b4532f]/60':'text-slate-300 border-white/10 bg-navy-700/40 hover:border-gold/40'}"><i data-lucide="${icon}" class="h-4 w-4 ${on?'text-[#f0a58a]':''}"></i><span class="whitespace-nowrap">${label}</span></button>`;
   const talepGold = `<button onclick="state.adminTable='TBL-0010';state.adminUsers=false;setModule('admin')" class="shrink-0 ml-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm border bg-gold text-navy-900 font-semibold border-gold hover:bg-gold-light transition"><i data-lucide="plus-circle" class="h-4 w-4"></i><span class="whitespace-nowrap">Talep Oluştur</span></button>`;
   if(state.company!=='all'){
-    // İş Takvimi → alt bar: Departmanlar (Gün/Hafta/Ay/Yıl sol barda)
+    // İş Takvimi → üst bar: Personel Takvimi · Ziyaretçi Takvimi (Gün/Hafta/Ay/Yıl sol barda)
     if(state.module==='istakvim'){
       bar.style.display=''; tint();
-      const dcur=state.takvimDept||'__hepsi';
-      bar.innerHTML = abtn(dcur==='__hepsi', "state.takvimDept='__hepsi';render()", 'users', 'Hepsi')
-        + DEPARTMAN.map(d=>abtn(dcur===d, `state.takvimDept='${d}';render()`, 'briefcase', d)).join('');
+      const tv=state.takvimView||'personel';
+      const tabRow = abtn(tv==='personel', "state.takvimView='personel';render()", 'users-round', 'Personel Takvimi')
+        + abtn(tv==='ziyaretci', "state.takvimView='ziyaretci';render()", 'contact', 'Ziyaretçi Takvimi');
+      if(tv==='personel'){
+        const dcur=state.takvimDept||'__hepsi';
+        const depRow = abtn(dcur==='__hepsi', "state.takvimDept='__hepsi';render()", 'users', 'Hepsi')
+          + DEPARTMAN.map(d=>abtn(dcur===d, `state.takvimDept='${d}';render()`, 'briefcase', d)).join('');
+        bar.innerHTML = `<div class="flex flex-col gap-2 w-full"><div class="flex gap-2 overflow-x-auto">${tabRow}</div><div class="flex gap-2 overflow-x-auto pt-2 border-t border-white/10">${depRow}</div></div>`;
+      } else {
+        bar.innerHTML = tabRow;
+      }
       return;
     }
     // ERP & CRM aktif → alt bar modül seçici (İstekler · Firma Bilgileri · Satış · Proje · Finans · Mali · Hukuk&Risk · İK)
