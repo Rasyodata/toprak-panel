@@ -511,8 +511,7 @@ const MODULES = [
 const COMPANY_TABS = [
   { id:'all',    label:'Yönetim Paneli',  firm:null,               icon:'layout-dashboard', tint:'#d7dde8', side:'#ccd4e1', cardTop:'#ffffff', accent:'#9a7b1a' },
   { id:'insaat', label:'İnşaat Şirketi',  firm:'Toprak İnşaat',      icon:'building-2', tint:'#e6ddcb', side:'#dcd0ba', cardTop:'#fffefb', accent:'#b06a12' },
-  { id:'s2',     label:'Şirket 2',        firm:'Toprak Gayrimenkul', icon:'building',   tint:'#d3e3d9', side:'#c6dace', cardTop:'#fbfffc', accent:'#15814f' },
-  { id:'s3',     label:'Şirket 3',        firm:'Toprak Turizm',      icon:'building',   tint:'#d0e3e8', side:'#c1dadf', cardTop:'#fafeff', accent:'#0e7684' }
+  { id:'s2',     label:'Proje Ortaklığı', firm:'Proje Ortaklığı',    icon:'handshake',  tint:'#d3e3d9', side:'#c6dace', cardTop:'#fbfffc', accent:'#15814f' }
 ];
 const scopeFirm = () => (COMPANY_TABS.find(c=>c.id===state.company)||{}).firm || null;
 
@@ -8252,6 +8251,7 @@ try{ if(window.lucide && lucide.createIcons){ const _ci=lucide.createIcons.bind(
 try{ loadData(); }catch(e){}
 /* Takvim her açılışta güncel dönemi göstersin (gün=bugün, hafta=bu hafta, ay=bu ay, yıl=bu yıl) */
 try{ const _n=new Date(); const _iso=_n.toISOString().slice(0,10); state.takvimTarih=_iso; state.takvimAy=_iso.slice(0,7); state.takvimYil=_iso.slice(0,4); state.takvimHaftaYil=+_iso.slice(0,4); }catch(e){}
+try{ if(!COMPANY_TABS.find(c=>c.id===state.company)) state.company='all'; }catch(e){}
 try{ seedAuditFromData(); }catch(e){}
 render();
 initCookie();
