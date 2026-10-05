@@ -2015,6 +2015,17 @@ function viewBI(){
     </div>
   </div>
 
+  <!-- CANLI ÖDEME TAKVİMİ ŞERİDİ (bugün vadesi gelenler) -->
+  ${(()=>{ const bg=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
+    const emri=odemeEmriKartlari.filter(c=>(c.tarih||'')===bg).map(c=>({saat:c.saat||'',t:'Ödeme Emri',ad:c.hakSahibi||'',tutar:c.net||c.brut||0,durum:c.durum}));
+    const sozu=odemeSozuKartlari.filter(c=>(c.vade||'')===bg).map(c=>({saat:'',t:'Ödeme Sözü',ad:c.hakSahibi||'',tutar:c.tutar||0,durum:c.durum}));
+    const butce=butceCikisKartlari.filter(c=>(c.tarih||'')===bg).map(c=>({saat:'',t:'Bütçe Gideri',ad:c.kalem||'',tutar:c.tutar||0,durum:c.durum}));
+    const list=emri.concat(sozu).concat(butce);
+    const it=x=>`<span class="inline-flex items-center gap-2 px-5 border-r border-white/10"><span class="text-[12px] text-gold font-semibold">${esc(x.t)}</span><span class="text-slate-200 text-[13px]">${esc(x.ad)}</span><span class="text-[13px] font-semibold ${x.durum==='Ödendi'?'text-emer-light':'text-rose-300'}">${money(x.tutar)}</span>${x.durum==='Ödendi'?'<span class="text-[10px] text-emer-light">✓ ödendi</span>':'<span class="text-[10px] text-amber-300">bekliyor</span>'}</span>`;
+    const h=list.length?list.map(it).join(''):`<span class="px-5 text-slate-500 text-[13px]">Bugün vadesi gelen ödeme yok</span>`;
+    const toplam=list.reduce((a,x)=>a+(x.tutar||0),0);
+    return `<div data-sub="bi" class="card rounded-xl mb-5 flex items-stretch overflow-hidden"><div class="flex items-center gap-2 px-4 shrink-0 bg-rose-600 text-white"><span class="h-2 w-2 rounded-full bg-white live-dot"></span><i data-lucide="wallet" class="h-3.5 w-3.5"></i><span class="text-xs font-bold tracking-wider">ÖDEME</span>${list.length?`<span class="text-[11px] font-semibold">${money(toplam)}</span>`:''}</div><div class="ticker-mask flex-1 py-2.5 text-sm"><div class="ticker-track" style="animation-duration:40s">${h}${h}</div></div></div>`; })()}
+
   <!-- CANLI PERSONEL HAREKETLERİ ŞERİDİ (bugün) -->
   ${(()=>{ const bg=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
     const defterTurler=['Gelen Kişi','Gelen Telefon','Gelen Evrak','Telefon ile İstek','Ziyaretçi'];
