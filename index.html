@@ -2999,7 +2999,7 @@ function addIsTakvimKisi(){ const g=i=>document.getElementById(i); const gv=i=>(
   captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); } }); }
 function delIsTakvim(no){ const i=isTakvimi.findIndex(r=>r.no===no); if(i>-1){ isTakvimi.splice(i,1); logAction('trash-2','red', `İş takvimi kaydı silindi · ${no}`); render(); toast('Silindi ✓'); } }
 function captureKonum(cb){ try{ if(navigator&&navigator.geolocation){ toast('Konum alınıyor…'); navigator.geolocation.getCurrentPosition(function(p){ cb(p.coords.latitude.toFixed(5)+', '+p.coords.longitude.toFixed(5)); }, function(){ cb(''); }, {enableHighAccuracy:true,timeout:9000,maximumAge:60000}); } else cb(''); }catch(e){ cb(''); } }
-function itTamamla(no){ const r=isTakvimi.find(x=>x.no===no); if(!r) return; r.durum='Tamamlandı'; render(); toast(no+' tamamlandı ✓ · konum alınıyor'); captureKonum(function(k){ if(k){ const rr=isTakvimi.find(x=>x.no===no); if(rr){ rr.konum=k; } try{saveData();}catch(e){} render(); toast('Konum işlendi 📍'); } }); }
+function itTamamla(no){ const r=isTakvimi.find(x=>x.no===no); if(!r){ const o=odemeEmriKartlari.find(x=>x.no===no); if(o){ o.durum='Ödendi'; logAction('check-circle-2','emer','Ödeme yapıldı · '+no+' · '+money(o.net||o.brut||0)+' · '+(o.hakSahibi||'')); try{saveData();}catch(e){} render(); toast('Ödendi olarak işaretlendi ✓'); } return; } r.durum='Tamamlandı'; render(); toast(no+' tamamlandı ✓ · konum alınıyor'); captureKonum(function(k){ if(k){ const rr=isTakvimi.find(x=>x.no===no); if(rr){ rr.konum=k; } try{saveData();}catch(e){} render(); toast('Konum işlendi 📍'); } }); }
 function puantajKaydet(tip){ const personel=myName(); if(!personel){ toast('Kullanıcı bulunamadı'); return; }
   let tarih='', saat=''; try{ const n=new Date(); tarih=n.toISOString().slice(0,10); saat=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }catch(e){}
   // Günde tek giriş + tek çıkış: zaten varsa engelle
@@ -3159,7 +3159,12 @@ function viewIsTakvimi(opts){
   else if(per==='ay'){ const m=state.takvimAy||today.slice(0,7); matchDate=t=>(t||'').slice(0,7)===m; const mo=+m.slice(5,7); donemEtiket=(AYTAM[mo-1]||'')+' '+m.slice(0,4)+' ayı'; }
   else if(per==='yil'){ const y=String(state.takvimYil||today.slice(0,4)); matchDate=t=>(t||'').slice(0,4)===y; donemEtiket=y+' yılı'; }
   else { const d=state.takvimTarih||today; let s=d,e=d; try{ const b=new Date(d); const off=(b.getDay()+6)%7; const st=new Date(b); st.setDate(b.getDate()-off); const en=new Date(st); en.setDate(st.getDate()+6); s=st.toISOString().slice(0,10); e=en.toISOString().slice(0,10); }catch(x){} matchDate=t=>t>=s&&t<=e; const wk=isoHaftaNo(d); const yr=(state.takvimHaftaYil)||s.slice(0,4); const fmt=x=>x.slice(8,10)+'.'+x.slice(5,7); donemEtiket=wk+'. Hafta · '+yr+' ('+fmt(s)+' – '+fmt(e)+')'; }
-  const rows=isTakvimi.filter(r=>(kisi? (r.personel===kisi && !r.odeme) : (odeme? !!r.odeme : (ziyaret? !!r.defter : (!r.odeme && (hepsi || persDept(r.personel)===dept))))) && matchDate(r.tarih||''));
+  let rows;
+  if(odeme){
+    rows = odemeEmriKartlari.filter(c=>matchDate(c.tarih||'')).map(c=>{ const tutar=c.net||c.brut||0; return { no:c.no, tarih:c.tarih, saat:c.saat||'', is:money(tutar)+' · '+(c.hakSahibi||''), tur:'Ödeme', durum:(c.durum==='Ödendi'||c.durum==='Tamamlandı')?'Tamamlandı':(c.durum||'Hazırlandı'), tutar, _odeme12:true }; });
+  } else {
+    rows = isTakvimi.filter(r=>(kisi? (r.personel===kisi && !r.odeme) : (ziyaret? !!r.defter : (!r.odeme && (hepsi || persDept(r.personel)===dept)))) && matchDate(r.tarih||''));
+  }
   const dt=d=>d==='Tamamlandı'?'emer':d==='Devam Ediyor'?'amber':'slate';
   if(listeOnly) per='liste';
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
@@ -3191,7 +3196,7 @@ function viewIsTakvimi(opts){
   const ekleBtn = kisi
     ? `<button onclick="itFormToggle()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Görev Ekle</button>`
     : odeme
-    ? `<button onclick="odemeFormToggle()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Ödeme Ekle</button>`
+    ? `<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0012';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Ödeme Ekle</button>`
     : `<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button>`;
   return inlineForm + odemeForm + `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
       <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="${kisi?'user':(odeme?'wallet':(ziyaret?'contact':(hepsi?'users':'briefcase')))}" class="h-5 w-5"></i></span>
