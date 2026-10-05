@@ -2964,7 +2964,7 @@ function addIsTakvim(){ const g=i=>document.getElementById(i); const gv=i=>((g(i
   isTakvimi.unshift({ no, personel, tur, periyot:gv('itPeriyot')||'Günlük', tarih:gv('itTarih'), saat, is, durum:gv('itDurum')||'Planlandı', aciklama:gv('itAciklama') });
   logAction('calendar-clock','gold', `İş takvimi · ${no} · ${personel} · ${tur} · ${is}`); render(); toast(no+' · iş takvimine eklendi');
   captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); } }); }
-const TAKVIM_TUR=['Görev','Gelen Kişi','Gelen Telefon','Gelen Evrak','Telefon ile İstek','Kargo','Ziyaretçi','Toplantı','Telefon','İzin','Ödeme','Ofise Giriş','Ofisten Çıkış','Diğer'];
+const TAKVIM_TUR=['Görev','Gelen Kişi','Gelen Telefon','Gelen Evrak','Telefon ile İstek','Kargo','Ziyaretçi','Toplantı','Telefon','İzin','Ödeme','Ödeme Sözü','Ofise Giriş','Ofisten Çıkış','Diğer'];
 function odemeFormToggle(){ state.odemeFormOpen=!state.odemeFormOpen; render(); setTimeout(function(){var e=document.getElementById('odKime'); if(e)e.focus();},70); }
 function addOdemeKayit(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
   const kime=gv('odKime'); const tutar=parseFloat(gv('odTutar'))||0; const tarih=gv('odTarih'); const saat=gv('odSaat')||''; const aciklama=gv('odAciklama');
@@ -2999,7 +2999,7 @@ function addIsTakvimKisi(){ const g=i=>document.getElementById(i); const gv=i=>(
   captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); } }); }
 function delIsTakvim(no){ const i=isTakvimi.findIndex(r=>r.no===no); if(i>-1){ isTakvimi.splice(i,1); logAction('trash-2','red', `İş takvimi kaydı silindi · ${no}`); render(); toast('Silindi ✓'); } }
 function captureKonum(cb){ try{ if(navigator&&navigator.geolocation){ toast('Konum alınıyor…'); navigator.geolocation.getCurrentPosition(function(p){ cb(p.coords.latitude.toFixed(5)+', '+p.coords.longitude.toFixed(5)); }, function(){ cb(''); }, {enableHighAccuracy:true,timeout:9000,maximumAge:60000}); } else cb(''); }catch(e){ cb(''); } }
-function itTamamla(no){ const r=isTakvimi.find(x=>x.no===no); if(!r){ const o=odemeEmriKartlari.find(x=>x.no===no); if(o){ o.durum='Ödendi'; logAction('check-circle-2','emer','Ödeme yapıldı · '+no+' · '+money(o.net||o.brut||0)+' · '+(o.hakSahibi||'')); try{saveData();}catch(e){} render(); toast('Ödendi olarak işaretlendi ✓'); } return; } r.durum='Tamamlandı'; render(); toast(no+' tamamlandı ✓ · konum alınıyor'); captureKonum(function(k){ if(k){ const rr=isTakvimi.find(x=>x.no===no); if(rr){ rr.konum=k; } try{saveData();}catch(e){} render(); toast('Konum işlendi 📍'); } }); }
+function itTamamla(no){ const r=isTakvimi.find(x=>x.no===no); if(!r){ const o=odemeEmriKartlari.find(x=>x.no===no)||odemeSozuKartlari.find(x=>x.no===no); if(o){ o.durum='Ödendi'; logAction('check-circle-2','emer','Ödeme yapıldı · '+no+' · '+money(o.net||o.brut||o.tutar||0)+' · '+(o.hakSahibi||'')); try{saveData();}catch(e){} render(); toast('Ödendi olarak işaretlendi ✓'); } return; } r.durum='Tamamlandı'; render(); toast(no+' tamamlandı ✓ · konum alınıyor'); captureKonum(function(k){ if(k){ const rr=isTakvimi.find(x=>x.no===no); if(rr){ rr.konum=k; } try{saveData();}catch(e){} render(); toast('Konum işlendi 📍'); } }); }
 function puantajKaydet(tip){ const personel=myName(); if(!personel){ toast('Kullanıcı bulunamadı'); return; }
   let tarih='', saat=''; try{ const n=new Date(); tarih=n.toISOString().slice(0,10); saat=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }catch(e){}
   // Günde tek giriş + tek çıkış: zaten varsa engelle
@@ -3161,7 +3161,9 @@ function viewIsTakvimi(opts){
   else { const d=state.takvimTarih||today; let s=d,e=d; try{ const b=new Date(d); const off=(b.getDay()+6)%7; const st=new Date(b); st.setDate(b.getDate()-off); const en=new Date(st); en.setDate(st.getDate()+6); s=st.toISOString().slice(0,10); e=en.toISOString().slice(0,10); }catch(x){} matchDate=t=>t>=s&&t<=e; const wk=isoHaftaNo(d); const yr=(state.takvimHaftaYil)||s.slice(0,4); const fmt=x=>x.slice(8,10)+'.'+x.slice(5,7); donemEtiket=wk+'. Hafta · '+yr+' ('+fmt(s)+' – '+fmt(e)+')'; }
   let rows;
   if(odeme){
-    rows = odemeEmriKartlari.filter(c=>matchDate(c.tarih||'')).map(c=>{ const tutar=c.net||c.brut||0; return { no:c.no, tarih:c.tarih, saat:c.saat||'', is:money(tutar)+' · '+(c.hakSahibi||''), tur:'Ödeme', durum:(c.durum==='Ödendi'||c.durum==='Tamamlandı')?'Tamamlandı':(c.durum||'Hazırlandı'), tutar, _odeme12:true }; });
+    const emri = odemeEmriKartlari.filter(c=>matchDate(c.tarih||'')).map(c=>{ const tutar=c.net||c.brut||0; return { no:c.no, tarih:c.tarih, saat:c.saat||'', is:money(tutar)+' · '+(c.hakSahibi||''), tur:'Ödeme', durum:(c.durum==='Ödendi'||c.durum==='Tamamlandı')?'Tamamlandı':(c.durum||'Hazırlandı'), tutar, _odeme12:true }; });
+    const sozu = odemeSozuKartlari.filter(c=>matchDate(c.vade||c.sozTarih||'')).map(c=>{ const tutar=c.tutar||0; return { no:c.no, tarih:(c.vade||c.sozTarih), saat:'', is:money(tutar)+' · '+(c.hakSahibi||'')+' (söz)', tur:'Ödeme Sözü', durum:(c.durum==='Ödendi'||c.durum==='Tamamlandı')?'Tamamlandı':(c.durum||'Söz Verildi'), tutar, _soz13:true }; });
+    rows = emri.concat(sozu);
   } else {
     rows = isTakvimi.filter(r=>(kisi? (r.personel===kisi && !r.odeme) : (ziyaret? !!r.defter : (!r.odeme && (hepsi || persDept(r.personel)===dept)))) && matchDate(r.tarih||''));
   }
@@ -3196,7 +3198,7 @@ function viewIsTakvimi(opts){
   const ekleBtn = kisi
     ? `<button onclick="itFormToggle()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Görev Ekle</button>`
     : odeme
-    ? `<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0012';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Ödeme Ekle</button>`
+    ? `<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0013';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="handshake" class="h-4 w-4"></i>Ödeme Sözü</button><button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0012';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Ödeme Ekle</button>`
     : `<button onclick="state.adminMode='ekle';state.adminUsers=false;state.adminTable='TBL-0026';setModule('admin')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>İş Ekle</button>`;
   return inlineForm + odemeForm + `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
       <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="${kisi?'user':(odeme?'wallet':(ziyaret?'contact':(hepsi?'users':'briefcase')))}" class="h-5 w-5"></i></span>
@@ -6336,7 +6338,38 @@ function odemeSozuFormCard(){
       <select id="osDurum" class="sm:col-span-3 ${selC}">${['Söz Verildi','Kısmi Ödendi','Ödendi','İptal'].map(o=>`<option>${o}</option>`).join('')}</select>
     </div>
     <div class="mt-3 flex justify-end"><button onclick="addOdemeSozu()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i> Ödeme Sözü Oluştur</button></div>
+    <div class="mt-3 rounded-xl border border-gold/25 bg-gold/5 p-4">
+      <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="layers" class="h-3.5 w-3.5"></i>Toplu Ödeme Sözü (çok seçenekli · Her Gün / Her Hafta / Her Ayın 15'i / Yıllık)</p>
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+        <input id="osbHak" placeholder="Hak Sahibi / Firma" class="sm:col-span-4 ${inpC}" />
+        <input id="osbTutar" type="number" placeholder="Taksit tutarı ₺" class="sm:col-span-3 ${inpC}" />
+        <input id="osbBaslangic" type="date" value="${(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})()}" class="sm:col-span-2 ${inpC}" title="Başlangıç" />
+        <select id="osbTekrar" class="sm:col-span-3 ${selC}" title="Tekrar">${['Her Ay','Her Gün','Her Hafta','Yıllık'].map(o=>`<option>${o}</option>`).join('')}</select>
+        <div class="sm:col-span-5 flex items-center gap-2"><span class="text-[13px] text-slate-400 shrink-0">Her ayın</span><input id="osbAyGun" type="number" min="1" max="31" value="15" class="w-20 ${inpC}" /><span class="text-[13px] text-slate-400">. günü (aylık için)</span></div>
+        <input id="osbKez" type="number" min="1" max="120" value="12" placeholder="Kaç taksit" class="sm:col-span-3 ${inpC}" />
+        <div class="sm:col-span-4 flex justify-end"><button onclick="addOdemeSozuToplu()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gold/50 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="layers" class="h-4 w-4"></i>Toplu Oluştur</button></div>
+      </div>
+      <p class="text-[10px] text-slate-500 mt-1">Örn: Her Ay · her ayın 15'i · 12 taksit → 12 aylık ödeme sözü. Ödeme Takviminde vade tarihlerine düşer.</p>
+    </div>
   </div>`;
+}
+function addOdemeSozuToplu(){ const g=i=>document.getElementById(i)||{}; const gv=i=>((g(i).value||'')+'').trim();
+  const hak=gv('osbHak'); if(!hak){ toast('Hak sahibi girin'); return; }
+  const tutar=parseInt(gv('osbTutar')||'0',10)||0; const tekrar=gv('osbTekrar')||'Her Ay';
+  const ayGun=Math.max(1,Math.min(31,parseInt(gv('osbAyGun')||'15',10)||15)); const kez=Math.max(1,Math.min(120,parseInt(gv('osbKez')||'12',10)||12));
+  let base; try{ base=gv('osbBaslangic')?new Date(gv('osbBaslangic')):new Date(); }catch(e){ base=new Date(); }
+  const fmtD=d=>{try{return d.toISOString().slice(0,10);}catch(e){return '';}}; const bugun=fmtD(new Date());
+  let created=0;
+  for(let i=0;i<kez;i++){ let vade;
+    if(tekrar==='Her Gün'){ const d=new Date(base); d.setDate(d.getDate()+i); vade=fmtD(d); }
+    else if(tekrar==='Her Hafta'){ const d=new Date(base); d.setDate(d.getDate()+i*7); vade=fmtD(d); }
+    else if(tekrar==='Yıllık'){ const d=new Date(base); d.setFullYear(d.getFullYear()+i); vade=fmtD(d); }
+    else { const d=new Date(base.getFullYear(), base.getMonth()+i, ayGun); vade=fmtD(d); }
+    const no=nextOszNo();
+    odemeSozuKartlari.unshift({ no, hakSahibi:hak, tutar, sozTarih:bugun, vade, dayanak:'', aciklama:'Toplu söz · '+tekrar+(tekrar==='Her Ay'?(' (ayın '+ayGun+'i)'):''), veren:'', durum:'Söz Verildi', toplu:true });
+    created++;
+  }
+  logAction('layers','gold', 'Toplu ödeme sözü · '+created+' taksit · '+hak+' · '+tekrar); render(); toast(created+' ödeme sözü oluşturuldu ✓');
 }
 function butceCikisFormCard(title,sub,v){
   const inpC='bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
