@@ -3037,7 +3037,7 @@ function puantajKaydet(tip){ const personel=myName(); if(!personel){ toast('Kull
   if(zaten){ toast('Bugün zaten '+(tip==='giris'?'ofise giriş':'ofisten çıkış')+' yaptınız ✓'); return; }
   const tur = tip==='giris'?'Ofise Giriş':'Ofisten Çıkış';
   const no=nextKayitNo('0026',isTakvimi);
-  isTakvimi.unshift({ no, personel, tur, periyot:'Günlük', tarih, saat, is:tur, durum:'Tamamlandı', aciklama:'Puantaj · '+tarih+' '+saat, puantaj:tip });
+  isTakvimi.unshift({ no, personel, tur, periyot:'Günlük', tarih, saat, is:tur, durum:'Tamamlandı', aciklama:'Puantaj · '+tarih+' '+saat, puantaj:tip, defter:true, kisi:personel });
   itYetkiVer(personel);
   logAction('clock', tip==='giris'?'emer':'amber', tur+' · '+personel+' · '+tarih+' '+saat); render(); toast(tur+' kaydedildi ✓ · konum alınıyor 📍');
   captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); toast(tur+' · konum işlendi 📍'); } }); }
@@ -3085,8 +3085,8 @@ function viewKayitDefteri(){
   const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
   const kayitlar=isTakvimi.filter(t=>t.defter && t.personel===nm).sort((a,b)=>String((b.tarih||'')+(b.saat||'')).localeCompare(String((a.tarih||'')+(a.saat||''))));
   const bugun=kayitlar.filter(t=>t.tarih===today);
-  const turRenk=t=>({'Gelen Kişi':'emer','Gelen Telefon':'gold','Gelen Evrak':'amber','Telefon ile İstek':'gold','Diğer':'slate'})[t]||'slate';
-  const turIc=t=>({'Gelen Kişi':'user-check','Gelen Telefon':'phone-incoming','Gelen Evrak':'file-text','Telefon ile İstek':'phone-call','Diğer':'sticky-note'})[t]||'dot';
+  const turRenk=t=>({'Gelen Kişi':'emer','Gelen Telefon':'gold','Gelen Evrak':'amber','Telefon ile İstek':'gold','Ofise Giriş':'emer','Ofisten Çıkış':'amber','Diğer':'slate'})[t]||'slate';
+  const turIc=t=>({'Gelen Kişi':'user-check','Gelen Telefon':'phone-incoming','Gelen Evrak':'file-text','Telefon ile İstek':'phone-call','Ofise Giriş':'log-in','Ofisten Çıkış':'log-out','Diğer':'sticky-note'})[t]||'dot';
   const pre=state.defterOpen;
   const form = pre ? `<div class="card rounded-2xl p-4 mb-4 border border-gold/30">
       <p class="text-[11px] uppercase tracking-wider text-gold mb-2 flex items-center gap-1.5"><i data-lucide="notebook-pen" class="h-3.5 w-3.5"></i>Yeni Kayıt · ${esc(nm)}</p>
