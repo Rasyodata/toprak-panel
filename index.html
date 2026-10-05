@@ -161,11 +161,12 @@
     <!-- TOP BAR -->
     <header class="sticky top-0 z-30 h-16 flex items-center gap-3 px-4 md:px-6
                    bg-navy-900/80 backdrop-blur-xl border-b border-white/5">
-      <div class="brand-logo h-9 w-9 rounded-xl bg-white ring-1 ring-white/20 shadow-glow shrink-0"></div>
+      <div onclick="companyPickerFromHeader()" class="brand-logo h-9 w-9 rounded-xl bg-white ring-1 ring-white/20 shadow-glow shrink-0 cursor-pointer" title="Şirket değiştir"></div>
       <div class="min-w-0">
         <div class="flex items-center gap-2">
-          <h1 id="brandTitle" class="text-base md:text-lg font-semibold tracking-wide truncate gold-text">TOPRAK YATIRIM</h1>
-          <button onclick="openLegal('demo')" title="Bu bir demo/prototiptir — gerçek veri girmeyin" class="shrink-0 inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-400/40 hover:bg-amber-500/25">DEMO</button>
+          <h1 id="brandTitle" onclick="companyPickerFromHeader()" title="Şirket değiştir (yetkili)" class="text-base md:text-lg font-semibold tracking-wide truncate gold-text cursor-pointer hover:brightness-110">TOPRAK YATIRIM</h1>
+          <i data-lucide="chevrons-up-down" onclick="companyPickerFromHeader()" class="h-4 w-4 text-gold/70 cursor-pointer shrink-0" title="Şirket değiştir"></i>
+          <button onclick="event.stopPropagation();openLegal('demo')" title="Bu bir demo/prototiptir — gerçek veri girmeyin" class="shrink-0 inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-400/40 hover:bg-amber-500/25">DEMO</button>
         </div>
         <p id="brandSub" class="hidden sm:block text-[11px] text-slate-500 truncate">İş Zekası Platformu</p>
       </div>
@@ -1043,13 +1044,7 @@ function buildNav(){
       ${active?'<span class="ml-auto h-1.5 w-1.5 rounded-full bg-[#f0a58a]"></span>':''}
     </button>`;
   }).join('')
-  + ((needsCompanyChoice(state.role) || ROLES[state.role].sysadmin) ? `<div class="my-2 border-t border-white/5"></div>
-    <button onclick="openCompanyPicker()"
-      class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gold border border-gold/30 bg-gold/5 hover:bg-gold/10 transition">
-      <i data-lucide="replace" class="h-[18px] w-[18px]"></i>
-      <span class="truncate">Şirket Seçimine Geç</span>
-      <i data-lucide="chevron-right" class="h-4 w-4 ml-auto"></i>
-    </button>` : '')
+  + ''
   + `<div class="my-2 border-t border-white/5"></div>
     <button data-userswitch onclick="toggleUserMenu()"
       class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-200 border border-white/10 bg-navy-700/50 hover:border-gold/40 transition">
@@ -7573,6 +7568,7 @@ function saveFirmInfo(name){
   closeInfo(); render();
   toast(name+' künyesi kaydedildi ✓');
 }
+function companyPickerFromHeader(){ if(!state.authed) return; if(needsCompanyChoice(state.role) || ROLES[state.role].sysadmin){ openCompanyPicker(); } else { toast('Şirket değiştirme yetkiniz yok'); } }
 function openCompanyPicker(){
   toggleSidebar(false);
   openInfo('replace','Şirket Seçimi','Görüntülenecek kapsamı seçin', `
