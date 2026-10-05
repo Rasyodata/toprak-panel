@@ -7579,8 +7579,8 @@ function openCompanyPicker(){
           style="border-left:4px solid ${c.accent}; ${active?`border-color:${c.accent}; background:${c.accent}1f`:'border-top-color:rgba(255,255,255,.1);border-right-color:rgba(255,255,255,.1);border-bottom-color:rgba(255,255,255,.1);background:rgba(30,41,74,.5)'}">
           <span class="h-10 w-10 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg, ${c.accent}, ${c.accent}bb); color:#0a0f1f"><i data-lucide="${c.icon}" class="h-5 w-5"></i></span>
           <span class="min-w-0 flex-1">
-            <span class="block text-sm font-medium text-slate-100">${c.label}</span>
-            <span class="block text-[11px] text-slate-500">${c.firm || 'Tüm iştirakler · konsolide'}</span>
+            <span class="block text-sm font-medium text-slate-100">${c.firm || c.label}</span>
+            <span class="block text-[11px] text-slate-500">${c.firm ? c.label : 'Tüm iştirakler · konsolide'}</span>
           </span>
           ${active?`<i data-lucide="check" class="h-4 w-4" style="color:${c.accent}"></i>`:''}
         </button>`; }).join('')}
