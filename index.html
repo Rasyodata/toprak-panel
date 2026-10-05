@@ -1111,10 +1111,9 @@ function buildNav(){
 function buildBottomNav(){
   const bn=document.getElementById('bottomNav'); if(!bn) return;
   const mk=(oc,ic,l,on)=>({oc,ic,l,on}); let items=[];
+  // Alt footer = üstte seçili modülün SOL BARı (alt-sekmeleri). Üst nav = modül/sekme seçici.
   if(state.company!=='all'){
-    if(state.module==='istakvim'){ const tv=(typeof takvimViewResolve==='function'?takvimViewResolve():(state.takvimView||'personel')); const defs={odeme:['wallet','Ödeme'],personel:['users-round','Personel'],ziyaretci:['contact','Ziyaretçi'],defter:['book-open','Defter']}; items=takvimTabsIzinli().map(id=>mk(`state.takvimView='${id}';render()`,defs[id][0],defs[id][1],tv===id)); }
-    else if(state.module==='admin' && isAdminUser()){ const mode=state.adminMode==='liste'?'liste':(state.adminMode==='yetki'?'yetki':'ekle'); items=[mk("state.adminMode='ekle';state.adminUsers=false;state.adminTable=null;render()",'table','Tablolar',mode==='ekle'),mk("state.adminMode='liste';state.adminUsers=false;state.adminTable=null;render()",'database','Kayıtlar',mode==='liste'),mk("state.adminMode='yetki';state.yetkiView='kayit';state.adminUsers=false;state.adminTable=null;render()",'shield-check','Yetki',mode==='yetki')]; }
-    else if(isErpModule(state.module)){ items=MODULES.filter(m=>ERP_MODULES.includes(m.id)&&can(m)).map(m=>mk(`setModule('${m.id}')`,m.icon,(m.id==='projects'?'İşler':m.name.split(' ')[0]),m.id===state.module)); }
+    if(state.module==='admin' && isAdminUser()){ const mode=state.adminMode==='liste'?'liste':(state.adminMode==='yetki'?'yetki':'ekle'); items=[mk("state.adminMode='ekle';state.adminUsers=false;state.adminTable=null;render()",'table','Tablolar',mode==='ekle'),mk("state.adminMode='liste';state.adminUsers=false;state.adminTable=null;render()",'database','Kayıtlar',mode==='liste'),mk("state.adminMode='yetki';state.yetkiView='kayit';state.adminUsers=false;state.adminTable=null;render()",'shield-check','Yetki',mode==='yetki')]; }
     else { const subs=getSubs(); if(subs&&subs.length){ const a=currentSub(); items=subs.map(s=>mk(`setSub('${s.id}')`,s.icon,(s.label||'').split(' ')[0],s.id===a)); } }
   }
   if(!items.length){ items=MODULES.filter(m=>can(m)).map(m=>mk(`setModule('${m.id}')`,m.icon,m.name.split(' ')[0],m.id===state.module)); }
