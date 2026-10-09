@@ -635,7 +635,7 @@ function takvimTabCan(tab){
   if(tab==='personel') return true; // herkes görür, admin değilse yalnızca kendi takvimi
   return false;
 }
-function takvimTabsIzinli(){ return ['odeme','personel','ziyaretci','defter','gorev'].filter(takvimTabCan); }
+function takvimTabsIzinli(){ return ['odeme','personel','ziyaretci','defter','gorev','duyuru'].filter(takvimTabCan); }
 function takvimDeptToggle(d){ state.takvimDeptler=state.takvimDeptler||[]; const i=state.takvimDeptler.indexOf(d); if(i<0) state.takvimDeptler.push(d); else state.takvimDeptler.splice(i,1); render(); }
 function takvimPersonelToggle(ad){ state.takvimPersoneller=state.takvimPersoneller||[]; const i=state.takvimPersoneller.indexOf(ad); if(i<0) state.takvimPersoneller.push(ad); else state.takvimPersoneller.splice(i,1); render(); }
 function takvimDeptHepsi(){ state.takvimDeptler=[]; state.takvimPersoneller=[]; render(); }
@@ -8005,6 +8005,7 @@ function buildSubNav(){
       let tabRow = abtn(grpIs, "if(['personel','odeme','ziyaretci'].indexOf(state.takvimView)<0)state.takvimView='personel';render()", 'calendar-clock', 'İş Yönetimi');
       if(takvimTabCan('defter')) tabRow += abtn(tv==='defter', "state.takvimView='defter';render()", 'book-open', 'Belge Yönetimi');
       tabRow += abtn(tv==='gorev', "state.takvimView='gorev';render()", 'list-checks', 'Görev Yönetimi');
+      tabRow += abtn(tv==='duyuru', "state.takvimView='duyuru';render()", 'megaphone', 'Duyurular Yönetimi');
       if(tv==='personel'){
         const dsel=state.takvimDeptler||[]; const psel=state.takvimPersoneller||[]; const hepsi=!dsel.length&&!psel.length;
         const ozet = hepsi?'Tüm Personel · Tüm Departmanlar':(psel.length?(psel.length+' personel seçili'):dsel.join(', '));
