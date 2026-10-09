@@ -630,10 +630,12 @@ function takvimTabCan(tab){
   if(tab==='odeme')    return state.role==='cfo' || takvimYetkili('odeme');
   if(tab==='ziyaretci')return state.role==='cfo' || isSecretary() || takvimYetkili('ziyaretci');
   if(tab==='defter')   return state.role==='cfo' || isSecretary() || takvimYetkili('defter') || takvimYetkili('ziyaretci');
+  if(tab==='gorev')    return true;
+  if(tab==='duyuru')   return true;
   if(tab==='personel') return true; // herkes görür, admin değilse yalnızca kendi takvimi
   return false;
 }
-function takvimTabsIzinli(){ return ['odeme','personel','ziyaretci','defter'].filter(takvimTabCan); }
+function takvimTabsIzinli(){ return ['odeme','personel','ziyaretci','defter','duyuru','gorev'].filter(takvimTabCan); }
 function takvimDeptToggle(d){ state.takvimDeptler=state.takvimDeptler||[]; const i=state.takvimDeptler.indexOf(d); if(i<0) state.takvimDeptler.push(d); else state.takvimDeptler.splice(i,1); render(); }
 function takvimPersonelToggle(ad){ state.takvimPersoneller=state.takvimPersoneller||[]; const i=state.takvimPersoneller.indexOf(ad); if(i<0) state.takvimPersoneller.push(ad); else state.takvimPersoneller.splice(i,1); render(); }
 function takvimDeptHepsi(){ state.takvimDeptler=[]; state.takvimPersoneller=[]; render(); }
@@ -3119,6 +3121,77 @@ function takvimNav(dir){ const per=currentSub()||'gun'; const today=(()=>{try{re
   render();
 }
 function takvimBugun(){ try{ const iso=new Date().toISOString().slice(0,10); state.takvimTarih=iso; state.takvimAy=iso.slice(0,7); state.takvimYil=iso.slice(0,4); state.takvimHaftaYil=+iso.slice(0,4); }catch(e){} render(); }
+function viewGorevYonetimi(){
+  const tasks=isTakvimi.filter(t=>!t.odeme && !t.defter && !t.puantaj).sort((a,b)=>String((b.tarih||'')+(b.saat||'')).localeCompare(String((a.tarih||'')+(a.saat||''))));
+  const dt=d=>d==='Tamamlandı'?'emer':d==='Devam Ediyor'?'amber':'slate';
+  const acik=tasks.filter(t=>t.durum!=='Tamamlandı').length;
+  const row=t=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
+      <span class="h-9 w-9 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center text-gold"><i data-lucide="${t.tur==='Hatırlatıcı'?'bell':'calendar-check'}" class="h-4 w-4"></i></span>
+      <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${t.tur&&t.tur!=='Görev'?('<span class="text-[9px] px-1 rounded bg-gold/20 text-gold mr-1">'+esc(t.tur)+'</span>'):''}${esc(t.is||'—')}</p><p class="text-[11px] text-slate-500">${esc(t.personel||'—')} · ${esc(t.tarih||'—')}${t.saat?(' · '+esc(t.saat)):''}${t.konum?(' · 📍'):''}</p></div>
+      ${badge(t.durum||'Planlandı',dt(t.durum))}
+      ${t.durum!=='Tamamlandı'?`<button onclick="itTamamla('${t.no}')" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emer-light/15 text-emer-light border border-emer/30 hover:bg-emer-light/25 text-[11px]"><i data-lucide="check" class="h-3.5 w-3.5"></i>Tamamla</button>`:''}
+      ${isAdminUser()?`<button onclick="delIsTakvim('${t.no}')" class="shrink-0 h-7 w-7 rounded-lg bg-rose-600 text-white hover:bg-rose-700 flex items-center justify-center" title="Sil"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>`:''}
+    </div>`;
+  return `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
+      <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="list-checks" class="h-5 w-5"></i></span>
+      <div class="min-w-0"><p class="text-base font-bold text-gold leading-tight">Görev Yönetimi</p><p class="text-[11px] text-slate-400">${tasks.length} görev · ${acik} açık</p></div>
+      <button onclick="openHatirlatici()" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="bell-plus" class="h-4 w-4"></i>Hatırlatıcı Ekle</button>
+    </div>
+    <div class="card rounded-2xl p-5"><div class="space-y-2">${tasks.length?tasks.slice(0,80).map(row).join(''):'<p class="text-sm text-slate-500 py-6 text-center">Görev yok. "Hatırlatıcı Ekle" ile oluşturun.</p>'}</div></div>`;
+}
+function openHatirlatici(){
+  const inpC='w-full bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
+  const persOpts=personelKartlari.map(p=>`<option>${esc(p.ad)}</option>`).join('');
+  openInfo('bell-plus','Hatırlatıcı / Görev Ekle','Görev Yönetimi · ilgili personele düşer', `
+    <div class="space-y-2">
+      <select id="htPersonel" class="${inpC}"><option value="">Personel seç…</option>${persOpts}</select>
+      <input id="htIs" placeholder="Hatırlatma / görev (ör. Sözleşme yenileme)" class="${inpC}"/>
+      <div class="grid grid-cols-2 gap-2"><input id="htTarih" type="date" value="${esc(today)}" class="${inpC}"/>${saatSelect('htSaat','09:00',inpC,'')}</div>
+      <input id="htAciklama" placeholder="Açıklama (opsiyonel)" class="${inpC}"/>
+    </div>
+    <div class="mt-3 flex justify-end gap-2"><button onclick="closeInfo()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button><button onclick="addHatirlatici()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Oluştur</button></div>`);
+}
+function addHatirlatici(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
+  const personel=gv('htPersonel'); const is=gv('htIs'); if(!is){toast('Görev/hatırlatma girin');return;}
+  const no=nextKayitNo('0026',isTakvimi);
+  isTakvimi.unshift({ no, personel:personel||'—', tur:'Hatırlatıcı', periyot:'Günlük', tarih:gv('htTarih'), saat:gv('htSaat')||'', is, durum:'Planlandı', aciklama:gv('htAciklama') });
+  if(personel) itYetkiVer(personel); logAction('bell-plus','gold','Hatırlatıcı · '+no+' · '+(personel||'')+' · '+is); closeInfo(); render(); toast('Hatırlatıcı eklendi ✓');
+}
+function viewDuyuruYonetimi(){
+  const tn={emer:'emer',gold:'gold',amber:'amber',slate:'slate'};
+  const row=(a,i)=>`<div class="flex items-center gap-3 rounded-xl border border-white/8 bg-navy-700/40 p-3">
+      <span class="h-9 w-9 shrink-0 rounded-lg bg-navy-700/70 border border-white/10 flex items-center justify-center text-gold"><i data-lucide="${a.pin?'pin':'megaphone'}" class="h-4 w-4"></i></span>
+      <div class="min-w-0 flex-1"><p class="text-sm text-slate-100 truncate">${a.pin?'<i data-lucide=&quot;pin&quot; class=&quot;inline h-3 w-3 text-gold&quot;></i> ':''}${esc(a.title)}</p><p class="text-[11px] text-slate-500">${esc(a.date||'')}</p></div>
+      ${badge(a.audience||'Genel',tn[a.tone]||'gold')}
+      ${isAdminUser()?`<button onclick="delDuyuru(${i})" class="shrink-0 h-7 w-7 rounded-lg bg-rose-600 text-white hover:bg-rose-700 flex items-center justify-center" title="Sil"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>`:''}
+    </div>`;
+  return `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
+      <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="megaphone" class="h-5 w-5"></i></span>
+      <div class="min-w-0"><p class="text-base font-bold text-gold leading-tight">Duyurular Yönetimi</p><p class="text-[11px] text-slate-400">${announcements.length} duyuru · ${announcements.filter(a=>a.pin).length} sabit</p></div>
+      <button onclick="openDuyuruGonder()" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="send" class="h-4 w-4"></i>Duyuru Gönder</button>
+    </div>
+    <div class="card rounded-2xl p-5"><div class="space-y-2">${announcements.length?announcements.map(row).join(''):'<p class="text-sm text-slate-500 py-6 text-center">Duyuru yok. "Duyuru Gönder" ile yayınlayın.</p>'}</div></div>`;
+}
+function delDuyuru(i){ if(!isAdminUser()){toast('Silme yetkiniz yok');return;} if(i>=0&&i<announcements.length){ const a=announcements.splice(i,1)[0]; logAction('trash-2','red','Duyuru silindi · '+(a&&a.title||'')); render(); toast('Duyuru silindi ✓'); } }
+function openDuyuruGonder(){
+  const inpC='w-full bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const auds=['Çalışanlar','Ortaklar','Yatırımcılar','Kamuoyu','Tedarikçiler'];
+  openInfo('send','Duyuru Gönder','Duyurular Yönetimi · yayınla', `
+    <div class="space-y-2">
+      <input id="dyBaslik" placeholder="Duyuru başlığı / metni" class="${inpC}"/>
+      <select id="dyHedef" class="${inpC}">${auds.map(a=>`<option>${a}</option>`).join('')}</select>
+      <label class="flex items-center gap-2 text-[13px] text-slate-300 px-1"><input id="dyPin" type="checkbox" class="h-4 w-4 accent-[#d4af37]"/> Sabitle (üstte göster)</label>
+    </div>
+    <div class="mt-3 flex justify-end gap-2"><button onclick="closeInfo()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button><button onclick="addDuyuru()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="send" class="h-4 w-4"></i>Yayınla</button></div>`);
+}
+function addDuyuru(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
+  const title=gv('dyBaslik'); if(!title){toast('Başlık girin');return;} const audience=gv('dyHedef')||'Çalışanlar'; const pin=!!(g('dyPin')&&g('dyPin').checked);
+  let date=''; try{ const n=new Date(); date=String(n.getDate()).padStart(2,'0')+'.'+String(n.getMonth()+1).padStart(2,'0')+'.'+n.getFullYear(); }catch(e){}
+  const toneByAud={Ortaklar:'emer',Yatırımcılar:'gold',Kamuoyu:'gold',Çalışanlar:'slate',Tedarikçiler:'amber'};
+  announcements.unshift({ title, date, audience, tone:toneByAud[audience]||'gold', pin });
+  logAction('megaphone','gold','Duyuru yayınlandı · '+title); closeInfo(); render(); toast('Duyuru yayınlandı ✓');
+}
 function openEvrakEkle(){
   const inpC='w-full bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
   const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
@@ -3311,7 +3384,7 @@ function viewPanelim(){
 }
 function viewIsTakvimi(opts){
   opts=opts||{}; let kisi=opts.kisi||null; const listeOnly = opts.mode==='liste';
-  if(!kisi && state.module==='istakvim'){ takvimViewResolve(); if(state.takvimView==='defter') return viewDefterSpread(); }
+  if(!kisi && state.module==='istakvim'){ takvimViewResolve(); if(state.takvimView==='defter') return viewDefterSpread(); if(state.takvimView==='gorev') return viewGorevYonetimi(); if(state.takvimView==='duyuru') return viewDuyuruYonetimi(); }
   const ziyaret = !kisi && state.module==='istakvim' && state.takvimView==='ziyaretci';
   const odeme = !kisi && state.module==='istakvim' && state.takvimView==='odeme';
   // Personel Takvimi: admin/ceo/cfo değilse yalnızca kendi takvimini görür
@@ -7928,9 +8001,11 @@ function buildSubNav(){
     // İş Takvimi → üst bar: Personel Takvimi · Ziyaretçi Takvimi (Gün/Hafta/Ay/Yıl sol barda)
     if(state.module==='istakvim'){
       bar.style.display=''; tint();
-      const tv=takvimViewResolve(); const isDefter = tv==='defter';
-      let tabRow = abtn(!isDefter, "if(state.takvimView==='defter')state.takvimView='personel';render()", 'calendar-clock', 'İş Takvimi');
-      if(takvimTabCan('defter')) tabRow += abtn(isDefter, "state.takvimView='defter';render()", 'book-open', 'Belge Yönetimi');
+      const tv=takvimViewResolve(); const grpIs=['personel','odeme','ziyaretci'].indexOf(tv)>=0;
+      let tabRow = abtn(grpIs, "if(['personel','odeme','ziyaretci'].indexOf(state.takvimView)<0)state.takvimView='personel';render()", 'calendar-clock', 'İş Yönetimi');
+      if(takvimTabCan('defter')) tabRow += abtn(tv==='defter', "state.takvimView='defter';render()", 'book-open', 'Belge Yönetimi');
+      tabRow += abtn(tv==='duyuru', "state.takvimView='duyuru';render()", 'megaphone', 'Duyurular Yönetimi');
+      tabRow += abtn(tv==='gorev', "state.takvimView='gorev';render()", 'list-checks', 'Görev Yönetimi');
       if(tv==='personel'){
         const dsel=state.takvimDeptler||[]; const psel=state.takvimPersoneller||[]; const hepsi=!dsel.length&&!psel.length;
         const ozet = hepsi?'Tüm Personel · Tüm Departmanlar':(psel.length?(psel.length+' personel seçili'):dsel.join(', '));
@@ -8004,8 +8079,18 @@ function leftSpecialSubsHtml(){
     else if(per==='hafta'){ const curYear=+((state.takvimHaftaYil)||(state.takvimTarih||today).slice(0,4)); const curWk=isoHaftaNo(state.takvimTarih||today)||1; picker=`<div class="px-2 pt-1 space-y-1"><label class="block text-[10px] text-slate-500">Yıl ve hafta seç</label><div class="flex gap-1"><select onchange="state.takvimHaftaYil=+this.value;state.takvimTarih=haftaPazartesi(+this.value,${curWk});render()" class="${selC}" style="max-width:88px">${[2025,2026,2027,2028,2029,2030].map(y=>`<option ${curYear===y?'selected':''}>${y}</option>`).join('')}</select><select onchange="state.takvimTarih=haftaPazartesi(${curYear},+this.value);render()" class="${selC} flex-1">${[...Array(53)].map((_,i)=>i+1).map(w=>`<option value="${w}" ${curWk===w?'selected':''}>${w}. hafta</option>`).join('')}</select></div><p class="text-[10px] text-gold flex items-center gap-1"><i data-lucide="calendar-days" class="h-3 w-3"></i>${curWk}. hafta · ${curYear} seçili</p></div>`; }
     else if(per==='ay') picker=`<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Ay seç</label><input type="month" value="${esc(state.takvimAy||today.slice(0,7))}" onchange="state.takvimAy=this.value;render()" class="${selC}"/></div>`;
     else if(per==='yil') picker=`<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Yıl seç</label><select onchange="state.takvimYil=this.value;render()" class="${selC}">${[2025,2026,2027,2028,2029,2030].map(y=>`<option ${String(state.takvimYil||today.slice(0,4))===String(y)?'selected':''}>${y}</option>`).join('')}</select></div>`;
+    if(state.module==='istakvim' && state.takvimView==='gorev'){
+      return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Görev Yönetimi</div>`
+        + lbtn("state.gorevSub='liste';render()",'list-checks','Görevler',(state.gorevSub||'liste')==='liste')
+        + lbtn("openHatirlatici()",'bell-plus','Hatırlatıcı Ekle', false) + sep;
+    }
+    if(state.module==='istakvim' && state.takvimView==='duyuru'){
+      return `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Duyurular Yönetimi</div>`
+        + lbtn("state.duyuruSub='liste';render()",'megaphone','Duyurular',(state.duyuruSub||'liste')==='liste')
+        + lbtn("openDuyuruGonder()",'send','Duyuru Gönder', false) + sep;
+    }
     let viewRow='';
-    if(state.module==='istakvim' && (state.takvimView||'personel')!=='defter'){ const tvv=takvimViewResolve(); const izin=takvimTabsIzinli().filter(id=>id!=='defter');
+    if(state.module==='istakvim' && (state.takvimView||'personel')!=='defter'){ const tvv=takvimViewResolve(); const izin=takvimTabsIzinli().filter(id=>id!=='defter'&&id!=='gorev'&&id!=='duyuru');
       const vdefs={odeme:['wallet','Ödeme Takvimi'], personel:['users-round','Personel Takvimi'], ziyaretci:['contact','Ziyaretçi Takvimi']};
       viewRow = `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Büro Yönetimi · Takvimler</div>`
         + izin.map(id=>lbtn(`state.takvimView='${id}';render()`, vdefs[id][0], vdefs[id][1], tvv===id)).join('') + sep;
