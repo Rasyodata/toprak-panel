@@ -3119,6 +3119,31 @@ function takvimNav(dir){ const per=currentSub()||'gun'; const today=(()=>{try{re
   render();
 }
 function takvimBugun(){ try{ const iso=new Date().toISOString().slice(0,10); state.takvimTarih=iso; state.takvimAy=iso.slice(0,7); state.takvimYil=iso.slice(0,4); state.takvimHaftaYil=+iso.slice(0,4); }catch(e){} render(); }
+function openEvrakEkle(){
+  const inpC='w-full bg-navy-700/70 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/50';
+  const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '';}})();
+  const persOpts = personelKartlari.map(p=>`<option>${esc(p.ad)}</option>`).join('');
+  openInfo('file-plus','Evrak / Kayıt Ekle','Belge Yönetimi · ziyaretçi takvimine işlenir', `
+    <div class="space-y-2">
+      <div class="grid grid-cols-2 gap-2">
+        <select id="evTur" class="${inpC}">${KAYIT_DEFTER_TUR.map(t=>`<option ${t==='Gelen Evrak'?'selected':''}>${t}</option>`).join('')}</select>
+        <select id="evPersonel" class="${inpC}"><option value="">Kaydeden personel…</option>${persOpts}</select>
+      </div>
+      <input id="evKisi" placeholder="Kişi / Kurum / Evrak No" class="${inpC}"/>
+      <div class="grid grid-cols-2 gap-2"><input id="evTarih" type="date" value="${esc(today)}" class="${inpC}"/>${saatSelect('evSaat','09:00',inpC,'title=&quot;Saat&quot;')}</div>
+      <input id="evAciklama" placeholder="Açıklama / içerik" class="${inpC}"/>
+    </div>
+    <div class="mt-3 flex justify-end gap-2"><button onclick="closeInfo()" class="px-3 py-2 rounded-lg border border-white/15 text-sm text-slate-300 hover:text-white">İptal</button><button onclick="addEvrakKayit()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Kaydet</button></div>`);
+}
+function addEvrakKayit(){ const g=i=>document.getElementById(i); const gv=i=>((g(i)&&g(i).value)||'').trim();
+  const tur=gv('evTur')||'Gelen Evrak'; const personel=gv('evPersonel')||myName()||'—'; const kisi=gv('evKisi'); const aciklama=gv('evAciklama'); const tarih=gv('evTarih')||''; const saat=gv('evSaat')||'';
+  if(!kisi && !aciklama){ toast('Kişi/kurum veya açıklama girin'); return; }
+  const is = kisi? (kisi+(aciklama?(' · '+aciklama):'')) : aciklama;
+  const no=nextKayitNo('0026',isTakvimi);
+  isTakvimi.unshift({ no, personel, tur, periyot:'Günlük', tarih, saat, is, durum:'Tamamlandı', aciklama, defter:true, kisi });
+  logAction('file-plus','gold','Evrak/kayıt · '+tur+' · '+(kisi||aciklama)); closeInfo(); render(); toast(tur+' kaydedildi ✓');
+  captureKonum(function(k){ if(k){ const rec=isTakvimi.find(r=>r.no===no); if(rec){ rec.konum=k; } try{saveData();}catch(e){} render(); } });
+}
 function viewDefterSpread(){
   const per=currentSub()||'gun'; const today=(()=>{try{return new Date().toISOString().slice(0,10);}catch(e){return '2026-01-01';}})();
   const AYT=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
@@ -3147,6 +3172,7 @@ function viewDefterSpread(){
       </div>
       <div class="min-w-0"><p class="text-base font-bold text-gold leading-tight">Belge Yönetimi</p><p class="text-[11px] text-slate-400">Ajanda · ${esc(etiket)} · ${recs.length} toplam kayıt</p></div>
       <button onclick="pdfIsTakvimi()" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="file-down" class="h-4 w-4"></i>PDF</button>
+      <button onclick="openEvrakEkle()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="file-plus" class="h-4 w-4"></i>Evrak Ekle</button>
     </div>
     <div class="card rounded-2xl p-3" style="background:#8a6d3a"><div class="flex gap-2 flex-col md:flex-row">${page(leftT,leftB)}${page(rightT,rightB)}</div><p class="text-center text-[10px] text-white/70 mt-2">İki sayfalı ajanda · bir güne/satıra tıklayıp kayıt ekleyin · ‹ › ile sayfa çevirin</p></div>`;
 }
