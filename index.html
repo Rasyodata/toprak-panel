@@ -7902,9 +7902,8 @@ function buildSubNav(){
     // İş Takvimi → üst bar: Personel Takvimi · Ziyaretçi Takvimi (Gün/Hafta/Ay/Yıl sol barda)
     if(state.module==='istakvim'){
       bar.style.display=''; tint();
-      const tv=takvimViewResolve(); const izin=takvimTabsIzinli();
-      const tabDefs={odeme:['wallet','Ödeme Takvimi'], personel:['users-round','Personel Takvimi'], ziyaretci:['contact','Ziyaretçi Takvimi'], defter:['book-open','Günlük Kayıt Defteri']};
-      const tabRow = izin.map(id=>abtn(tv===id, `state.takvimView='${id}';render()`, tabDefs[id][0], tabDefs[id][1])).join('');
+      const tv=takvimViewResolve();
+      const tabRow = abtn(true, "setModule('istakvim')", 'calendar-clock', 'İş Takvimi');
       if(tv==='personel'){
         const dsel=state.takvimDeptler||[]; const psel=state.takvimPersoneller||[]; const hepsi=!dsel.length&&!psel.length;
         const ozet = hepsi?'Tüm Personel · Tüm Departmanlar':(psel.length?(psel.length+' personel seçili'):dsel.join(', '));
@@ -7978,9 +7977,13 @@ function leftSpecialSubsHtml(){
     else if(per==='hafta'){ const curYear=+((state.takvimHaftaYil)||(state.takvimTarih||today).slice(0,4)); const curWk=isoHaftaNo(state.takvimTarih||today)||1; picker=`<div class="px-2 pt-1 space-y-1"><label class="block text-[10px] text-slate-500">Yıl ve hafta seç</label><div class="flex gap-1"><select onchange="state.takvimHaftaYil=+this.value;state.takvimTarih=haftaPazartesi(+this.value,${curWk});render()" class="${selC}" style="max-width:88px">${[2025,2026,2027,2028,2029,2030].map(y=>`<option ${curYear===y?'selected':''}>${y}</option>`).join('')}</select><select onchange="state.takvimTarih=haftaPazartesi(${curYear},+this.value);render()" class="${selC} flex-1">${[...Array(53)].map((_,i)=>i+1).map(w=>`<option value="${w}" ${curWk===w?'selected':''}>${w}. hafta</option>`).join('')}</select></div><p class="text-[10px] text-gold flex items-center gap-1"><i data-lucide="calendar-days" class="h-3 w-3"></i>${curWk}. hafta · ${curYear} seçili</p></div>`; }
     else if(per==='ay') picker=`<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Ay seç</label><input type="month" value="${esc(state.takvimAy||today.slice(0,7))}" onchange="state.takvimAy=this.value;render()" class="${selC}"/></div>`;
     else if(per==='yil') picker=`<div class="px-2 pt-1"><label class="block text-[10px] text-slate-500 mb-0.5">Yıl seç</label><select onchange="state.takvimYil=this.value;render()" class="${selC}">${[2025,2026,2027,2028,2029,2030].map(y=>`<option ${String(state.takvimYil||today.slice(0,4))===String(y)?'selected':''}>${y}</option>`).join('')}</select></div>`;
-    const buroHead = (state.module==='istakvim') ? (`<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Büro Yönetimi</div>`
-      + lbtn("setModule('istakvim')",'calendar-clock','İş Takvimi', true) + sep) : '';
-    return buroHead + `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${baslikLbl}</div>`
+    let viewRow='';
+    if(state.module==='istakvim'){ const tvv=takvimViewResolve(); const izin=takvimTabsIzinli();
+      const vdefs={odeme:['wallet','Ödeme Takvimi'], personel:['users-round','Personel Takvimi'], ziyaretci:['contact','Ziyaretçi Takvimi'], defter:['book-open','Kayıt Defteri']};
+      viewRow = `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">Büro Yönetimi · Takvimler</div>`
+        + izin.map(id=>lbtn(`state.takvimView='${id}';render()`, vdefs[id][0], vdefs[id][1], tvv===id)).join('') + sep;
+    }
+    return viewRow + `<div class="px-2 pb-1 text-[10px] uppercase tracking-[.2em] text-gold">${baslikLbl}</div>`
       + pb('gun','Gün','calendar') + pb('hafta','Hafta','calendar-days') + pb('ay','Ay','calendar-range') + pb('yil','Yıl','calendar-check')
       + picker + sep;
   }
