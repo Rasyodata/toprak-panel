@@ -251,9 +251,9 @@
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
         <i data-lucide="list-checks" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">Görevlerim</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
-      <button id="defterBtn" onclick="setModule('kayitdefteri')" title="Kayıt Defteri" style="display:none"
+      <button id="defterBtn" onclick="setModule('kayitdefteri')" title="Belge Yönetimi" style="display:none"
         class="relative overflow-hidden h-10 inline-flex items-center gap-2 px-3.5 rounded-xl font-semibold text-sm bg-gold text-navy-900 border border-gold transition hover:brightness-110">
-        <i data-lucide="notebook-pen" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">Kayıt Defteri</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
+        <i data-lucide="notebook-pen" class="h-4 w-4"></i><span class="whitespace-nowrap hidden lg:inline">Belge Yönetimi</span><span class="hdrStrip absolute left-2 right-2 bottom-[2px] h-[3px] rounded-full" style="display:none;background:#1b2231"></span>
       </button>
       </div>
 
@@ -3145,7 +3145,7 @@ function viewDefterSpread(){
         <button onclick="takvimBugun()" title="Bugün" class="h-8 w-8 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white flex items-center justify-center"><i data-lucide="locate-fixed" class="h-4 w-4"></i></button>
         <button onclick="takvimNav(1)" title="İleri" class="h-8 w-8 rounded-lg border border-white/15 text-slate-200 hover:border-gold/50 hover:text-white flex items-center justify-center"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
       </div>
-      <div class="min-w-0"><p class="text-base font-bold text-gold leading-tight">Günlük Kayıt Defteri</p><p class="text-[11px] text-slate-400">Ajanda · ${esc(etiket)} · ${recs.length} toplam kayıt</p></div>
+      <div class="min-w-0"><p class="text-base font-bold text-gold leading-tight">Belge Yönetimi</p><p class="text-[11px] text-slate-400">Ajanda · ${esc(etiket)} · ${recs.length} toplam kayıt</p></div>
       <button onclick="pdfIsTakvimi()" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gold/40 text-gold font-semibold text-sm hover:bg-gold/10 transition"><i data-lucide="file-down" class="h-4 w-4"></i>PDF</button>
     </div>
     <div class="card rounded-2xl p-3" style="background:#8a6d3a"><div class="flex gap-2 flex-col md:flex-row">${page(leftT,leftB)}${page(rightT,rightB)}</div><p class="text-center text-[10px] text-white/70 mt-2">İki sayfalı ajanda · bir güne/satıra tıklayıp kayıt ekleyin · ‹ › ile sayfa çevirin</p></div>`;
@@ -3180,7 +3180,7 @@ function viewKayitDefteri(){
     </div>`;
   return form + `<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
       <span class="h-10 w-10 rounded-xl bg-navy-600 text-gold border border-white/10 flex items-center justify-center"><i data-lucide="notebook-pen" class="h-5 w-5"></i></span>
-      <div class="min-w-0"><p class="text-base font-bold text-gold leading-tight">Günlük Kayıt Defteri</p><p class="text-[11px] text-slate-400">${esc(nm)} · bugün ${bugun.length} kayıt · toplam ${kayitlar.length}</p></div>
+      <div class="min-w-0"><p class="text-base font-bold text-gold leading-tight">Belge Yönetimi</p><p class="text-[11px] text-slate-400">${esc(nm)} · bugün ${bugun.length} kayıt · toplam ${kayitlar.length}</p></div>
       <button onclick="defterToggle()" class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gold text-navy-900 font-semibold text-sm hover:bg-gold-light transition"><i data-lucide="plus" class="h-4 w-4"></i>Kayıt Oluştur</button>
     </div>
     ${(()=>{ const it=t=>`<span class="inline-flex items-center gap-2 px-5 border-r border-white/10"><span class="text-[12px] text-gold font-semibold">${esc(t.saat||'')}</span><span class="text-slate-200 text-[13px]">${esc(t.tur||'')}: ${esc(t.kisi||t.is||'')}</span>${t.konum?'<span class="text-[11px] text-emer-light">📍</span>':''}</span>`;
@@ -3452,7 +3452,7 @@ function ykAltModuller(topId){
   if(topId==='erp') return ERP_MODULES.map(id=>({id, label:((MODULES.find(m=>m.id===id)||{}).name||id).replace(/ Yönetimi| Yönetim/,'')}));
   if(topId==='ayarlar') return [{id:'tablolar',label:'Tablolar'},{id:'kayitlar',label:'Kayıtlar'},{id:'yetki',label:'Yetki Yönetimi'}];
   if(topId==='ekran') return [{id:'bi',label:'İş Zekası'},{id:'analytics',label:'Analytics'},{id:'nakit',label:'Nakit Akış'},{id:'butce',label:'Bütçe'},{id:'konsolide',label:'Bilanço'}];
-  if(topId==='istakvim') return [{id:'odeme',label:'Ödeme Takvimi'},{id:'personel',label:'Personel Takvimi'},{id:'ziyaretci',label:'Ziyaretçi Takvimi'},{id:'defter',label:'Günlük Kayıt Defteri'}];
+  if(topId==='istakvim') return [{id:'odeme',label:'Ödeme Takvimi'},{id:'personel',label:'Personel Takvimi'},{id:'ziyaretci',label:'Ziyaretçi Takvimi'},{id:'defter',label:'Belge Yönetimi'}];
   return [];
 }
 function ykDraft(){ if(!state.ykd) state.ykd={sirk:[],mod:[],alt:{},kart:{},ad:'',kisi:''}; return state.ykd; }
@@ -6316,7 +6316,7 @@ function sysTables(){
     { kod:'TBL-0038', ad:'Proje Tablosu',             aciklama:'Proje tipi (Yap-Sat/Kat Karşılığı) · künye · il/ilçe · arsa/inşaat/satılabilir m² · daire/dükkan · hedef maliyet · alınan arsalar', sayi:yapSatProjeleri.length, git:"state.adminTable='TBL-0038';render()" },
     { kod:'TBL-0039', ad:'Personel Görev Tablosu',    aciklama:'Departman/göreve göre standart görevler (ör. Büro Asistanı) + karta iş ekleme', sayi:personelGorevleri.length,       git:"state.adminTable='TBL-0039';render()" },
     { kod:'TBL-0040', ad:'İş Takvimi Tablosu',        aciklama:'Her personelin günlük/haftalık/aylık işleri · durum takibi', sayi:isTakvimi.length,                          git:"state.adminTable='TBL-0040';render()" },
-    { kod:'TBL-0041', ad:'Kayıt Defteri Tablosu',     aciklama:'Sekreter/asistan günlük kayıt defteri · gelen kişi/telefon/evrak/istek · ofise giriş-çıkış · konum', sayi:isTakvimi.filter(t=>t.defter).length,       git:"state.adminTable='TBL-0041';render()" }
+    { kod:'TBL-0041', ad:'Belge Yönetimi Tablosu',     aciklama:'Sekreter/asistan günlük kayıt defteri · gelen kişi/telefon/evrak/istek · ofise giriş-çıkış · konum', sayi:isTakvimi.filter(t=>t.defter).length,       git:"state.adminTable='TBL-0041';render()" }
   ];
 }
 function viewAdminRecords(){
@@ -6699,7 +6699,7 @@ function viewAdminTable(kod){
   if(kod==='TBL-0040'){ return tbl('İş Takvimi Tablosu',[{h:'No',f:r=>kod2(r.no)},{h:'Personel',cls:'text-slate-100 font-medium',f:r=>esc(r.personel)},{h:'Periyot',f:r=>badge(r.periyot||'Günlük', r.periyot==='Aylık'?'emer':r.periyot==='Haftalık'?'amber':'gold')},{h:'Tarih',f:r=>esc(r.tarih||'—')},{h:'Saat',f:r=>esc(r.saat||'—')},{h:'Tür',f:r=>esc(r.tur||'Görev')},{h:'İş / Görev',f:r=>esc(r.is||'—')},{h:'Durum',f:r=>badge(r.durum||'Planlandı', r.durum==='Tamamlandı'?'emer':r.durum==='Devam Ediyor'?'amber':'slate')},{h:'Konum',f:r=>r.konum?`<span class="inline-flex items-center gap-1 text-[11px] text-emer-light"><i data-lucide="map-pin" class="h-3 w-3"></i>${esc(r.konum)}</span>`:'<span class="text-slate-600">—</span>'},{h:'Düzenle',f:r=>`<button onclick="state.itEdit='${r.no}';render()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/15 text-slate-200 text-[11px] hover:border-gold/40 transition"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Düzelt</button>`}],isTakvimi); }
   if(kod==='TBL-0041'){
     const dd=d=>d==='Tamamlandı'?'emer':'slate'; const rows=isTakvimi.filter(t=>t.defter).sort((a,b)=>String((b.tarih||'')+(b.saat||'')).localeCompare(String((a.tarih||'')+(a.saat||''))));
-    return `${back}<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3"><span class="font-mono text-sm text-gold">TBL-0041</span><span class="text-lg font-bold text-white">Kayıt Defteri Tablosu</span><span class="text-[11px] text-slate-400 ml-auto">${rows.length} kayıt · sekreter/asistan günlük defteri + puantaj</span></div>
+    return `${back}<div class="card card-gold rounded-2xl p-4 mb-4 flex items-center gap-3"><span class="font-mono text-sm text-gold">TBL-0041</span><span class="text-lg font-bold text-white">Belge Yönetimi Tablosu</span><span class="text-[11px] text-slate-400 ml-auto">${rows.length} kayıt · sekreter/asistan günlük defteri + puantaj</span></div>
     <div class="card rounded-2xl p-5"><div class="overflow-x-auto"><table class="w-full text-sm min-w-[820px]"><thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-white/5"><tr><th class="text-left py-2 font-medium">No</th><th class="text-left font-medium">Personel</th><th class="text-left font-medium">Tarih</th><th class="text-left font-medium">Saat</th><th class="text-left font-medium">Tür</th><th class="text-left font-medium">Kişi / Kayıt</th><th class="text-left font-medium">Konum</th>${canDel?'<th class="text-right font-medium">İşlem</th>':''}</tr></thead>
     <tbody>${rows.length?rows.map(r=>`<tr class="border-b border-white/5 hover:bg-white/[.02]"><td class="py-2.5">${kod2(r.no)}</td><td class="text-slate-100 font-medium">${esc(r.personel||'—')}</td><td class="text-slate-400 text-[12px]">${esc(r.tarih||'—')}</td><td class="text-slate-400 text-[12px]">${esc(r.saat||'—')}</td><td>${badge(r.tur||'Kayıt','gold')}</td><td class="text-slate-200">${esc(r.kisi||r.is||'—')}</td><td>${r.konum?`<span class="inline-flex items-center gap-1 text-[11px] text-emer-light"><i data-lucide="map-pin" class="h-3 w-3"></i>${esc(r.konum)}</span>`:'<span class="text-slate-600">—</span>'}</td>${canDel?`<td class="text-right"><button onclick="delIsTakvim('${r.no}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Sil</button></td>`:''}</tr>`).join(''):`<tr><td colspan="${canDel?8:7}" class="text-center text-slate-500 py-6">Kayıt defteri boş.</td></tr>`}</tbody></table></div></div>`;
   }
@@ -7853,7 +7853,7 @@ const SUBTABS = {
   hr:            [{id:'kadro',label:'Kadro',icon:'users'},{id:'personel',label:'Personeller',icon:'contact'},{id:'bordro',label:'Bordro & Organizasyon',icon:'wallet'}],
   istakvim:      [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   panelim:       [{id:'bilgiler',label:'Kişisel Bilgiler',icon:'id-card'}],
-  kayitdefteri:  [{id:'defter',label:'Kayıt Defteri',icon:'notebook-pen'}],
+  kayitdefteri:  [{id:'defter',label:'Belge Yönetimi',icon:'notebook-pen'}],
   gorevtakvimim: [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   gorevlerim:    [{id:'gun',label:'Gün',icon:'calendar'},{id:'hafta',label:'Hafta',icon:'calendar-days'},{id:'ay',label:'Ay',icon:'calendar-range'},{id:'yil',label:'Yıl',icon:'calendar-check'}],
   admin:         [{id:'kayitlar',label:'Kayıtlar',icon:'database'}]
@@ -7904,7 +7904,7 @@ function buildSubNav(){
       bar.style.display=''; tint();
       const tv=takvimViewResolve(); const isDefter = tv==='defter';
       let tabRow = abtn(!isDefter, "if(state.takvimView==='defter')state.takvimView='personel';render()", 'calendar-clock', 'İş Takvimi');
-      if(takvimTabCan('defter')) tabRow += abtn(isDefter, "state.takvimView='defter';render()", 'book-open', 'Kayıt Defteri');
+      if(takvimTabCan('defter')) tabRow += abtn(isDefter, "state.takvimView='defter';render()", 'book-open', 'Belge Yönetimi');
       if(tv==='personel'){
         const dsel=state.takvimDeptler||[]; const psel=state.takvimPersoneller||[]; const hepsi=!dsel.length&&!psel.length;
         const ozet = hepsi?'Tüm Personel · Tüm Departmanlar':(psel.length?(psel.length+' personel seçili'):dsel.join(', '));
